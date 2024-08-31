@@ -1,0 +1,6 @@
+@anynote_HostAddress = http://localhost:5299
+
+GET {{anynote_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

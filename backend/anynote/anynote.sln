@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34310.174
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "anynote", "anynote.csproj", "{DE5555C1-A2B6-47C7-80B6-4B6D7749A7BC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DE5555C1-A2B6-47C7-80B6-4B6D7749A7BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE5555C1-A2B6-47C7-80B6-4B6D7749A7BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE5555C1-A2B6-47C7-80B6-4B6D7749A7BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE5555C1-A2B6-47C7-80B6-4B6D7749A7BC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9FDD98CF-A1C6-4677-90AD-B19263DD7FD1}
+	EndGlobalSection
+EndGlobal
