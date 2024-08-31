@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:anynote/GlobalConfig.dart';
 import 'package:anynote/views/EditNote.dart';
+import 'package:anynote/views/WideView/wideHome.dart';
 import 'package:anynote/views/archieve_list.dart';
 import 'package:anynote/views/archiveView.dart';
 import 'package:anynote/views/login.dart';
@@ -18,7 +19,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (Platform.isWindows) {
     await windowManager.ensureInitialized();
-    WindowManager.instance.setSize(const Size(500, 900));
+    WindowManager.instance.setSize(const Size(1200, 900));
     windowManager.center();
     //windowManager.setAlwaysOnTop(true);
     windowManager.setTitle('记事本');
@@ -26,24 +27,35 @@ void main() async {
 
   await GlobalConfig.init();
   Get.put(MainController());
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
+
+  WideHome? wideHome;
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'AnyNote',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.grey),
-        useMaterial3: true,
-        fontFamily: "MyCustomfont",
-      ),
-      home: GlobalConfig.isLoggedIn ? const HomePage() : LoginPage(),
-    );
+        title: 'AnyNote',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.grey),
+          useMaterial3: true,
+          fontFamily: "MyCustomfont",
+        ),
+        home: LayoutBuilder(builder: (context, constraints) {
+          if (!GlobalConfig.isLoggedIn) {
+            return LoginPage();
+          }
+          if (Get.width > 600) {
+            wideHome ??= WideHome();
+            return KeepAliveWrapper(child: wideHome!);
+          }
+
+          return const HomePage();
+        }));
   }
 }
 

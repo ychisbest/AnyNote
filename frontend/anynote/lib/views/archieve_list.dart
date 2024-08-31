@@ -25,6 +25,7 @@ class _ArchieveListState extends State<ArchieveList> {
   @override
   void dispose() {
     if (mounted) {
+      print('dispose');
       controller.updateFilter('');
     }
     super.dispose();
@@ -154,7 +155,7 @@ Widget BuildNoteItem(
           ? [
               BoxShadow(
                 color: Colors.black.withOpacity(0.3),
-                blurRadius: 15,
+                blurRadius: 5,
                 offset: const Offset(5, 10),
               ),
             ]
@@ -178,9 +179,17 @@ Widget BuildNoteItem(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(
                 children: [
-                  Text(
-                    DateFormat('yyyy年MM月dd日 HH:mm').format(item.createTime),
-                    style: TextStyle(color: Colors.grey[700], fontSize: 10),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 10.0),
+                    child: Text(
+                      DateFormat('yyyy-MM-dd   HH:mm').format(item.createTime),
+                      style: TextStyle(
+                        color: Colors.grey[800],
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                   ),
                   const Spacer(),
                   PopupMenuButton<String>(
