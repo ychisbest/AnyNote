@@ -115,83 +115,97 @@ Widget BuildNoteItem(
 
   var content = ClipRect(
     child: Container(
-        constraints: const BoxConstraints(maxHeight: 200),
-        child: CustomMarkdownDisplay(text: item.content?.trimRight() ?? "")),
+      constraints: const BoxConstraints(maxHeight: 200),
+      child: CustomMarkdownDisplay(text: item.content?.trimRight() ?? ""),
+    ),
   );
 
   var shadowContent = Stack(
     children: [
       ShaderMask(
-          shaderCallback: (Rect bounds) {
-            return const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.black, Colors.transparent, Colors.transparent],
-              stops: [0.3, 0.9, 1],
-            ).createShader(bounds);
-          },
-          blendMode: BlendMode.dstIn,
-          child: content),
+        shaderCallback: (Rect bounds) {
+          return const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.black, Colors.transparent, Colors.transparent],
+            stops: [0.3, 0.9, 1],
+          ).createShader(bounds);
+        },
+        blendMode: BlendMode.dstIn,
+        child: content,
+      ),
       Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Icon(
-            Icons.more_horiz_sharp,
-            color: darkenColor(item.color.toFullARGB(), 0.55),
-            size: 15,
-          ))
+        bottom: 0,
+        left: 0,
+        right: 0,
+        child: Icon(
+          Icons.more_horiz,
+          color: darkenColor(item.color.toFullARGB(), 0.55),
+          size: 20,
+        ),
+      ),
     ],
   );
 
   return Container(
     key: ValueKey(item.id),
-    margin: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+    margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
     decoration: BoxDecoration(
-      border: Border.all(color: darkenColor(item.color.toFullARGB()), width: 2),
-      borderRadius: const BorderRadius.all(Radius.circular(10)),
+      border: Border.all(
+          color: darkenColor(item.color.toFullARGB(), 0.2), width: 1),
+      borderRadius: BorderRadius.circular(15),
       color: item.color.toFullARGB(),
-      boxShadow: item.isTopMost
-          ? [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 5,
-                offset: const Offset(5, 10),
-              ),
-            ]
-          : null,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.1),
+          blurRadius: 8,
+          offset: const Offset(0, 4),
+        ),
+      ],
     ),
-    child: GestureDetector(
-      onTap: () async {
-        await Get.to(() => EditNotePage(item: item));
-      },
-      child: Container(
-        color: Colors.transparent,
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(15),
+        onTap: () async {
+          await Get.to(() => EditNotePage(item: item));
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
               decoration: BoxDecoration(
-                color: darkenColor(item.color.toFullARGB()),
+                color: darkenColor(item.color.toFullARGB(), 0.1),
                 borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(5)),
+                    const BorderRadius.vertical(top: Radius.circular(15)),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 10.0),
-                    child: Text(
-                      DateFormat('yyyy-MM-dd   HH:mm').format(item.createTime),
-                      style: TextStyle(
-                        color: Colors.grey[800],
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
+                  Icon(
+                    Icons.event_note,
+                    size: 18,
+                    color: Colors.grey[700],
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    DateFormat('yyyy-MM-dd HH:mm').format(item.createTime),
+                    style: TextStyle(
+                      color: Colors.grey[800],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   const Spacer(),
+                  if (item.isTopMost)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Icon(
+                        Icons.star,
+                        color: Colors.amber,
+                        size: 20,
+                      ),
+                    ),
                   PopupMenuButton<String>(
                     icon: const Icon(
                       Icons.more_vert,
@@ -221,10 +235,8 @@ Widget BuildNoteItem(
                         value: 'toggleTopMost',
                         child: ListTile(
                           leading: Icon(
-                            item.isTopMost
-                                ? Icons.star_outline_outlined
-                                : Icons.star,
-                            color: item.isTopMost ? Colors.grey : Colors.orange,
+                            item.isTopMost ? Icons.star_border : Icons.star,
+                            color: item.isTopMost ? Colors.grey : Colors.amber,
                           ),
                           title: Text(item.isTopMost
                               ? 'Remove from Top'
@@ -235,19 +247,17 @@ Widget BuildNoteItem(
                         value: 'toggleArchive',
                         child: ListTile(
                           leading: Icon(
-                            isArchive
-                                ? Icons.unarchive_outlined
-                                : Icons.archive_outlined,
-                            color: Colors.green,
+                            isArchive ? Icons.unarchive : Icons.archive,
+                            color: Colors.blue,
                           ),
                           title: Text(isArchive ? 'Unarchive' : 'Archive'),
                         ),
                       ),
-                      const PopupMenuItem<String>(
+                      PopupMenuItem<String>(
                         value: 'delete',
                         child: ListTile(
                           leading: Icon(
-                            Icons.delete,
+                            Icons.delete_outline,
                             color: Colors.red,
                           ),
                           title: Text('Delete'),
@@ -259,9 +269,9 @@ Widget BuildNoteItem(
               ),
             ),
             Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: overflow ? shadowContent : content),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: overflow ? shadowContent : content,
+            ),
           ],
         ),
       ),

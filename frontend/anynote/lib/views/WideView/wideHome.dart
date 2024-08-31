@@ -19,28 +19,44 @@ class WideHome extends StatelessWidget {
     Get.find<MainController>().initData();
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Row(
         children: [
           // Sidebar
           Container(
-            width: 200,
-            color: Colors.grey[100],
+            width: 240,
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
             child: Column(
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32.0),
                   child: Text(
                     "AnyNote",
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800],
+                      letterSpacing: 1.2,
+                    ),
                   ),
                 ),
                 Expanded(
                   child: ListView(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     children: [
-                      _buildMenuItem(Icons.note, "Notes", 0),
-                      _buildMenuItem(Icons.archive, "Archived", 1),
-                      _buildMenuItem(Icons.tag, "Tags", 2),
-                      _buildMenuItem(Icons.settings, "Settings", 3),
+                      _buildMenuItem(Icons.note_outlined, "Notes", 0),
+                      _buildMenuItem(Icons.archive_outlined, "Archived", 1),
+                      _buildMenuItem(Icons.local_offer_outlined, "Tags", 2),
+                      _buildMenuItem(Icons.settings_outlined, "Settings", 3),
                     ],
                   ),
                 ),
@@ -49,14 +65,25 @@ class WideHome extends StatelessWidget {
           ),
           // Main content area
           Expanded(
-            child: Obx(() => IndexedStack(
-                  index: currentPageIndex.value,
-                  children: [
-                    _buildMainContent('Notes'),
-                    _buildMainContent('Archived'),
-                    _buildMainContent('Tags'),
-                    _buildMainContent('Settings'),
-                  ],
+            child: Obx(() => AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: IndexedStack(
+                    key: ValueKey<int>(currentPageIndex.value),
+                    index: currentPageIndex.value,
+                    children: [
+                      _buildMainContent('Notes'),
+                      _buildMainContent('Archived'),
+                      _buildMainContent('Tags'),
+                      _buildMainContent('Settings'),
+                    ],
+                  ),
+                  transitionBuilder:
+                      (Widget child, Animation<double> animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: child,
+                    );
+                  },
                 )),
           ),
         ],
@@ -65,24 +92,27 @@ class WideHome extends StatelessWidget {
   }
 
   Widget _buildMenuItem(IconData icon, String title, int index) {
-    return Obx(() => AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            color: currentPageIndex.value == index
-                ? Colors.blue.withOpacity(0.1)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+    return Obx(() => ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          leading: Icon(icon,
+              color: currentPageIndex.value == index
+                  ? Colors.black87
+                  : Colors.black54,
+              size: 20),
+          title: Text(
+            title,
+            style: TextStyle(
+              color: currentPageIndex.value == index
+                  ? Colors.black87
+                  : Colors.black54,
+              fontWeight: currentPageIndex.value == index
+                  ? FontWeight.w600
+                  : FontWeight.normal,
+              fontSize: 14,
+            ),
           ),
-          child: ListTile(
-            leading: Icon(icon,
-                color: currentPageIndex.value == index ? Colors.blue : null),
-            title: Text(title,
-                style: TextStyle(
-                    color:
-                        currentPageIndex.value == index ? Colors.blue : null)),
-            selected: currentPageIndex.value == index,
-            onTap: () => currentPageIndex.value = index,
-          ),
+          selected: currentPageIndex.value == index,
+          onTap: () => currentPageIndex.value = index,
         ));
   }
 

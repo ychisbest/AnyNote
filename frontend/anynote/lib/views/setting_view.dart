@@ -38,7 +38,9 @@ class _SettingViewState extends State<SettingView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: const Text('设置'),
         elevation: 0,
       ),
@@ -117,7 +119,7 @@ class _SettingViewState extends State<SettingView> {
   Widget _buildTextField(TextEditingController controller, String label) {
     return TextField(
       controller: controller,
-      style: const TextStyle(fontSize: 12,color: Colors.black87),
+      style: const TextStyle(fontSize: 12, color: Colors.black87),
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(
