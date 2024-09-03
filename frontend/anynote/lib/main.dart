@@ -12,17 +12,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:window_manager/window_manager.dart';
-
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'MainController.dart';
+import 'views/WideView/windowManger.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (Platform.isWindows) {
-    await windowManager.ensureInitialized();
-    WindowManager.instance.setSize(const Size(1200, 900));
-    windowManager.center();
-    //windowManager.setAlwaysOnTop(true);
-    windowManager.setTitle('记事本');
+  if (!kIsWeb) {
+    setwindow();
   }
 
   await GlobalConfig.init();
@@ -33,29 +30,17 @@ void main() async {
 class MyApp extends StatelessWidget {
   MyApp({super.key});
 
-  WideHome? wideHome;
-
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
         title: 'AnyNote',
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.grey),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
           fontFamily: "MyCustomfont",
         ),
-        home: LayoutBuilder(builder: (context, constraints) {
-          if (!GlobalConfig.isLoggedIn) {
-            return LoginPage();
-          }
-          if (Get.width > 600) {
-            wideHome ??= WideHome();
-            return KeepAliveWrapper(child: wideHome!);
-          }
-
-          return const HomePage();
-        }));
+        home: GlobalConfig.isLoggedIn?const HomePage():LoginPage());
   }
 }
 
@@ -69,6 +54,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final MainController c = Get.put(MainController());
   DateTime? _lastPausedTime;
+  Widget? resizeableHome;
 
   @override
   void initState() {
@@ -85,8 +71,44 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    Color scaffoldBackgroundColor = Theme.of(context).scaffoldBackgroundColor;
 
+    return LayoutBuilder(builder: (context, constraints) {
+      if (!GlobalConfig.isLoggedIn) {
+        return LoginPage();
+      }
+      if (Get.width > 600) {
+        resizeableHome??=WideHome();
+        return resizeableHome!;
+      }
+
+      return NerrowHome();
+    });
+
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.paused) {
+      _lastPausedTime = DateTime.now();
+    } else if (state == AppLifecycleState.resumed) {
+      if (_lastPausedTime != null) {
+        final timeDifference = DateTime.now().difference(_lastPausedTime!);
+        if (timeDifference.inMinutes >= 2) {
+          final MainController c = Get.find<MainController>();
+          c.fetchNotes();
+        }
+      }
+    }
+  }
+}
+
+class NerrowHome extends StatelessWidget {
+  NerrowHome({super.key});
+  final MainController c = Get.put(MainController());
+  @override
+  Widget build(BuildContext context) {
+    Color scaffoldBackgroundColor = Theme.of(context).scaffoldBackgroundColor;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: scaffoldBackgroundColor,
@@ -127,23 +149,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       ),
     );
   }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.paused) {
-      _lastPausedTime = DateTime.now();
-    } else if (state == AppLifecycleState.resumed) {
-      if (_lastPausedTime != null) {
-        final timeDifference = DateTime.now().difference(_lastPausedTime!);
-        if (timeDifference.inMinutes >= 2) {
-          final MainController c = Get.find<MainController>();
-          c.fetchNotes();
-        }
-      }
-    }
-  }
 }
+
 
 class KeepAliveWrapper extends StatefulWidget {
   final Widget child;

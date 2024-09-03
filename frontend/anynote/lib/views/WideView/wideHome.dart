@@ -1,6 +1,6 @@
 import 'package:anynote/MainController.dart';
+import 'package:anynote/views/EditNote.dart';
 import 'package:anynote/views/archieve_list.dart';
-import 'package:anynote/views/archiveView.dart';
 import 'package:anynote/views/setting_view.dart';
 import 'package:anynote/views/tag_list.dart';
 import 'package:flutter/material.dart';
@@ -10,16 +10,18 @@ class WideHome extends StatelessWidget {
   WideHome({Key? key}) : super(key: key);
 
   final RxInt currentPageIndex = 0.obs;
-
-  ArchieveList archivedNotes = ArchieveList(isArchive: true);
-  ArchieveList unarchivedNotes = ArchieveList(isArchive: false);
+  final MainController c = Get.put(MainController());
 
   @override
   Widget build(BuildContext context) {
-    Get.find<MainController>().initData();
-
     return Scaffold(
       backgroundColor: Colors.white,
+      floatingActionButton: FloatingActionButton(
+        onPressed: (){
+          Get.to(()=>EditNotePage());
+        },
+        child: const Icon(Icons.add),
+      ),
       body: Row(
         children: [
           // Sidebar
@@ -65,26 +67,20 @@ class WideHome extends StatelessWidget {
           ),
           // Main content area
           Expanded(
-            child: Obx(() => AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: IndexedStack(
-                    key: ValueKey<int>(currentPageIndex.value),
-                    index: currentPageIndex.value,
-                    children: [
-                      _buildMainContent('Notes'),
-                      _buildMainContent('Archived'),
-                      _buildMainContent('Tags'),
-                      _buildMainContent('Settings'),
-                    ],
-                  ),
-                  transitionBuilder:
-                      (Widget child, Animation<double> animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    );
-                  },
-                )),
+            child: Builder(
+              builder: (context) {
+                return Obx(() =>c.isLoading.isTrue?const Center(child: CircularProgressIndicator()):
+                IndexedStack(
+                  index: currentPageIndex.value,
+                  children: [
+                    _buildMainContent('Notes'),
+                    _buildMainContent('Archived'),
+                    _buildMainContent('Tags'),
+                    _buildMainContent('Settings'),
+                  ],
+                ));
+              }
+            ),
           ),
         ],
       ),
@@ -121,7 +117,7 @@ class WideHome extends StatelessWidget {
       case 'Notes':
         return Center(
           child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
+              constraints: const BoxConstraints(maxWidth: 800),
               child: ArchieveList()),
         );
       case 'Archived':

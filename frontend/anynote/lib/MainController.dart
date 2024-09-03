@@ -260,8 +260,8 @@ class MainController extends GetxController {
 
     if (confirm) {
       try {
-        await _api.deleteNoteItem(id);
         deleteNoteLocally(id);
+        await _api.deleteNoteItem(id);
       } catch (e) {
         Get.snackbar('错误', '删除笔记失败: $e');
       }
@@ -270,10 +270,10 @@ class MainController extends GetxController {
 
   Future<void> deleteNoteWithoutPrompt(int id) async {
     try {
-      await _api.deleteNoteItem(id);
       deleteNoteLocally(id);
+      await _api.deleteNoteItem(id);
     } catch (e) {
-      Get.snackbar('错误', '删除空笔记失败: $e');
+      //Get.snackbar('错误', '删除空笔记失败: $e');
     }
   }
 

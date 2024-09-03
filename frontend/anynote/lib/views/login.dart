@@ -1,5 +1,6 @@
 import 'package:anynote/GlobalConfig.dart';
 import 'package:anynote/main.dart';
+import 'package:anynote/views/WideView/wideHome.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart';
@@ -36,7 +37,7 @@ class _LoginPageState extends State<LoginPage> {
         GlobalConfig.secretStr = _secret;
         GlobalConfig.isLoggedIn = true;
         Get.snackbar("success", "登录成功");
-        Get.off(() => const HomePage());
+        Get.off(() => HomePage());
       } else {
         print("login failed");
         Get.snackbar('错误', '登录失败，请检查网络连接');

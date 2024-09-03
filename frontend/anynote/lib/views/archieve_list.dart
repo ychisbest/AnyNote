@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
 
@@ -24,17 +25,25 @@ class _ArchieveListState extends State<ArchieveList> {
 
   @override
   void dispose() {
-    if (mounted) {
-      print('dispose');
-      controller.updateFilter('');
-    }
+    // if (mounted) {
+    //   print('dispose');
+    //   controller.updateFilter('');
+    // }
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    controller.updateFilter('');
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
+        if (widget.isArchive) _buildSearchBar(),
+        const SizedBox(height: 10,),
         Expanded(
           child: Obx(() {
             var archivedNotes = widget.isArchive
@@ -54,7 +63,6 @@ class _ArchieveListState extends State<ArchieveList> {
             );
           }),
         ),
-        if (widget.isArchive) _buildSearchBar(),
       ],
     );
   }
@@ -90,19 +98,16 @@ class _ArchieveListState extends State<ArchieveList> {
   }
 
   Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: TextField(
-        style: const TextStyle(fontSize: 12),
-        onChanged: (value) {
-          controller.updateFilter(value);
-        },
-        decoration: InputDecoration(
-          hintText: "搜索...",
-          prefixIcon: const Icon(Icons.search),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+    return TextField(
+      style: const TextStyle(fontSize: 12),
+      onChanged: (value) {
+        controller.updateFilter(value);
+      },
+      decoration: InputDecoration(
+        hintText: "搜索...",
+        prefixIcon: const Icon(Icons.search),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
       ),
     );
@@ -179,7 +184,7 @@ Widget BuildNoteItem(
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(15)),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
                 children: [
                   Icon(
@@ -192,17 +197,17 @@ Widget BuildNoteItem(
                     DateFormat('yyyy-MM-dd HH:mm').format(item.createTime),
                     style: TextStyle(
                       color: Colors.grey[800],
-                      fontSize: 14,
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const Spacer(),
                   if (item.isTopMost)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
+                    const Padding(
+                      padding: EdgeInsets.only(right: 8),
                       child: Icon(
-                        Icons.star,
-                        color: Colors.amber,
+                        Icons.star_outline_outlined,
+                        color: Colors.orange,
                         size: 20,
                       ),
                     ),
