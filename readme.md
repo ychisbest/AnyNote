@@ -1,38 +1,53 @@
-# 📝 AnyNote: Your Digital Notebook 🚀
+# AnyNote 📝✨
 
-## 📖 About
-AnyNote is a versatile and user-friendly digital note-taking application designed to help you capture, organize, and access your thoughts and ideas anytime, anywhere.
+AnyNote is an open-source, cross-platform note-taking application that puts your data in your hands.
 
-## 🌟 Key Features
-- 🖋️ Quick and easy note creation
-- 🗂️ Organize notes with tags and categories
-- 🔍 Powerful search functionality
-- 🔄 Real-time syncing across devices
-- 🔒 Secure encryption for your sensitive information
+<img src="https://anynote.online/screenshot/show.gif" alt="demo" width="550"/>
+
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/ychisbest/AnyNote)
+[![Website](https://img.shields.io/badge/Website-anynote.online-blue)](https://anynote.online)
+
+## ✨ Features
+
+- 🏠 **Self-hosted**: Deploy AnyNote on your own infrastructure and keep your data under your control.
+- 🌐 **Cross-platform**: Supports Windows, Android, and Web platforms.
+- 📝 **WYSIWYG Markdown Editor**: Enjoy an excellent editing experience with a what-you-see-is-what-you-get Markdown editor.
+- 🔄 **Real-time Synchronization**: Automatically sync data across all open clients.
+- 🔍 **Efficient Search**: Find your historical notes instantly with high-performance search capabilities.
 
 ## 🚀 Getting Started
-1. Run the docker container
+
+### Backend Deployment
+
+To deploy the AnyNote backend using Docker, run the following command:
+
+```bash
+docker run -d -p 8080:8080 -e secret=YOUR_SECRET -v /path/to/data:/data ych8398527/anynote:1.0
 ```
-docker run -p 8080:8080 -v <your data path>:/data -e secret=<your secret> ych8398527/anynote:1.0
-```
 
-2. Download the AnyNote app from the release page
-3. Start creating and organizing your notes!
+Replace `YOUR_SECRET` with your chosen secret key and `/path/to/data` with the desired path for data storage.
 
+### Client Installation
 
-## 🔧 Support
-Having trouble with AnyNote? Please open an issue on our GitHub repository:
-[Create a new issue](https://github.com/ychisbest/AnyNote/issues/new)
+Download the latest client for your platform from our [GitHub Releases](https://github.com/ychisbest/AnyNote/releases) page.
 
-We'll do our best to assist you as quickly as possible.
+## 🤝 Contributing
 
-## 🔒 Privacy
-all data is stored in the docker container, so we don't have access to your data
+We welcome contributions to AnyNote! Please check out our [GitHub repository](https://github.com/ychisbest/AnyNote) for more information on how to get involved.
 
-## 📱 Download
-Get AnyNote now:
-[AnyNote Releases](https://github.com/ychisbest/AnyNote/releases)
+## 💬 Support
 
+For more information and support, visit our [official website](https://anynote.online) or open an issue on our GitHub repository.
 
-Start capturing your ideas with AnyNote today! 🎉
+---
 
+## 📢 Why Choose AnyNote?
+
+- 🔒 **Privacy-focused**: Your data stays with you, not on someone else's servers.
+- 🚀 **Fast and Efficient**: Designed for speed and responsiveness.
+- 🎨 **Customizable**: Tailor your note-taking experience to your preferences.
+- 🌟 **Always Improving**: Regular updates and new features based on user feedback.
+
+---
+
+AnyNote - Your notes, your way, anywhere. 📘🌍

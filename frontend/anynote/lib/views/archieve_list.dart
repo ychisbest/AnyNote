@@ -43,9 +43,6 @@ class _ArchieveListState extends State<ArchieveList> {
     return Column(
       children: [
         if (widget.isArchive) _buildSearchBar(),
-        const SizedBox(
-          height: 10,
-        ),
         Expanded(
           child: Obx(() {
             var archivedNotes = widget.isArchive
@@ -263,7 +260,7 @@ Widget BuildNoteItem(
                           title: Text(isArchive ? 'Unarchive' : 'Archive'),
                         ),
                       ),
-                      PopupMenuItem<String>(
+                      const PopupMenuItem<String>(
                         value: 'delete',
                         child: ListTile(
                           leading: Icon(
