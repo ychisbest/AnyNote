@@ -567,7 +567,6 @@ void UnindentText(TextEditingController controller, FocusNode controllerfn) {
 void TextChangeEx(TextEditingController _controller, String _lastchange) {
   final text = _controller.text;
   final selection = _controller.selection;
-
   if (text.length > _lastchange.length &&
       selection.baseOffset > 0 &&
       text.length >= selection.baseOffset) {

@@ -183,12 +183,30 @@ class MainController extends GetxController {
     }
   }
 
-  Future<bool> login() async {
+  Future<Map<String, dynamic>> login() async {
     try {
-      await _api.getNotes();
-      return true;
+      int statusCode = await _api.login();
+      if (statusCode >= 200 && statusCode < 300) {
+        return {
+          'isLoginSuccess': true,
+          'errorContent': null,
+        };
+      } else if (statusCode == 401) {
+        return {
+          'isLoginSuccess': false,
+          'errorContent': 'Secret is incorrect',
+        };
+      } else {
+        return {
+          'isLoginSuccess': false,
+          'errorContent': 'Login Failed',
+        };
+      }
     } catch (e) {
-      return false;
+      return {
+        'isLoginSuccess': false,
+        'errorContent': e.toString(),
+      };
     }
   }
 
@@ -242,15 +260,15 @@ class MainController extends GetxController {
   Future<void> deleteNote(int id) async {
     bool confirm = await Get.dialog<bool>(
           AlertDialog(
-            title: Text('确认删除'),
-            content: Text('你确定要删除这个笔记吗？'),
+            title: Text('Confirm Delete'),
+            content: Text('Are you sure you want to delete this note?'),
             actions: [
               TextButton(
-                child: Text('取消'),
+                child: Text('Cancel'),
                 onPressed: () => Get.back(result: false),
               ),
               TextButton(
-                child: Text('删除'),
+                child: Text('Delete'),
                 onPressed: () => Get.back(result: true),
               ),
             ],
@@ -281,9 +299,8 @@ class MainController extends GetxController {
     try {
       List<int> ids = items.map((item) => item.id!).toList();
       List<int> indices = items.map((item) => item.index).toList();
-
-      await _api.updateIndex(ids, indices);
       updateIndicesLocally(ids, indices);
+      await _api.updateIndex(ids, indices);
     } catch (e) {
       Get.snackbar('错误', '更新笔记顺序失败: $e');
     }

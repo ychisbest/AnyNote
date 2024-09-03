@@ -18,7 +18,10 @@ namespace anynote
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            var path = "/data/data.db";
+
+            //var path = "/data/data.db";
+
+            var path = "data.db";
             optionsBuilder.UseSqlite("Data Source=" + path);
             base.OnConfiguring(optionsBuilder);
         }

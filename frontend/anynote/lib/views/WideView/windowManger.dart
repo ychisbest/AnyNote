@@ -10,6 +10,6 @@ setwindow() async {
     windowManager.center();
     // //windowManager.setAlwaysOnTop(true);
 
-    windowManager.setTitle('记事本');
+    windowManager.setTitle('AnyNote');
   }
 }

@@ -18,7 +18,7 @@ class Archiveview extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: const Text("已归档"),
+          title: const Text("Archived"),
           actions: [
             TextButton(
               onPressed: () {
@@ -26,12 +26,12 @@ class Archiveview extends StatelessWidget {
                 Get.to(() {
                   return Scaffold(
                       appBar: AppBar(
-                          title: Text(DateFormat('yyyy年MM月dd日 HH:mm')
+                          title: Text(DateFormat('yyyy-MM-dd HH:mm')
                               .format(c.filteredArchivedNotes[ri].createTime))),
                       body: SingleChildScrollView(
                         child: Padding(
                           padding: const EdgeInsets.all(20.0),
-                          child: Container(
+                          child: SizedBox(
                               width: double.infinity,
                               child: CustomMarkdownDisplay(
                                   text: c.filteredArchivedNotes[ri].content ??

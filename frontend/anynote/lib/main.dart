@@ -38,9 +38,9 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
-          fontFamily: "MyCustomfont",
+          fontFamily: kIsWeb ? "" : "MyCustomfont",
         ),
-        home: GlobalConfig.isLoggedIn?const HomePage():LoginPage());
+        home: GlobalConfig.isLoggedIn ? const HomePage() : LoginPage());
   }
 }
 
@@ -71,19 +71,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-
     return LayoutBuilder(builder: (context, constraints) {
       if (!GlobalConfig.isLoggedIn) {
         return LoginPage();
       }
       if (Get.width > 600) {
-        resizeableHome??=WideHome();
+        resizeableHome ??= WideHome();
         return resizeableHome!;
       }
 
       return NerrowHome();
     });
-
   }
 
   @override
@@ -150,7 +148,6 @@ class NerrowHome extends StatelessWidget {
     );
   }
 }
-
 
 class KeepAliveWrapper extends StatefulWidget {
   final Widget child;

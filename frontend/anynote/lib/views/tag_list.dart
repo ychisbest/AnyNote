@@ -13,7 +13,7 @@ class TagList extends StatelessWidget {
         backgroundColor: Colors.white,
         appBar: AppBar(
           backgroundColor: Colors.white,
-          title: const Text("标签列表"),
+          title: const Text("Tags List"),
           actions: [
             IconButton(
                 onPressed: () {
@@ -69,7 +69,7 @@ class AddTagListView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: const Text("标记无标签内容"),
+          title: const Text("untaged content"),
         ),
         body: GetX<MainController>(builder: (c) {
           var items = c.notesWithoutTag;

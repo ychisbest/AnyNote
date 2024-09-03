@@ -60,6 +60,7 @@ class _EditNotePageState extends State<EditNotePage> {
     } else {
       item = widget.item;
       tc.text = widget.item!.content ?? "";
+      _lastChange = tc.text;
     }
     tc.addListener(textUpdate);
 
@@ -86,11 +87,12 @@ class _EditNotePageState extends State<EditNotePage> {
     }
 
     try {
-      String oldText = item!.content??"";
+      String oldText = item!.content ?? "";
       int oldCursorPosition = tc.selection.baseOffset;
 
       // 计算新的光标位置
-      int newCursorPosition = calculateNewCursorPosition(oldText, newText, oldCursorPosition);
+      int newCursorPosition =
+          calculateNewCursorPosition(oldText, newText, oldCursorPosition);
 
       // 更新内容和光标位置
       item!.content = newText;
@@ -103,11 +105,12 @@ class _EditNotePageState extends State<EditNotePage> {
         tfn.requestFocus();
       }
     } catch (e) {
-      print('更新文本时发生错误: $e');
+      print('Error occurred while updating text 🚨: $e');
     }
   }
 
-  int calculateNewCursorPosition(String oldText, String newText, int oldCursorPosition) {
+  int calculateNewCursorPosition(
+      String oldText, String newText, int oldCursorPosition) {
     // 如果旧文本为空，将光标放在新文本的开始
     if (oldText.isEmpty) {
       return 0;
@@ -130,7 +133,8 @@ class _EditNotePageState extends State<EditNotePage> {
     int commonSuffixLength = 0;
     while (commonSuffixLength < oldText.length - commonPrefixLength &&
         commonSuffixLength < newText.length - commonPrefixLength &&
-        oldText[oldText.length - 1 - commonSuffixLength] == newText[newText.length - 1 - commonSuffixLength]) {
+        oldText[oldText.length - 1 - commonSuffixLength] ==
+            newText[newText.length - 1 - commonSuffixLength]) {
       commonSuffixLength++;
     }
 
@@ -145,7 +149,8 @@ class _EditNotePageState extends State<EditNotePage> {
     }
 
     // 如果文本完全不匹配或光标在中间变化的部分
-    double relativePosition = oldText.isEmpty ? 0 : oldCursorPosition / oldText.length;
+    double relativePosition =
+        oldText.isEmpty ? 0 : oldCursorPosition / oldText.length;
     return (relativePosition * newText.length).round();
   }
 
@@ -327,7 +332,7 @@ class _EditNotePageState extends State<EditNotePage> {
   Future<void> CallAI() async {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('AI 生成中...'),
+        content: Text('AI Generating 🚀...'),
         duration: Duration(seconds: 60), // 设置显示时间
       ),
     );

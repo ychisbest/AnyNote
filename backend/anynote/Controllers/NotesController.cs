@@ -192,58 +192,6 @@ namespace anynote.Controllers
             return NoContent();
         }
 
-        [HttpGet("/")]
-        public async Task<ContentResult> Index()
-        {
-            var content = @"<!DOCTYPE html>
-<html lang=""zh-CN"">
-<head>
-    <meta charset=""UTF-8"">
-    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
-    <title>AnyNote 部署成功</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .container {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        h1 {
-            color: #4caf50;
-            margin-bottom: 1rem;
-        }
-        p {
-            color: #333;
-            margin-bottom: 1.5rem;
-        }
-        .icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-    </style>
-</head>
-<body>
-    <div class=""container"">
-        <div class=""icon"">✅</div>
-        <h1>AnyNote 部署成功</h1>
-        <p>您的 AnyNote 服务器程序已成功部署。<br>现在您可以开始使用了。</p>
-    </div>
-</body>
-</html>";
-
-            return Content(content,"text/html",Encoding.UTF8);
-        }
-
         private bool NoteItemExists(int id)
         {
             return _context.Notes.Any(e => e.Id == id);

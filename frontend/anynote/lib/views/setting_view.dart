@@ -41,7 +41,7 @@ class _SettingViewState extends State<SettingView> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('设置'),
+        title: const Text('Setup 🛠️'),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -50,7 +50,7 @@ class _SettingViewState extends State<SettingView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('字体大小',
+              const Text('Font size',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               Slider(
@@ -85,7 +85,7 @@ class _SettingViewState extends State<SettingView> {
                 ),
               ),
               const SizedBox(height: 40),
-              const Text('AI 设置',
+              const Text('AI Setup',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 24),
               _buildTextField(_aiApiKeyController, 'AI API Key'),
@@ -107,7 +107,7 @@ class _SettingViewState extends State<SettingView> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('注销登录', style: TextStyle(fontSize: 18)),
+                child: const Text('Log out', style: TextStyle(fontSize: 18)),
               ),
             ],
           ),

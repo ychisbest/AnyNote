@@ -96,14 +96,25 @@ class NotesApi {
   }
 
   Future<List<NoteItem>> getNotes() async {
-    print(_dio.options.baseUrl);
-    print(baseUrl);
     try {
       final response = await _dio.get('/api/Notes');
       List jsonResponse = response.data;
       return jsonResponse.map((item) => NoteItem.fromJson(item)).toList();
     } catch (e) {
       throw Exception('Failed to load notes: $e');
+    }
+  }
+
+  Future<int> login() async {
+    try {
+      final response = await _dio.get('/api/Notes');
+      return response.statusCode ?? 0;
+    } catch (e) {
+      if (e is DioException && e.response?.statusCode == 401) {
+        return 401;
+      }
+      print('Failed to load notes: $e');
+      rethrow;
     }
   }
 

@@ -39,6 +39,8 @@ Secret.value = app.Configuration["secret"];
 
 app.UseResponseCompression();
 
+app.UseStaticFiles();
+
 app.UseSwagger();
 
 app.UseSwaggerUI();

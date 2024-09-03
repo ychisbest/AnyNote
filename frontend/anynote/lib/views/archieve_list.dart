@@ -43,7 +43,9 @@ class _ArchieveListState extends State<ArchieveList> {
     return Column(
       children: [
         if (widget.isArchive) _buildSearchBar(),
-        const SizedBox(height: 10,),
+        const SizedBox(
+          height: 10,
+        ),
         Expanded(
           child: Obx(() {
             var archivedNotes = widget.isArchive
@@ -98,16 +100,19 @@ class _ArchieveListState extends State<ArchieveList> {
   }
 
   Widget _buildSearchBar() {
-    return TextField(
-      style: const TextStyle(fontSize: 12),
-      onChanged: (value) {
-        controller.updateFilter(value);
-      },
-      decoration: InputDecoration(
-        hintText: "搜索...",
-        prefixIcon: const Icon(Icons.search),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: TextField(
+        style: const TextStyle(fontSize: 12),
+        onChanged: (value) {
+          controller.updateFilter(value);
+        },
+        decoration: InputDecoration(
+          hintText: "Search...",
+          prefixIcon: const Icon(Icons.search),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
         ),
       ),
     );

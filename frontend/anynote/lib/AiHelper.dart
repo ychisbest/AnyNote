@@ -60,7 +60,7 @@ Future<void> SendMessage(TextEditingController controller) async {
           {
             "content": """你是我嵌入笔记软件中的ai助手，我会把笔记内容当作附件发送给你作为参考。回复请按照以下规则。
         - 不需要多余的礼貌性用语和废话，我的精力很宝贵。
-        - 使用中文回复。
+        - 根据我问题和附件的语言，确定回复我的语言。
         - 回答技术细节请尽量详细，我喜欢深度思考。
         """,
             "role": "system"
@@ -113,7 +113,7 @@ Future<void> SendMessage(TextEditingController controller) async {
       // 处理请求失败的情况
     }
   } catch (e) {
-    Get.snackbar('错误', e.toString());
+    Get.snackbar('Error', e.toString());
     return;
   }
 }
