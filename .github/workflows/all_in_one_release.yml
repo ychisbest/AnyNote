@@ -132,7 +132,7 @@ jobs:
         java-version: 11
         distribution: microsoft
         java-package: jdk
-        
+
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
@@ -158,14 +158,10 @@ jobs:
       working-directory: frontend/anynote
 
     - name: Zip Linux build
-      run: |
-        cd frontend/anynote/build/linux/x64/release/bundle
-        zip -r ../../../../../linux.zip .
+      run: zip -r linux.zip frontend/anynote/build/linux/x64/release/bundle/*
 
     - name: Zip Web build
-      run: |
-        cd frontend/anynote/build/web
-        zip -r ../../../../web.zip .
+      run: zip -r web.zip frontend/anynote/build/web/*
 
     - name: Upload Linux build to Release
       uses: actions/upload-release-asset@v1
