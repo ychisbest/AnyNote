@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
+Directory.CreateDirectory("/data");
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();

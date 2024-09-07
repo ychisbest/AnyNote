@@ -22,7 +22,7 @@ AnyNote is an open-source, cross-platform note-taking application that puts your
 To deploy the AnyNote backend using Docker, run the following command:
 
 ```bash
-docker run -d -p 8080:8080 -e secret=YOUR_SECRET -v /path/to/data:/data ych8398527/anynote:1.0
+docker run -d -p 8080:8080 -e secret=YOUR_SECRET -v /path/to/data:/data anynoteofficial/anynote:latest
 ```
 
 Replace `YOUR_SECRET` with your chosen secret key and `/path/to/data` with the desired path for data storage.
