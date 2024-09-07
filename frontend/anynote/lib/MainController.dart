@@ -44,9 +44,6 @@ class MainController extends GetxController {
     hubConnection = HubConnectionBuilder()
         .withUrl(
           '$baseurl/notehub',
-          options: HttpConnectionOptions(
-            transport: HttpTransportType.WebSockets,
-          ),
         )
         .withAutomaticReconnect()
         .build();
@@ -360,7 +357,7 @@ class MainController extends GetxController {
     final RegExp tagRegExp = RegExp(r'#([0-9a-zA-Z\u4e00-\u9fa5]+)');
     Map<String, List<NoteItem>> tagMap = {};
 
-    for (var obj in filteredArchivedNotes) {
+    for (var obj in notes) {
       final matches = tagRegExp.allMatches(obj.content ?? "");
       for (var match in matches) {
         String tag = match.group(1)!;
@@ -378,7 +375,11 @@ class MainController extends GetxController {
     final RegExp tagRegExp = RegExp(r'#([0-9a-zA-Z\u4e00-\u9fa5]+)');
     Set<String> tags = {};
 
-    for (var obj in notes) {
+    var copynotes=notes.toList();
+
+    sortNotes(copynotes,true);
+
+    for (var obj in copynotes) {
       final matches = tagRegExp.allMatches(obj.content ?? "");
       for (var match in matches) {
         String tag = match.group(1)!;

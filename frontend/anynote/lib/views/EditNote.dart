@@ -280,43 +280,48 @@ class _EditNotePageState extends State<EditNotePage> {
                   ),
                 ),
               ),
-              Expanded(
-                child: RawKeyboardListener(
-                  focusNode: fn,
-                  onKey: (event) async {
-                    if (event is RawKeyDownEvent) {
-                      if (event.isControlPressed &&
-                          event.logicalKey == LogicalKeyboardKey.keyJ) {
-                        await CallAI();
-                      }
 
-                      if (event.isShiftPressed &&
-                          event.logicalKey == LogicalKeyboardKey.tab) {
-                        UnindentText(tc, tfn);
-                      } else if (event.logicalKey == LogicalKeyboardKey.tab) {
-                        IndentText(tc, tfn);
+              Expanded(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: RawKeyboardListener(
+                    focusNode: fn,
+                    onKey: (event) async {
+                      if (event is RawKeyDownEvent) {
+                        if (event.isControlPressed &&
+                            event.logicalKey == LogicalKeyboardKey.keyJ) {
+                          await CallAI();
+                        }
+
+                        if (event.isShiftPressed &&
+                            event.logicalKey == LogicalKeyboardKey.tab) {
+                          UnindentText(tc, tfn);
+                        } else if (event.logicalKey == LogicalKeyboardKey.tab) {
+                          IndentText(tc, tfn);
+                        }
                       }
-                    }
-                  },
-                  child: TextField(
-                    controller: tc,
-                    focusNode: tfn,
-                    minLines: null,
-                    maxLines: null,
-                    expands: true,
-                    style: TextStyle(
-                        color: Colors.grey[800],
-                        fontSize: GlobalConfig.fontSize.toDouble(),
-                        letterSpacing: 1,
-                        height: 2),
-                    textAlignVertical: TextAlignVertical.top,
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.all(30),
+                    },
+                    child: TextField(
+                      controller: tc,
+                      focusNode: tfn,
+                      minLines: null,
+                      maxLines: null,
+                      expands: true,
+                      style: TextStyle(
+                          color: Colors.grey[800],
+                          fontSize: GlobalConfig.fontSize.toDouble(),
+                          letterSpacing: 1,
+                          height: 2),
+                      textAlignVertical: TextAlignVertical.top,
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.all(30),
+                      ),
                     ),
                   ),
                 ),
               ),
+
               MarkdownShortcutBar(
                 controller: tc,
                 focusNode: tfn,

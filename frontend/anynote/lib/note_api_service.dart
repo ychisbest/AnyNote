@@ -69,24 +69,31 @@ class NotesApi {
   }
 
   void _initializeDio() {
-    _dio = Dio(BaseOptions(
-      followRedirects: true, // Ensure that Dio follows redirects automatically
-      baseUrl: baseUrl,
-      headers: {
-        'Accept-Encoding': 'gzip br',
-      },
-      connectTimeout: const Duration(seconds: 5),
-      sendTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 5),
-    ));
-    _dio.transformer = DioBrotliTransformer();
-    _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
-        options.headers["SignalR-ConnectionId"] = signalrID;
-        options.headers["x-secret"] = secret;
-        return handler.next(options);
-      },
-    ));
+    try {
+      _dio = Dio(BaseOptions(
+        followRedirects:
+            true, // Ensure that Dio follows redirects automatically
+        baseUrl: baseUrl,
+        headers: {
+          'Accept-Encoding': 'gzip br',
+        },
+        connectTimeout: const Duration(seconds: 5),
+        sendTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 5),
+      ));
+      _dio.transformer = DioBrotliTransformer();
+      _dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            options.headers["SignalR-ConnectionId"] = signalrID;
+            options.headers["x-secret"] = secret;
+            return handler.next(options);
+          },
+        ),
+      );
+    } catch (e) {
+      print('Failed to initialize Dio: $e');
+    }
   }
 
   void updateBaseUrl(String newBaseUrl, String newSecret) {

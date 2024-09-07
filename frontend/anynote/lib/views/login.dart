@@ -14,8 +14,9 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   MainController controller = Get.find<MainController>();
   final _formKey = GlobalKey<FormState>();
-  String _serverUrl = '';
+  String _serverUrl = 'demo.anynote.online'; // 修改：添加默认值
   String _secret = '';
+  String _protocol = 'https'; // 新增：默认协议
 
   void _handleServerUrlChange(String value) {
     setState(() {
@@ -29,12 +30,19 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
+  void _handleProtocolChange(String? value) {
+    setState(() {
+      _protocol = value ?? 'https';
+    });
+  }
+
   void _handleSignIn() async {
     if (_formKey.currentState!.validate()) {
-      controller.updateBaseUrl(_serverUrl, _secret);
+      String fullUrl = '$_protocol://$_serverUrl'; // 修改：组合完整URL
+      controller.updateBaseUrl(fullUrl, _secret);
       var loginResult = await controller.login();
       if (loginResult['isLoginSuccess'] == true) {
-        GlobalConfig.baseUrl = _serverUrl;
+        GlobalConfig.baseUrl = fullUrl;
         GlobalConfig.secretStr = _secret;
         GlobalConfig.isLoggedIn = true;
         Get.snackbar("success", "Login Success");
@@ -66,8 +74,7 @@ class _LoginPageState extends State<LoginPage> {
                     children: <Widget>[
                       Image.asset(
                         'assets/Logo.png',
-                        width: 160,
-                        height: 160,
+                        height: 300,
                       ),
                       const SizedBox(height: 48),
                       const Text(
@@ -89,29 +96,70 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       const SizedBox(height: 48),
-                      TextFormField(
-                        decoration: InputDecoration(
-                          labelText: 'Server URL',
-                          prefixIcon: const Icon(Icons.cloud_outlined),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: DropdownButtonFormField<String>(
+                              value: _protocol,
+                              decoration: InputDecoration(
+                                contentPadding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey[300]!),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide:
+                                      const BorderSide(color: Colors.blue),
+                                ),
+                              ),
+                              items: ['http', 'https'].map((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                              onChanged: _handleProtocolChange,
+                            ),
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 5,
+                            child: TextFormField(
+                              //initialValue: _serverUrl, // 新增：设置初始值
+                              decoration: InputDecoration(
+                                labelText: 'Server URL',
+                                prefixIcon: const Icon(Icons.cloud_outlined),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey[300]!),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide:
+                                      const BorderSide(color: Colors.blue),
+                                ),
+                              ),
+                              onChanged: _handleServerUrlChange,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter a server URL';
+                                }
+                                return null;
+                              },
+                            ),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.blue),
-                          ),
-                        ),
-                        onChanged: _handleServerUrlChange,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a server URL';
-                          }
-                          return null;
-                        },
+                        ],
                       ),
                       const SizedBox(height: 16),
                       TextFormField(

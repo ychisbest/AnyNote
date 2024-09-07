@@ -122,6 +122,7 @@ class _SettingViewState extends State<SettingView> {
       style: const TextStyle(fontSize: 12, color: Colors.black87),
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: const TextStyle(fontSize: 12, color: Colors.black45),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
         ),
