@@ -194,6 +194,18 @@ class NotesApi {
     }
   }
 
+  Future<NoteItem> addNoteItem(String content) async {
+    try {
+      final response = await _dio.post(
+        '/',
+        data: {'content': content},
+      );
+      return NoteItem.fromJson(response.data);
+    } catch (e) {
+      throw Exception('Failed to create note: $e');
+    }
+  }
+
   Future<void> deleteNoteItem(int id) async {
     try {
       await _dio.delete('/api/Notes/$id');

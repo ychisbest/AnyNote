@@ -15,6 +15,7 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../AiHelper.dart';
+import '../models/upload_faild.dart';
 
 enum SyncStatus { waiting, syncing, completed, error }
 
@@ -168,7 +169,7 @@ class _EditNotePageState extends State<EditNotePage> {
       setState(() {
         _syncStatus = SyncStatus.syncing; // 开始同步
       });
-      c.updateNote(item!.id!, item!).then((res) {
+      c.updateNote(item!.id!, item!).then((res) async {
         setState(() {
           if (res) {
             _syncStatus = SyncStatus.completed; // 同步完成

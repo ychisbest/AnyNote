@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 import 'GlobalConfig.dart';
+import 'models/upload_faild.dart';
 import 'note_api_service.dart';
 
 typedef UpdateEditTextCallback = void Function(String id, String text);
@@ -172,16 +173,36 @@ class MainController extends GetxController {
         isLoading.value = false;
       }
       final fetchedNotes = await _api.getNotes();
+
       notes.assignAll(fetchedNotes);
-      saveNotesToLocal();
+
+      var map = await GlobalConfig.getUpdateFailedNotes();
+      List<String> ids = [];
+      for (var key in map.keys) {
+        var item = map[key];
+        if (item!.oldNote.content == item!.faildNote.content) {
+          updateNote(item.faildNote.id!, item.faildNote);
+          map.remove(key);
+        } else {
+          var content = "# Conflict content\n" + item.faildNote.content!;
+          var note = await _api.addNoteItem(content);
+          notes.add(note);
+          ids.add(item.faildNote.id.toString());
+        }
+      }
+      map.removeWhere((key, value) => ids.contains(key));
+      await GlobalConfig.setUpdateFailedNotes(map);
 
       for (var note in notes) {
         updateEditTextCallback?.call(
             note.id.toString(), note.content.toString());
       }
 
+      saveNotesToLocal();
+
       return true;
     } catch (e) {
+      print(e);
       Get.snackbar('Network Error', 'offline mode');
       loadNotesFromLocal();
       return false;
@@ -227,10 +248,28 @@ class MainController extends GetxController {
     try {
       final updatedNote = await _api.putNoteItem(id, noteItem);
       updateNoteLocally(updatedNote);
+      saveNotesToLocal();
+
+      var map = await GlobalConfig.getUpdateFailedNotes();
+      map.remove(id.toString());
+      await GlobalConfig.setUpdateFailedNotes(map);
+
       return true;
     } catch (e) {
-      Get.snackbar('错误', '更新笔记失败: $e');
       print(e);
+
+      var map = await GlobalConfig.getUpdateFailedNotes();
+      if (map[id.toString()]?.oldNote != null) {
+        map[id.toString()] = UploadFailedNote(
+            faildNote: noteItem, oldNote: map[id.toString()]!.oldNote);
+      } else {
+        map[id.toString()] =
+            UploadFailedNote(faildNote: noteItem, oldNote: noteItem);
+      }
+      await GlobalConfig.setUpdateFailedNotes(map);
+      updateNoteLocally(noteItem);
+      saveNotesToLocal();
+
       return false;
     }
   }

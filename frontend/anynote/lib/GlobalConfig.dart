@@ -1,4 +1,9 @@
+import 'dart:convert';
+
+import 'package:anynote/note_api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'models/upload_faild.dart';
 
 class GlobalConfig {
   static late SharedPreferences _prefs;
@@ -20,6 +25,42 @@ class GlobalConfig {
   static const String _defaultAiApiKey = '';
   static const String _defaultAiUrl = 'https://api.openai.com/v1';
   static const String _defaultAiModel = 'gpt-3.5-turbo';
+  static const String _updateFailedNotesKey = 'updateFailedNotes';
+  static const String _offlineContentsKey = 'offlineContents';
+
+// Set offline contents
+  static Future<void> setOfflineContents(List<String> contents) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_offlineContentsKey, contents);
+  }
+
+// Get offline contents
+  static Future<List<String>> getOfflineContents() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList(_offlineContentsKey) ?? [];
+  }
+
+// Set update failed notes
+  static Future<void> setUpdateFailedNotes(
+      Map<String, UploadFailedNote> notes) async {
+    final prefs = await SharedPreferences.getInstance();
+    final Map<String, dynamic> encodedNotes =
+        notes.map((key, value) => MapEntry(key, value.toJson()));
+    final String jsonString = json.encode(encodedNotes);
+    await prefs.setString(_updateFailedNotesKey, jsonString);
+  }
+
+// Get update failed notes
+  static Future<Map<String, UploadFailedNote>> getUpdateFailedNotes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? jsonString = prefs.getString(_updateFailedNotesKey);
+    if (jsonString != null) {
+      Map<String, dynamic> decodedMap = json.decode(jsonString);
+      return decodedMap
+          .map((key, value) => MapEntry(key, UploadFailedNote.fromJson(value)));
+    }
+    return {};
+  }
 
   static String get aiApiKey =>
       _prefs.getString(_aiApiKeyKey) ?? _defaultAiApiKey;
@@ -56,6 +97,8 @@ class GlobalConfig {
     await _prefs.remove(_aiApiKeyKey);
     await _prefs.remove(_aiUrlKey);
     await _prefs.remove(_aiModelKey);
+    await _prefs.remove(_updateFailedNotesKey);
+    await _prefs.remove(_offlineContentsKey);
   }
 
   static String get baseUrl => _prefs.getString(_baseUrlKey) ?? _defaultBaseUrl;

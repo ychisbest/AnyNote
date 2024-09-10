@@ -130,12 +130,11 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            flex: 5,
+                            flex: 3,
                             child: TextFormField(
                               initialValue: _serverUrl, // 新增：设置初始值
                               decoration: InputDecoration(
                                 labelText: 'Server URL',
-                                prefixIcon: const Icon(Icons.cloud_outlined),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),

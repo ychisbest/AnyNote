@@ -132,6 +132,19 @@ namespace anynote.Controllers
             return note;
         }
 
+        [HttpPost("/")]
+        [SecretHeader]
+        public async Task<ActionResult<NoteItem>> AddNote([FromBody] NoteItem noteItem)
+        {
+            var singalrid = Request.Headers["SignalR-ConnectionId"];
+
+            noteItem.CreateTime = DateTime.UtcNow;
+            _context.Notes.Add(noteItem);
+            await _context.SaveChangesAsync();
+            await _hubContext.Clients.AllExcept(singalrid).SendAsync("ReceiveNewNote", noteItem);
+            return noteItem;
+        }
+
         [HttpPost("Archieve")]
         [SecretHeader]
         public async Task<ActionResult> AchieveItem(int id)
@@ -190,6 +203,13 @@ namespace anynote.Controllers
             await _hubContext.Clients.AllExcept(singalrid).SendAsync("ReceiveNoteDelete", id);
 
             return NoContent();
+        }
+
+
+        [HttpGet("/")]
+        public IActionResult index()
+        {
+            return Redirect("/index.html");
         }
 
         private bool NoteItemExists(int id)
