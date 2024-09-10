@@ -6,7 +6,7 @@ import 'package:window_manager/window_manager.dart';
 setwindow() async {
   if (Platform.isWindows) {
     await windowManager.ensureInitialized();
-    WindowManager.instance.setSize(const Size(1200, 900));
+    WindowManager.instance.setSize(const Size(500, 900));
     windowManager.center();
     // //windowManager.setAlwaysOnTop(true);
 

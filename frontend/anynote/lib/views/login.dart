@@ -132,7 +132,7 @@ class _LoginPageState extends State<LoginPage> {
                           Expanded(
                             flex: 5,
                             child: TextFormField(
-                              //initialValue: _serverUrl, // 新增：设置初始值
+                              initialValue: _serverUrl, // 新增：设置初始值
                               decoration: InputDecoration(
                                 labelText: 'Server URL',
                                 prefixIcon: const Icon(Icons.cloud_outlined),

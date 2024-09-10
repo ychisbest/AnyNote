@@ -280,7 +280,6 @@ class _EditNotePageState extends State<EditNotePage> {
                   ),
                 ),
               ),
-
               Expanded(
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 800),
@@ -321,7 +320,6 @@ class _EditNotePageState extends State<EditNotePage> {
                   ),
                 ),
               ),
-
               MarkdownShortcutBar(
                 controller: tc,
                 focusNode: tfn,

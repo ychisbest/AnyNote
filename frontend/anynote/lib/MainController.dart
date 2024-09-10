@@ -27,7 +27,7 @@ class MainController extends GetxController {
   }
 
   void initData() {
-    fetchNotes();
+    fetchNotes(readlocalfirst: true);
     initSignalR();
   }
 
@@ -164,15 +164,25 @@ class MainController extends GetxController {
     }
   }
 
-  Future<bool> fetchNotes() async {
+  Future<bool> fetchNotes({bool readlocalfirst = false}) async {
     isLoading.value = true;
     try {
+      if (readlocalfirst) {
+        await loadNotesFromLocal();
+        isLoading.value = false;
+      }
       final fetchedNotes = await _api.getNotes();
       notes.assignAll(fetchedNotes);
       saveNotesToLocal();
+
+      for (var note in notes) {
+        updateEditTextCallback?.call(
+            note.id.toString(), note.content.toString());
+      }
+
       return true;
     } catch (e) {
-      Get.snackbar('错误', '加载笔记失败,尝试从本地加载！');
+      Get.snackbar('Network Error', 'offline mode');
       loadNotesFromLocal();
       return false;
     } finally {
@@ -375,9 +385,9 @@ class MainController extends GetxController {
     final RegExp tagRegExp = RegExp(r'#([0-9a-zA-Z\u4e00-\u9fa5]+)');
     Set<String> tags = {};
 
-    var copynotes=notes.toList();
+    var copynotes = notes.toList();
 
-    sortNotes(copynotes,true);
+    sortNotes(copynotes, true);
 
     for (var obj in copynotes) {
       final matches = tagRegExp.allMatches(obj.content ?? "");

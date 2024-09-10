@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class MarkdownShortcutBar extends StatelessWidget {
+class MarkdownShortcutBar extends StatefulWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final Function? onAiTap;
@@ -13,9 +13,71 @@ class MarkdownShortcutBar extends StatelessWidget {
     this.onAiTap,
   }) : super(key: key);
 
+  @override
+  _MarkdownShortcutBarState createState() => _MarkdownShortcutBarState();
+}
+
+class _MarkdownShortcutBarState extends State<MarkdownShortcutBar> {
+  final List<String> _undoHistory = [];
+  final List<String> _redoHistory = [];
+  bool _canUndo = false;
+  bool _canRedo = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_handleTextChange);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_handleTextChange);
+    super.dispose();
+  }
+
+  void _handleTextChange() {
+    final currentText = widget.controller.text;
+    if (_undoHistory.isEmpty || _undoHistory.last != currentText) {
+      _undoHistory.add(currentText);
+      _redoHistory.clear();
+      _updateUndoRedoState();
+    }
+  }
+
+  void _updateUndoRedoState() {
+    setState(() {
+      _canUndo = _undoHistory.length > 1;
+      _canRedo = _redoHistory.isNotEmpty;
+    });
+  }
+
+  void _undo() {
+    if (_undoHistory.length > 1) {
+      _redoHistory.add(_undoHistory.removeLast());
+      final previousText = _undoHistory.last;
+      widget.controller.value = TextEditingValue(
+        text: previousText,
+        selection: TextSelection.collapsed(offset: previousText.length),
+      );
+      _updateUndoRedoState();
+    }
+  }
+
+  void _redo() {
+    if (_redoHistory.isNotEmpty) {
+      final nextText = _redoHistory.removeLast();
+      _undoHistory.add(nextText);
+      widget.controller.value = TextEditingValue(
+        text: nextText,
+        selection: TextSelection.collapsed(offset: nextText.length),
+      );
+      _updateUndoRedoState();
+    }
+  }
+
   void _toggleMarkdown(String opening, String closing) {
-    final text = controller.text;
-    final selection = controller.selection;
+    final text = widget.controller.text;
+    final selection = widget.controller.selection;
     final selectedText = selection.textInside(text);
 
     String newText;
@@ -23,7 +85,6 @@ class MarkdownShortcutBar extends StatelessWidget {
     int newSelectionEnd = selection.end;
 
     if (selectedText.isEmpty) {
-      // 如果没有选中文本，在光标位置插入标记
       newText = '$opening$closing';
       newSelectionStart += opening.length;
       newSelectionEnd = newSelectionStart;
@@ -43,7 +104,7 @@ class MarkdownShortcutBar extends StatelessWidget {
 
   void _replaceTextWithNewSelection(String newText, TextSelection selection,
       int newSelectionStart, int newSelectionEnd) {
-    final text = controller.text;
+    final text = widget.controller.text;
     final newValue = TextEditingValue(
       text: text.replaceRange(selection.start, selection.end, newText),
       selection: TextSelection(
@@ -51,24 +112,24 @@ class MarkdownShortcutBar extends StatelessWidget {
         extentOffset: newSelectionEnd,
       ),
     );
-    controller.value = newValue;
-    focusNode.requestFocus();
+    widget.controller.value = newValue;
+    widget.focusNode.requestFocus();
   }
 
   void _replaceText(String newText, TextSelection selection) {
-    final text = controller.text;
+    final text = widget.controller.text;
     final newValue = TextEditingValue(
       text: text.replaceRange(selection.start, selection.end, newText),
       selection:
           TextSelection.collapsed(offset: selection.start + newText.length),
     );
-    controller.value = newValue;
-    focusNode.requestFocus();
+    widget.controller.value = newValue;
+    widget.focusNode.requestFocus();
   }
 
   void _toggleList() {
-    final text = controller.text;
-    final selection = controller.selection;
+    final text = widget.controller.text;
+    final selection = widget.controller.selection;
     final lineStart =
         text.isEmpty ? 0 : text.lastIndexOf('\n', selection.start - 1) + 1;
     final lineEnd = text.indexOf('\n', selection.end);
@@ -92,8 +153,8 @@ class MarkdownShortcutBar extends StatelessWidget {
   }
 
   void _toggleCheckbox() {
-    final text = controller.text;
-    final selection = controller.selection;
+    final text = widget.controller.text;
+    final selection = widget.controller.selection;
     final lineStart =
         text.isEmpty ? 0 : text.lastIndexOf('\n', selection.start - 1) + 1;
     final lineEnd = text.indexOf('\n', selection.end);
@@ -132,18 +193,20 @@ class MarkdownShortcutBar extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                _buildIconButton(Icons.undo, _undo, isEnable: _canUndo),
+                _buildIconButton(Icons.redo, _redo, isEnable: _canRedo),
                 _buildIconButton(
                     Icons.format_bold, () => _toggleMarkdown('**', '**')),
                 _buildIconButton(
                     Icons.format_italic, () => _toggleMarkdown('*', '*')),
                 _buildIconButton(Icons.format_strikethrough,
                     () => _toggleMarkdown('~~', '~~')),
-                _buildIconButton(Icons.code, () => _toggleMarkdown('`', '`')),
+                // _buildIconButton(Icons.code, () => _toggleMarkdown('`', '`')),
                 _buildIconButton(Icons.format_list_bulleted, _toggleList),
                 _buildIconButton(Icons.check_box_outlined, _toggleCheckbox),
-                if (onAiTap != null)
+                if (widget.onAiTap != null)
                   _buildIconButton(Icons.generating_tokens_outlined, () {
-                    onAiTap!.call();
+                    widget.onAiTap!.call();
                   }),
               ],
             ),
@@ -153,10 +216,15 @@ class MarkdownShortcutBar extends StatelessWidget {
     );
   }
 
-  Widget _buildIconButton(IconData icon, VoidCallback onPressed) {
+  Widget _buildIconButton(IconData icon, VoidCallback onPressed,
+      {bool isEnable = true}) {
     return IconButton(
-      icon: Icon(icon, size: 20),
-      onPressed: onPressed,
+      icon: Icon(
+        icon,
+        size: 20,
+        color: isEnable ? Colors.black : Colors.black12,
+      ),
+      onPressed: isEnable ? onPressed : null,
       splashRadius: 20,
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
     );

@@ -62,7 +62,7 @@ class MarkdownEditingController extends TextEditingController {
 
     final List<String> lines = text.split('\n');
     final RegExp exp = RegExp(
-        r'(^ *-(?! \[))|(^ *- \[x\])|(^ *- \[ \])|(\*\*\*.*?\*\*\*)|(\*\*.*?\*\*)|(\*.*?\*)|(~~.*?~~)|(`.*?`)|(https?:\/\/[^\s]+)|(!\[.*?\]\(.*?\))|(#[a-zA-Z\u4e00-\u9fa5]+)');
+        r'(^ *-(?! \[))|(^ *- \[x\])|(^ *- \[ \])|(\*\*\*.+?\*\*\*)|(\*\*.+?\*\*)|(\*.+?\*)|(~~.+?~~)|(`.+?`)|(https?:\/\/[^\s]+)|(!\[.*?\]\(.*?\))|(#[a-zA-Z\u4e00-\u9fa5]+)');
     int lastMatchEnd;
 
     for (String line in lines) {
@@ -136,6 +136,53 @@ class MarkdownEditingController extends TextEditingController {
         continue;
       }
 
+      if (RegExp(r'^```[0-9a-zA-Z]*$').hasMatch(line)) {
+        if (showLine) {
+          children.add(TextSpan(
+            text: line == "```\n" ? "```" : "$line\n",
+            style: style?.copyWith(
+                color: Colors.black, fontWeight: FontWeight.bold),
+          ));
+        } else {
+          var restext = line.replaceFirst('```', '');
+
+          var blankcount = (restext.length + 3);
+
+          var blank = List.filled(
+            blankcount,
+            const WidgetSpan(child: SizedBox.shrink()),
+          );
+
+          children.add(TextSpan(children: [
+            WidgetSpan(
+                child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 1,
+                    color: Colors.grey[300],
+                  ),
+                ),
+                Text(
+                  restext,
+                  style: TextStyle(color: Colors.grey[500], fontSize: 10),
+                ),
+                Expanded(
+                  child: Container(
+                    height: 1,
+                    color: Colors.grey[300],
+                  ),
+                ),
+              ],
+            )),
+            ...blank,
+          ]));
+        }
+
+        currentLineIndex++;
+        continue;
+      }
+
       while (line.startsWith("  ")) {
         line = line.substring(2, line.length);
         children.add(const TextSpan(children: [
@@ -179,7 +226,9 @@ class MarkdownEditingController extends TextEditingController {
                 matchText.replaceFirst('- [ ]', "${zeroWidthChar * 4}▢");
           }
           matchStyle = matchStyle.copyWith(
-              color: Colors.red, fontWeight: FontWeight.bold, );
+            color: Colors.red,
+            fontWeight: FontWeight.bold,
+          );
         }
 
         if (matchText.trimLeft().startsWith('- [x]')) {
@@ -188,7 +237,9 @@ class MarkdownEditingController extends TextEditingController {
                 matchText.replaceFirst('- [x]', "${zeroWidthChar * 4}✓");
           }
           matchStyle = matchStyle.copyWith(
-              color: Colors.green, fontWeight: FontWeight.bold,);
+            color: Colors.green,
+            fontWeight: FontWeight.bold,
+          );
         }
 
         if (matchText.startsWith('***') && matchText.endsWith('***')) {
@@ -238,7 +289,8 @@ class MarkdownEditingController extends TextEditingController {
         }
 
         if (matchText.startsWith('`') && matchText.endsWith('`')) {
-          matchStyle = matchStyle.copyWith(backgroundColor: Colors.grey[200]);
+          matchStyle = matchStyle.copyWith(
+              backgroundColor: Colors.grey.withOpacity(0.2));
           if (!showLine) {
             matchText = matchText
                 .replaceFirst('`', zeroWidthChar)
@@ -301,7 +353,7 @@ class CustomMarkdownDisplay extends StatelessWidget {
     final List<String> lines = text.split('\n');
 
     final RegExp exp = RegExp(
-        r'(^ *-(?! \[))|(^ *- \[x\])|(^ *- \[ \])|(\*\*\*.*?\*\*\*)|(\*\*.*?\*\*)|(\*.*?\*)|(~~.*?~~)|(`.*?`)|(https?:\/\/[^\s]+)|(!\[.*?\]\(.*?\))|(#[a-zA-Z\u4e00-\u9fa5]+)');
+        r'(^ *-(?! \[))|(^ *- \[x\])|(^ *- \[ \])|(\*\*\*.+?\*\*\*)|(\*\*.+?\*\*)|(\*.+?\*)|(~~.+?~~)|(`.+?`)|(https?:\/\/[^\s]+)|(!\[.*?\]\(.*?\))|(#[a-zA-Z\u4e00-\u9fa5]+)');
     int lastMatchEnd;
 
     for (String line in lines) {
@@ -352,6 +404,43 @@ class CustomMarkdownDisplay extends StatelessWidget {
           )),
         ]));
 
+        continue;
+      }
+
+      if (RegExp(r'^```[0-9a-zA-Z]*$').hasMatch(line)) {
+        var restext = line.replaceFirst('```', '');
+
+        var blankcount = (restext.length + 3);
+
+        var blank = List.filled(
+          blankcount,
+          const WidgetSpan(child: SizedBox.shrink()),
+        );
+
+        children.add(TextSpan(children: [
+          WidgetSpan(
+              child: Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 1,
+                  color: Colors.grey[300],
+                ),
+              ),
+              Text(
+                restext,
+                style: TextStyle(color: Colors.grey[500], fontSize: 10),
+              ),
+              Expanded(
+                child: Container(
+                  height: 1,
+                  color: Colors.grey[300],
+                ),
+              ),
+            ],
+          )),
+          ...blank,
+        ]));
         continue;
       }
 
@@ -441,7 +530,8 @@ class CustomMarkdownDisplay extends StatelessWidget {
         }
 
         if (matchText.startsWith('`') && matchText.endsWith('`')) {
-          matchStyle = matchStyle.copyWith(backgroundColor: Colors.grey[200]);
+          matchStyle = matchStyle.copyWith(
+              backgroundColor: Colors.grey.withOpacity(0.2));
           matchText = matchText
               .replaceFirst('`', zeroWidthChar)
               .replaceFirst('`', zeroWidthChar);
@@ -570,7 +660,7 @@ void TextChangeEx(TextEditingController _controller, String _lastchange) {
   if (text.length > _lastchange.length &&
       selection.baseOffset > 0 &&
       text.length >= selection.baseOffset) {
-    if (text[selection.baseOffset - 1] == '\n') {
+    if (text[selection.baseOffset - 1] == '\n' && text.length > 3) {
       int lineStart = text.lastIndexOf('\n', selection.baseOffset - 2);
       lineStart = lineStart == -1 ? 0 : lineStart + 1;
 
