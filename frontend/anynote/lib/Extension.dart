@@ -112,6 +112,53 @@ class MarkdownEditingController extends TextEditingController {
         continue;
       }
 
+      // if (RegExp(r'!\[.*?\]\(.*?\)').hasMatch(line)) {
+      //   final matches = RegExp(r'!\[(.*?)\]\((.*?)\)').allMatches(line);
+      //   lastMatchEnd = 0;
+
+      //   for (final match in matches) {
+      //     if (match.start > lastMatchEnd) {
+      //       children
+      //           .add(TextSpan(text: line.substring(lastMatchEnd, match.start)));
+      //     }
+
+      //     final altText = match.group(1) ?? '';
+      //     final imageUrl = match.group(2) ?? '';
+
+      //     if (showLine) {
+      //       children.add(TextSpan(text: line));
+      //     } else {
+      //       children.add(
+      //         TextSpan(children: [
+      //           WidgetSpan(
+      //             child: Padding(
+      //               padding: const EdgeInsets.all(10.0),
+      //               child: Image.network(
+      //                 imageUrl,
+      //                 fit: BoxFit.cover,
+      //                 errorBuilder: (context, error, stackTrace) {
+      //                   return Icon(
+      //                     Icons.image_not_supported_outlined,
+      //                     color: Colors.grey[500],
+      //                   );
+      //                 },
+      //               ),
+      //             ),
+      //           ),
+      //         ]),
+      //       );
+      //     }
+      //     lastMatchEnd = match.end;
+      //   }
+
+      //   if (lastMatchEnd < line.length) {
+      //     children.add(TextSpan(text: line.substring(lastMatchEnd)));
+      //   }
+
+      //   children.add(const TextSpan(text: '\n'));
+      //   continue;
+      // }
+
       if (line == ('---')) {
         if (showLine) {
           children.add(TextSpan(
@@ -395,6 +442,47 @@ class CustomMarkdownDisplay extends StatelessWidget {
         continue;
       }
 
+      if (RegExp(r'!\[.*?\]\(.*?\)').hasMatch(line)) {
+        final matches = RegExp(r'!\[(.*?)\]\((.*?)\)').allMatches(line);
+        lastMatchEnd = 0;
+
+        for (final match in matches) {
+          if (match.start > lastMatchEnd) {
+            children
+                .add(TextSpan(text: line.substring(lastMatchEnd, match.start)));
+          }
+
+          final altText = match.group(1) ?? '';
+          final imageUrl = match.group(2) ?? '';
+
+          children.add(
+            TextSpan(children: [
+              WidgetSpan(
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(
+                      Icons.image_not_supported_outlined,
+                      color: Colors.grey[500],
+                    );
+                  },
+                ),
+              ),
+            ]),
+          );
+
+          lastMatchEnd = match.end;
+        }
+
+        if (lastMatchEnd < line.length) {
+          children.add(TextSpan(text: line.substring(lastMatchEnd)));
+        }
+
+        children.add(const TextSpan(text: '\n'));
+        continue;
+      }
+
       if (line == ('---')) {
         children.add(TextSpan(children: [
           WidgetSpan(
@@ -658,7 +746,7 @@ void TextChangeEx(TextEditingController _controller, String _lastchange) {
   final text = _controller.text;
   final selection = _controller.selection;
   if (text.length > _lastchange.length &&
-      selection.baseOffset > 0 &&
+      selection.baseOffset > 3 &&
       text.length >= selection.baseOffset) {
     if (text[selection.baseOffset - 1] == '\n' && text.length > 3) {
       int lineStart = text.lastIndexOf('\n', selection.baseOffset - 2);
