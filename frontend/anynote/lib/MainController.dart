@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:anynote/Extension.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -77,6 +78,7 @@ class MainController extends GetxController {
       if (arguments != null && arguments.isNotEmpty) {
         final noteId = arguments[0] as int;
         deleteNoteLocally(noteId);
+        updateEditTextCallback?.call(noteId.toString(), "_%_delete_%_");
       }
     });
 
@@ -172,31 +174,20 @@ class MainController extends GetxController {
         await loadNotesFromLocal();
         isLoading.value = false;
       }
+
+      var duplicates = notes
+          .where((item) =>
+              notes.any((other) => other.id == item.id && other != item))
+          .toList();
+      if (duplicates.isNotEmpty) {
+        notes.removeWhere((item) => duplicates.contains(item));
+      }
+
       final fetchedNotes = await _api.getNotes();
 
       notes.assignAll(fetchedNotes);
 
-      var map = await GlobalConfig.getUpdateFailedNotes();
-      List<String> ids = [];
-      for (var key in map.keys) {
-        var item = map[key];
-        if (item!.oldNote.content == item!.faildNote.content) {
-          updateNote(item.faildNote.id!, item.faildNote);
-          map.remove(key);
-        } else {
-          var content = "# Conflict content\n" + item.faildNote.content!;
-          var note = await _api.addNoteItem(content);
-          notes.add(note);
-          ids.add(item.faildNote.id.toString());
-        }
-      }
-      map.removeWhere((key, value) => ids.contains(key));
-      await GlobalConfig.setUpdateFailedNotes(map);
-
-      for (var note in notes) {
-        updateEditTextCallback?.call(
-            note.id.toString(), note.content.toString());
-      }
+      UploadOfflineData();
 
       saveNotesToLocal();
 
@@ -204,10 +195,49 @@ class MainController extends GetxController {
     } catch (e) {
       print(e);
       Get.snackbar('Network Error', 'offline mode');
-      loadNotesFromLocal();
       return false;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  void UploadOfflineData() async {
+    var map = await GlobalConfig.getUpdateFailedNotes();
+
+    List<String> ids = [];
+    for (var key in map.keys) {
+      var item = map[key];
+      if (IDGenerator.isOfflineId(item!.faildNote.id!)) {
+        var note = await _api.addNoteItem(item.faildNote.content!);
+        notes.add(note);
+        ids.add(key);
+        continue;
+      }
+
+      var fetchedNote =
+          notes.firstWhereOrNull((note) => note.id == item!.faildNote.id);
+
+      if (fetchedNote == null) {
+        ids.add(key);
+        continue;
+      }
+
+      if ((item!.oldNote.lastUpdateTime == fetchedNote!.lastUpdateTime ||
+          item!.faildNote.lastUpdateTime == null)) {
+        updateNote(item.faildNote.id!, item.faildNote);
+        ids.add(key);
+      } else {
+        var content = "# offline content\n---\n${item.faildNote.content!}";
+        var note = await _api.addNoteItem(content);
+        notes.add(note);
+        ids.add(key);
+      }
+    }
+    map.removeWhere((key, value) => ids.contains(key));
+    await GlobalConfig.setUpdateFailedNotes(map);
+
+    for (var note in notes) {
+      updateEditTextCallback?.call(note.id.toString(), note.content.toString());
     }
   }
 
@@ -246,6 +276,10 @@ class MainController extends GetxController {
 
   Future<bool> updateNote(int id, NoteItem noteItem) async {
     try {
+      if (IDGenerator.isOfflineId(id)) {
+        throw Exception("offline");
+      }
+
       final updatedNote = await _api.putNoteItem(id, noteItem);
       updateNoteLocally(updatedNote);
       saveNotesToLocal();
@@ -259,7 +293,8 @@ class MainController extends GetxController {
       print(e);
 
       var map = await GlobalConfig.getUpdateFailedNotes();
-      if (map[id.toString()]?.oldNote != null) {
+      if (map[id.toString()]?.oldNote.content != null &&
+          map[id.toString()]!.oldNote!.content!.isNotEmpty) {
         map[id.toString()] = UploadFailedNote(
             faildNote: noteItem, oldNote: map[id.toString()]!.oldNote);
       } else {
@@ -275,13 +310,18 @@ class MainController extends GetxController {
   }
 
   Future<NoteItem> addNote() async {
+    NoteItem newNote = NoteItem(
+        createTime: DateTime.now(),
+        index: 0,
+        id: IDGenerator.generateOfflineId());
     try {
-      final newNote = await _api.addNote();
-      addNoteLocally(newNote);
+      newNote = await _api.addNote();
       return newNote;
     } catch (e) {
-      Get.snackbar('错误', '添加笔记失败: $e');
-      throw Exception("add error");
+      print(e);
+    } finally {
+      addNoteLocally(newNote);
+      return newNote;
     }
   }
 

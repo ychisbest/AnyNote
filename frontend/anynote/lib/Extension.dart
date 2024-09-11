@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:anynote/GlobalConfig.dart';
@@ -10,6 +11,23 @@ extension ColorExtension on int? {
   Color toFullARGB() {
     if (this == null) return Color(0xFFFFFFFF);
     return Color(this! | 0xFF000000);
+  }
+}
+
+class IDGenerator {
+  static const int _offlineIdMin = 1000000000; // 1 billion
+  static const int _offlineIdMax = 2147483647; // Max value for int
+
+  static final Random _random = Random();
+
+  // Generate a random offline ID
+  static int generateOfflineId() {
+    return _offlineIdMin + _random.nextInt(_offlineIdMax - _offlineIdMin);
+  }
+
+  // Check if an ID is an offline ID
+  static bool isOfflineId(int id) {
+    return id >= _offlineIdMin;
   }
 }
 

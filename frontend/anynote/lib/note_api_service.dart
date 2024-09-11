@@ -198,7 +198,7 @@ class NotesApi {
     try {
       final response = await _dio.post(
         '/',
-        data: {'content': content},
+        data: {'content': content, 'Index': -1},
       );
       return NoteItem.fromJson(response.data);
     } catch (e) {

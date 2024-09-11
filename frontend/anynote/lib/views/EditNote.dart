@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:anynote/Extension.dart';
@@ -57,6 +58,7 @@ class _EditNotePageState extends State<EditNotePage> {
   void initState() {
     if (widget.item == null) {
       c.addNote().then((res) => item = res);
+
       tfn.requestFocus();
     } else {
       item = widget.item;
@@ -85,6 +87,10 @@ class _EditNotePageState extends State<EditNotePage> {
 
     if (item!.id.toString() != id || item!.content == newText) {
       return;
+    }
+
+    if (newText == "_%_delete_%_") {
+      Get.back();
     }
 
     try {
@@ -165,10 +171,11 @@ class _EditNotePageState extends State<EditNotePage> {
     });
 
     if (_debounce?.isActive ?? false) _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
       setState(() {
         _syncStatus = SyncStatus.syncing; // 开始同步
       });
+
       c.updateNote(item!.id!, item!).then((res) async {
         setState(() {
           if (res) {
