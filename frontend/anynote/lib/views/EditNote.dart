@@ -56,8 +56,17 @@ class _EditNotePageState extends State<EditNotePage> {
 
   @override
   void initState() {
+    super.initState();
     if (widget.item == null) {
-      c.addNote().then((res) => item = res);
+
+      item = NoteItem(
+          createTime: DateTime.now(),
+          index: 0,
+          id: IDGenerator.generateOfflineId());
+      Future.microtask((){
+        c.addNote(item!).then((res) => item?.id = res.id);
+      });
+
 
       tfn.requestFocus();
     } else {
@@ -69,7 +78,7 @@ class _EditNotePageState extends State<EditNotePage> {
 
     c.updateEditTextCallback = updatingEditText;
 
-    super.initState();
+
   }
 
   @override
@@ -161,34 +170,76 @@ class _EditNotePageState extends State<EditNotePage> {
     return (relativePosition * newText.length).round();
   }
 
+  // void textUpdate() {
+  //   if (item == null) return;
+  //   if (item!.content == tc.text) return;
+  //   item!.content = tc.text;
+  //
+  //   setState(() {
+  //     _syncStatus = SyncStatus.waiting; // 设置为等待状态
+  //   });
+  //
+  //   if (_debounce?.isActive ?? false) _debounce?.cancel();
+  //   _debounce = Timer(const Duration(milliseconds: 500), () async {
+  //     setState(() {
+  //       _syncStatus = SyncStatus.syncing; // 开始同步
+  //     });
+  //
+  //     c.updateNote(item!.id!, item!).then((res) async {
+  //       setState(() {
+  //         if (res) {
+  //           _syncStatus = SyncStatus.completed; // 同步完成
+  //         } else {
+  //           _syncStatus = SyncStatus.error; // 同步失败
+  //         }
+  //       });
+  //     });
+  //   });
+  //
+  //   TextChangeEx(tc, _lastChange);
+  //   _lastChange = tc.text;
+  // }
+
   void textUpdate() {
     if (item == null) return;
     if (item!.content == tc.text) return;
     item!.content = tc.text;
+
+    if (!mounted) return; // 检查 widget 是否仍然挂载
 
     setState(() {
       _syncStatus = SyncStatus.waiting; // 设置为等待状态
     });
 
     if (_debounce?.isActive ?? false) _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () async {
-      setState(() {
-        _syncStatus = SyncStatus.syncing; // 开始同步
-      });
-
-      c.updateNote(item!.id!, item!).then((res) async {
-        setState(() {
-          if (res) {
-            _syncStatus = SyncStatus.completed; // 同步完成
-          } else {
-            _syncStatus = SyncStatus.error; // 同步失败
-          }
-        });
-      });
-    });
+    _debounce = Timer(const Duration(milliseconds: 500), excuteUpdate);
 
     TextChangeEx(tc, _lastChange);
     _lastChange = tc.text;
+  }
+
+  excuteUpdate() async {
+
+    if (mounted) {
+      setState(() {
+        _syncStatus = SyncStatus.syncing; // 开始同步
+      });
+    }
+
+    try {
+      bool res = await c.updateNote(item!.id!, item!);
+      if (!mounted) return; // 在设置状态之前再次检查
+
+      setState(() {
+        _syncStatus = res ? SyncStatus.completed : SyncStatus.error;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _syncStatus = SyncStatus.error; // 发生错误时设置状态
+      });
+      print('更新笔记时发生错误: $e');
+    }
   }
 
   void _changeNoteColor(Color color) {
@@ -225,6 +276,11 @@ class _EditNotePageState extends State<EditNotePage> {
   Widget build(BuildContext context) {
     return PopScope(
       onPopInvoked: (handle) {
+
+        _debounce?.cancel();
+        excuteUpdate();
+
+
         if (item != null && (item!.content ?? "").trim().isEmpty) {
           c.deleteNoteWithoutPrompt(item!.id!);
         }

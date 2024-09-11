@@ -89,7 +89,7 @@ class MainController extends GetxController {
       }
     });
 
-    hubConnection?.on("ReceiveNoteIndicesUpdate", (arguments) {
+    hubConnection?.on("ReceiveNoteIndicesU pdate", (arguments) {
       if (arguments != null && arguments.length == 2) {
         final ids = (arguments[0] as List<dynamic>).cast<int>().toList();
         final indices = (arguments[1] as List<dynamic>).cast<int>().toList();
@@ -108,8 +108,13 @@ class MainController extends GetxController {
     }
   }
 
-  void updateNoteLocally(NoteItem updatedNote) {
-    final index = notes.indexWhere((note) => note.id == updatedNote.id);
+  void updateNoteLocally(NoteItem updatedNote,{int? id}) {
+    int index=-1;
+    if(id==null) {
+      index= notes.indexWhere((note) => note.id == updatedNote.id);
+    } else {
+      index = notes.indexWhere((note) => note.id == id!);
+    }
     if (index != -1) {
       notes[index] = updatedNote;
       notes.refresh();
@@ -279,7 +284,6 @@ class MainController extends GetxController {
       if (IDGenerator.isOfflineId(id)) {
         throw Exception("offline");
       }
-
       final updatedNote = await _api.putNoteItem(id, noteItem);
       updateNoteLocally(updatedNote);
       saveNotesToLocal();
@@ -309,18 +313,17 @@ class MainController extends GetxController {
     }
   }
 
-  Future<NoteItem> addNote() async {
-    NoteItem newNote = NoteItem(
-        createTime: DateTime.now(),
-        index: 0,
-        id: IDGenerator.generateOfflineId());
+  Future<NoteItem> addNote(NoteItem newNote) async {
+    addNoteLocally(newNote);
     try {
+      var localid=newNote.id;
       newNote = await _api.addNote();
+      updateNoteLocally(newNote,id: localid);
       return newNote;
     } catch (e) {
       print(e);
     } finally {
-      addNoteLocally(newNote);
+
       return newNote;
     }
   }
