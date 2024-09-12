@@ -89,7 +89,7 @@ class MainController extends GetxController {
       }
     });
 
-    hubConnection?.on("ReceiveNoteIndicesU pdate", (arguments) {
+    hubConnection?.on("ReceiveNoteIndicesUpdate", (arguments) {
       if (arguments != null && arguments.length == 2) {
         final ids = (arguments[0] as List<dynamic>).cast<int>().toList();
         final indices = (arguments[1] as List<dynamic>).cast<int>().toList();
@@ -333,7 +333,8 @@ class MainController extends GetxController {
       await _api.archiveItem(id);
       archiveNoteLocally(id);
     } catch (e) {
-      Get.snackbar('错误', '归档笔记失败: $e');
+      print(e);
+      //Get.snackbar('错误', '归档笔记失败: $e');
     }
   }
 
@@ -342,7 +343,8 @@ class MainController extends GetxController {
       await _api.unarchiveItem(id);
       unarchiveNoteLocally(id);
     } catch (e) {
-      Get.snackbar('错误', '取消归档笔记失败: $e');
+      print(e);
+      //Get.snackbar('错误', '取消归档笔记失败: $e');
     }
   }
 
@@ -370,7 +372,8 @@ class MainController extends GetxController {
         deleteNoteLocally(id);
         await _api.deleteNoteItem(id);
       } catch (e) {
-        Get.snackbar('错误', '删除笔记失败: $e');
+        print(e);
+        //Get.snackbar('错误', '删除笔记失败: $e');
       }
     }
   }
@@ -380,6 +383,7 @@ class MainController extends GetxController {
       deleteNoteLocally(id);
       await _api.deleteNoteItem(id);
     } catch (e) {
+      print(e);
       //Get.snackbar('错误', '删除空笔记失败: $e');
     }
   }
@@ -391,7 +395,8 @@ class MainController extends GetxController {
       updateIndicesLocally(ids, indices);
       await _api.updateIndex(ids, indices);
     } catch (e) {
-      Get.snackbar('错误', '更新笔记顺序失败: $e');
+      print(e);
+      //Get.snackbar('错误', '更新笔记顺序失败: $e');
     }
   }
 

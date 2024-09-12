@@ -262,13 +262,13 @@ class _EditNotePageState extends State<EditNotePage> {
   Widget _getSyncIcon() {
     switch (_syncStatus) {
       case SyncStatus.waiting:
-        return const Icon(Icons.schedule, color: Colors.orange);
+        return const Icon(key: ValueKey(1), Icons.schedule, color: Colors.orange);
       case SyncStatus.syncing:
-        return const Icon(Icons.sync, color: Colors.blue);
+        return const Icon(key: ValueKey(2),Icons.sync, color: Colors.blue);
       case SyncStatus.completed:
-        return const Icon(Icons.check_circle, color: Colors.green);
+        return const Icon(key: ValueKey(3),Icons.check_circle, color: Colors.green);
       case SyncStatus.error:
-        return const Icon(Icons.error, color: Colors.red);
+        return const Icon(key: ValueKey(4),Icons.error, color: Colors.red);
     }
   }
 
@@ -302,7 +302,16 @@ class _EditNotePageState extends State<EditNotePage> {
             actions: [
               IconButton(
                 onPressed: () {},
-                icon: _getSyncIcon(),
+                icon: AnimatedSwitcher(
+                    transitionBuilder: (Widget child, Animation<double> animation) {
+                      return ScaleTransition(
+                        scale: Tween<double>(begin: 0, end: 1.0).animate(animation),
+                        child: child,
+                      );
+                    },
+                    duration: const Duration(milliseconds: 300),
+                    child: _getSyncIcon(
+                    )),
               )
             ],
           ),
@@ -370,6 +379,7 @@ class _EditNotePageState extends State<EditNotePage> {
                       minLines: null,
                       maxLines: null,
                       expands: true,
+
                       style: TextStyle(
                           color: Colors.grey[800],
                           fontSize: GlobalConfig.fontSize.toDouble(),
@@ -378,7 +388,7 @@ class _EditNotePageState extends State<EditNotePage> {
                       textAlignVertical: TextAlignVertical.top,
                       decoration: const InputDecoration(
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.all(30),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 10,vertical: 30),
                       ),
                     ),
                   ),

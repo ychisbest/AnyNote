@@ -127,7 +127,6 @@ class NotesApi {
 
   Future<NoteItem> putNoteItem(int id, NoteItem noteItem) async {
     try {
-      print(_dio.options.baseUrl);
       final response = await _dio.put(
         '/api/Notes/$id',
         data: noteItem.toJson(),

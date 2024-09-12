@@ -195,12 +195,12 @@ class _MarkdownShortcutBarState extends State<MarkdownShortcutBar> {
               children: [
                 _buildIconButton(Icons.undo, _undo, isEnable: _canUndo),
                 _buildIconButton(Icons.redo, _redo, isEnable: _canRedo),
-                _buildIconButton(
-                    Icons.format_bold, () => _toggleMarkdown('**', '**')),
-                _buildIconButton(
-                    Icons.format_italic, () => _toggleMarkdown('*', '*')),
-                _buildIconButton(Icons.format_strikethrough,
-                    () => _toggleMarkdown('~~', '~~')),
+                // _buildIconButton(
+                //     Icons.format_bold, () => _toggleMarkdown('**', '**')),
+                // _buildIconButton(
+                //     Icons.format_italic, () => _toggleMarkdown('*', '*')),
+                // _buildIconButton(Icons.format_strikethrough,
+                //     () => _toggleMarkdown('~~', '~~')),
                 // _buildIconButton(Icons.code, () => _toggleMarkdown('`', '`')),
                 _buildIconButton(Icons.format_list_bulleted, _toggleList),
                 _buildIconButton(Icons.check_box_outlined, _toggleCheckbox),

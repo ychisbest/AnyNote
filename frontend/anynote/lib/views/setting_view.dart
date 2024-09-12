@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../MainController.dart';
+import 'HeatMap.dart';
 
 class SettingView extends StatefulWidget {
   const SettingView({super.key});

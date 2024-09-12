@@ -1,18 +1,25 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:math';
+import 'dart:ui';
 
 import 'package:anynote/GlobalConfig.dart';
 import 'package:anynote/views/EditNote.dart';
+import 'package:anynote/views/HeatMap.dart';
 import 'package:anynote/views/WideView/wideHome.dart';
 import 'package:anynote/views/archieve_list.dart';
 import 'package:anynote/views/archiveView.dart';
 import 'package:anynote/views/login.dart';
+import 'package:anynote/views/random_view.dart';
 import 'package:anynote/views/setting_view.dart';
+import 'package:anynote/views/tag_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'Extension.dart';
 import 'MainController.dart';
 import 'views/WideView/windowManger.dart';
 
@@ -117,23 +124,35 @@ class NerrowHome extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text("AnyNote"),
+          leading: Builder(builder: (context) {
+            return IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+            );
+          }),
           actions: [
-            IconButton(
-                onPressed: () {
-                  Get.to(() => const SettingView());
-                },
-                icon: const Icon(Icons.settings)),
-            IconButton(
-                onPressed: () {
-                  Get.to(() => Archiveview());
-                },
-                icon: const Icon(Icons.archive_outlined))
+            TextButton(
+              onPressed: () {
+                Get.to(()=>RandomView());
+
+              },
+              child: const Icon(Icons.casino),
+            ),
           ],
         ),
+        drawer: const _buildDrawer(),
         body: SafeArea(
-          child: Obx(() => c.isLoading.isTrue
-              ? const Center(child: CircularProgressIndicator())
-              : ArchieveList()),
+          child: Column(
+            children: [
+              Expanded(
+                child: Obx(() => c.isLoading.isTrue
+                    ? const Center(child: CircularProgressIndicator())
+                    : ArchieveList()),
+              ),
+            ],
+          ),
         ),
         floatingActionButton: Builder(builder: (context) {
           return FloatingActionButton(
@@ -144,6 +163,99 @@ class NerrowHome extends StatelessWidget {
             child: const Icon(Icons.add),
           );
         }),
+      ),
+    );
+  }
+}
+
+class _buildDrawer extends StatelessWidget {
+  const _buildDrawer({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    ScrollController scrollController = ScrollController();
+
+    // 使用 addPostFrameCallback 确保滚动操作在 widget 构建完成后执行
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      scrollController.animateTo(
+        scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 1000),
+        curve: Curves.easeInOut,
+      );
+    });
+
+    return Drawer(
+      child: Column(
+        children: <Widget>[
+          const DrawerHeader(
+            decoration: BoxDecoration(
+              color: Colors.white,
+            ),
+            child: Center(
+                child: Text(
+              'AnyNote',
+              style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+            )),
+          ),
+
+
+          Scrollbar(
+            controller: scrollController,
+            child: ScrollConfiguration(
+              behavior: const ScrollBehavior().copyWith(
+                scrollbars: false,
+                dragDevices: {
+                  PointerDeviceKind.touch,
+                  PointerDeviceKind.mouse,
+                },
+              ),
+              child: SingleChildScrollView(
+                controller: scrollController,
+                scrollDirection: Axis.horizontal,
+                child: Container(height: 90,
+                  width: 500,
+                  padding: const EdgeInsets.all(10),
+                  child: GithubHeatmap(),),
+              ),
+            ),
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.search_rounded),
+            title: const Text('Archived & Search'),
+            onTap: () async {
+              Get.back();
+              Get.to(() => Archiveview());
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.tag_sharp),
+            title: const Text('Tags'),
+            onTap: () async {
+              Get.back();
+              Get.to(() => TagList());
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.bookmark_added_outlined),
+            title: const Text('Tagging notes'),
+            onTap: () async {
+              Get.back();
+              Get.to(() => const AddTagListView());
+            },
+          ),
+          const Spacer(),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Setting'),
+            onTap: () async {
+              Get.back();
+              Get.to(() => const SettingView());
+            },
+          ),
+        ],
       ),
     );
   }
