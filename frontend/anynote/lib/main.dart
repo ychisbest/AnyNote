@@ -135,14 +135,13 @@ class NerrowHome extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () {
-                Get.to(()=>RandomView());
-
+                Get.to(() => RandomView());
               },
               child: const Icon(Icons.casino),
             ),
           ],
         ),
-        drawer: const _buildDrawer(),
+        drawer: const BuildDrawer(),
         body: SafeArea(
           child: Column(
             children: [
@@ -168,24 +167,62 @@ class NerrowHome extends StatelessWidget {
   }
 }
 
-class _buildDrawer extends StatelessWidget {
-  const _buildDrawer({
-    super.key,
-  });
+class SafeScrollAnimation {
+  final ScrollController scrollController;
+  bool _isMounted = true;
+
+  SafeScrollAnimation(this.scrollController);
+
+  void dispose() {
+    _isMounted = false;
+  }
+
+  void animateWithBounce() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isMounted || !scrollController.hasClients) return;
+
+      final targetPosition = scrollController.position.maxScrollExtent;
+
+      _animateTo(0 - 30, const Duration(milliseconds: 500), Curves.easeInOut)
+          .then((_) => _animateTo(targetPosition + 30, const Duration(milliseconds: 1000), Curves.easeInOut))
+          .then((_) => _animateTo(targetPosition, const Duration(milliseconds: 500), Curves.elasticOut));
+    });
+  }
+
+  Future<void> _animateTo(double offset, Duration duration, Curve curve) async {
+    if (!_isMounted || !scrollController.hasClients) return;
+    return scrollController.animateTo(offset, duration: duration, curve: curve);
+  }
+}
+
+class BuildDrawer extends StatefulWidget {
+  const BuildDrawer({Key? key}) : super(key: key);
+
+  @override
+  _BuildDrawerState createState() => _BuildDrawerState();
+}
+
+class _BuildDrawerState extends State<BuildDrawer> {
+  late ScrollController _scrollController;
+  late SafeScrollAnimation _scrollAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _scrollAnimation = SafeScrollAnimation(_scrollController);
+    _scrollAnimation.animateWithBounce();
+  }
+
+  @override
+  void dispose() {
+    _scrollAnimation.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    ScrollController scrollController = ScrollController();
-
-    // 使用 addPostFrameCallback 确保滚动操作在 widget 构建完成后执行
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      scrollController.animateTo(
-        scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 1000),
-        curve: Curves.easeInOut,
-      );
-    });
-
     return Drawer(
       child: Column(
         children: <Widget>[
@@ -199,10 +236,8 @@ class _buildDrawer extends StatelessWidget {
               style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
             )),
           ),
-
-
           Scrollbar(
-            controller: scrollController,
+            controller: _scrollController,
             child: ScrollConfiguration(
               behavior: const ScrollBehavior().copyWith(
                 scrollbars: false,
@@ -212,16 +247,18 @@ class _buildDrawer extends StatelessWidget {
                 },
               ),
               child: SingleChildScrollView(
-                controller: scrollController,
                 scrollDirection: Axis.horizontal,
-                child: Container(height: 90,
+                physics: const BouncingScrollPhysics(),
+                controller: _scrollController,
+                child: Container(
+                  height: 90,
                   width: 500,
                   padding: const EdgeInsets.all(10),
-                  child: GithubHeatmap(),),
+                  child: const RepaintBoundary(child: GithubHeatmap()),
+                ),
               ),
             ),
           ),
-
           ListTile(
             leading: const Icon(Icons.search_rounded),
             title: const Text('Archived & Search'),

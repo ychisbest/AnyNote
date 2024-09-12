@@ -89,9 +89,9 @@ class _SettingViewState extends State<SettingView> {
               const Text('AI Setup',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 24),
-              _buildTextField(_aiApiKeyController, 'AI API Key'),
-              const SizedBox(height: 16),
               _buildTextField(_aiUrlController, 'AI URL'),
+              const SizedBox(height: 16),
+              _buildTextField(_aiApiKeyController, 'AI API Key',ispassword: true),
               const SizedBox(height: 16),
               _buildTextField(_aiModelController, 'AI Model'),
               const SizedBox(height: 48),
@@ -117,8 +117,9 @@ class _SettingViewState extends State<SettingView> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label) {
+  Widget _buildTextField(TextEditingController controller, String label,{bool ispassword=false}) {
     return TextField(
+      obscureText: ispassword,
       controller: controller,
       style: const TextStyle(fontSize: 12, color: Colors.black87),
       decoration: InputDecoration(

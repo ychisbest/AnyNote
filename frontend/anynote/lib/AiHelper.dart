@@ -58,21 +58,22 @@ Future<void> SendMessage(TextEditingController controller) async {
         "model": GlobalConfig.aiModel,
         "messages": [
           {
-            "content": """你是我嵌入笔记软件中的ai助手，我会把笔记内容当作附件发送给你作为参考。回复请按照以下规则。
-        - 不需要多余的礼貌性用语和废话，我的精力很宝贵。
-        - 根据我问题和附件的语言，确定回复我的语言。
-        - 回答技术细节请尽量详细，我喜欢深度思考。
+            "content": """
+You are an AI assistant embedded in my note-taking software. I will send you the note content as an attachment for reference. Please respond according to the following rules:
+- No unnecessary polite language or filler words; my time is valuable.
+- Determine the language of your response based on the language of my question and the attachment.
+- Provide detailed technical answers; I enjoy deep thinking.
         """,
             "role": "system"
           },
           {
             "role": "user",
             "content": """
-          附件:
+          attachment:
           ```
           $fullText
           ```
-          现在回答我的问题：
+          here is my question,reply me in my question's language：
           $todo
           """
           }

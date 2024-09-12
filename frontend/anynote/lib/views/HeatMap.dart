@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:anynote/MainController.dart';
 import 'package:anynote/note_api_service.dart';
 import 'package:flutter/material.dart';
@@ -10,23 +12,29 @@ class Item {
 }
 
 class GithubHeatmap extends StatelessWidget {
-
-
-  GithubHeatmap({Key? key}) : super(key: key);
+  const GithubHeatmap({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     RxList<NoteItem> items = Get.find<MainController>().notes;
     return LayoutBuilder(
       builder: (context, constraints) {
-        return GestureDetector(
-          onTapUp: (details) =>
-              _handleTap(context, details, constraints.maxWidth),
-          child:CustomPaint(
-                size: Size(constraints.maxWidth, constraints.maxHeight),
-                painter: HeatmapPainter(items: items),
-          ),
-        );
+        if (Platform.isAndroid || Platform.isIOS) {
+          return CustomPaint(
+            size: Size(constraints.maxWidth, constraints.maxHeight),
+            painter: HeatmapPainter(items: items),
+          );
+
+        } else {
+          return GestureDetector(
+            onTapUp: (details) =>
+                _handleTap(context, details, constraints.maxWidth),
+            child: CustomPaint(
+              size: Size(constraints.maxWidth, constraints.maxHeight),
+              painter: HeatmapPainter(items: items),
+            ),
+          );
+        }
       },
     );
   }
@@ -104,10 +112,10 @@ class HeatmapPainter extends CustomPainter {
   }
 
   Color getColorForCount(int count) {
-    if (count == 0) return const Color(0xFFebedf0);
-    if (count <= 3) return const Color(0xFF9be9a8);
-    if (count <= 6) return const Color(0xFF40c463);
-    if (count <= 9) return const Color(0xFF30a14e);
+    if (count == 0) return const Color(0xFFe0e0f0);
+    if (count <= 2) return const Color(0xFF9be9a8);
+    if (count <= 4) return const Color(0xFF40c463);
+    if (count <= 6) return const Color(0xFF30a14e);
     return const Color(0xFF216e39);
   }
 

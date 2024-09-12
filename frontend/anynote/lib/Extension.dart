@@ -201,7 +201,7 @@ class MarkdownEditingController extends TextEditingController {
         continue;
       }
 
-      if (RegExp(r'^```[0-9a-zA-Z]*$').hasMatch(line)) {
+      if (RegExp(r'^\s*```[0-9a-zA-Z]*$').hasMatch(line)) {
         if (showLine) {
           children.add(TextSpan(
             text: line == "```\n" ? "```" : "$line\n",
@@ -513,7 +513,7 @@ class CustomMarkdownDisplay extends StatelessWidget {
         continue;
       }
 
-      if (RegExp(r'^```[0-9a-zA-Z]*$').hasMatch(line)) {
+      if (RegExp(r'^\s*```[0-9a-zA-Z]*$').hasMatch(line)) {
         var restext = line.replaceFirst('```', '');
 
         var blankcount = (restext.length + 3);
