@@ -22,7 +22,7 @@ class ArchieveList extends StatefulWidget {
 
 class _ArchieveListState extends State<ArchieveList> {
   final MainController controller = Get.find<MainController>();
-
+  ScrollController sc=ScrollController();
   @override
   void dispose() {
     // if (mounted) {
@@ -48,17 +48,20 @@ class _ArchieveListState extends State<ArchieveList> {
             var archivedNotes = widget.isArchive
                 ? controller.filteredArchivedNotes
                 : controller.filteredUnarchivedNotes;
-            return ScrollConfiguration(
-              behavior: const ScrollBehavior().copyWith(
-                scrollbars: true,
-                dragDevices: {
-                  PointerDeviceKind.touch,
-                  PointerDeviceKind.mouse,
-                },
+            return Scrollbar(
+              controller: sc,
+              child: ScrollConfiguration(
+                behavior: const ScrollBehavior().copyWith(
+                  scrollbars: false,
+                  dragDevices: {
+                    PointerDeviceKind.touch,
+                    PointerDeviceKind.mouse,
+                  },
+                ),
+                child: RefreshIndicator(
+                    onRefresh: () => controller.fetchNotes(),
+                    child: _buildList(archivedNotes, widget.isArchive)),
               ),
-              child: RefreshIndicator(
-                  onRefresh: () => controller.fetchNotes(),
-                  child: _buildList(archivedNotes, widget.isArchive)),
             );
           }),
         ),
@@ -69,7 +72,8 @@ class _ArchieveListState extends State<ArchieveList> {
   Widget _buildList(List<NoteItem> archivedNotes, bool isArchive) {
     if (isArchive) {
       return ListView.builder(
-          physics: const AlwaysScrollableScrollPhysics(),
+        controller: sc,
+          physics: const BouncingScrollPhysics(),
           itemCount: archivedNotes.length,
           itemBuilder: (BuildContext context, int index) {
             final item = archivedNotes[index];
@@ -78,6 +82,8 @@ class _ArchieveListState extends State<ArchieveList> {
     }
 
     return ReorderableListView(
+      physics: const BouncingScrollPhysics(),
+      scrollController: sc,
         scrollDirection: Axis.vertical,
         children: List.generate(archivedNotes.length, (index) {
           return BuildNoteItem(

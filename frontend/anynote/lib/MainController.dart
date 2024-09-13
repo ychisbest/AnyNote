@@ -108,10 +108,10 @@ class MainController extends GetxController {
     }
   }
 
-  void updateNoteLocally(NoteItem updatedNote,{int? id}) {
-    int index=-1;
-    if(id==null) {
-      index= notes.indexWhere((note) => note.id == updatedNote.id);
+  void updateNoteLocally(NoteItem updatedNote, {int? id}) {
+    int index = -1;
+    if (id == null) {
+      index = notes.indexWhere((note) => note.id == updatedNote.id);
     } else {
       index = notes.indexWhere((note) => note.id == id!);
     }
@@ -162,47 +162,50 @@ class MainController extends GetxController {
     await prefs.setString('offline_notes', notesJson);
   }
 
-  Future<void> loadNotesFromLocal() async {
+  Future<List<NoteItem>> loadNotesFromLocal() async {
     final prefs = await SharedPreferences.getInstance();
     final notesJson = prefs.getString('offline_notes');
     if (notesJson != null) {
       final List<dynamic> decodedNotes = jsonDecode(notesJson);
-      notes.assignAll(
-          decodedNotes.map((json) => NoteItem.fromJson(json)).toList());
+      return decodedNotes.map((json) => NoteItem.fromJson(json)).toList();
+    } else {
+      return [];
     }
   }
 
   Future<bool> fetchNotes({bool readlocalfirst = false}) async {
     isLoading.value = true;
     try {
-      if (readlocalfirst) {
-        await loadNotesFromLocal();
+      List<NoteItem> res = [];
+
+      _api.getNotes().then((r) {
+        res = r;
+        notes.assignAll(res);
         isLoading.value = false;
+        Future.microtask(UploadOfflineData);
+        Future.microtask(saveNotesToLocal);
+
+      }).catchError((e){
+        isLoading.value = false;
+        Get.snackbar('Network Error', 'offline mode');
+      });
+
+      if(readlocalfirst) {
+        loadNotesFromLocal().then((r) {
+          if (res.isEmpty) {
+            res = r;
+            notes.assignAll(res);
+            isLoading.value = false;
+          }
+        });
       }
 
-      var duplicates = notes
-          .where((item) =>
-              notes.any((other) => other.id == item.id && other != item))
-          .toList();
-      if (duplicates.isNotEmpty) {
-        notes.removeWhere((item) => duplicates.contains(item));
-      }
-
-      final fetchedNotes = await _api.getNotes();
-
-      notes.assignAll(fetchedNotes);
-
-      UploadOfflineData();
-
-      saveNotesToLocal();
 
       return true;
     } catch (e) {
       print(e);
       Get.snackbar('Network Error', 'offline mode');
       return false;
-    } finally {
-      isLoading.value = false;
     }
   }
 
@@ -239,7 +242,7 @@ class MainController extends GetxController {
       }
     }
     map.removeWhere((key, value) => ids.contains(key));
-    await GlobalConfig.setUpdateFailedNotes(map);
+    GlobalConfig.setUpdateFailedNotes(map);
 
     for (var note in notes) {
       updateEditTextCallback?.call(note.id.toString(), note.content.toString());
@@ -316,14 +319,13 @@ class MainController extends GetxController {
   Future<NoteItem> addNote(NoteItem newNote) async {
     addNoteLocally(newNote);
     try {
-      var localid=newNote.id;
+      var localid = newNote.id;
       newNote = await _api.addNote();
-      updateNoteLocally(newNote,id: localid);
+      updateNoteLocally(newNote, id: localid);
       return newNote;
     } catch (e) {
       print(e);
     } finally {
-
       return newNote;
     }
   }

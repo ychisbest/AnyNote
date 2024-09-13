@@ -69,10 +69,10 @@ packages:
     dependency: "direct main"
     description:
       name: dio
-      sha256: "0dfb6b6a1979dac1c1245e17cef824d7b452ea29bd33d3467269f9bef3715fb0"
+      sha256: "5598aa796bbf4699afd5c67c0f5f6e2ed542afc956884b9cd58c306966efc260"
       url: "https://pub.dev"
     source: hosted
-    version: "5.6.0"
+    version: "5.7.0"
   dio_brotli_transformer:
     dependency: "direct main"
     description:
@@ -372,10 +372,10 @@ packages:
     dependency: transitive
     description:
       name: shared_preferences_android
-      sha256: a7e8467e9181cef109f601e3f65765685786c1a738a83d7fbbde377589c0d974
+      sha256: "480ba4345773f56acda9abf5f50bd966f581dac5d514e5fc4a18c62976bbba7e"
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.1"
+    version: "2.3.2"
   shared_preferences_foundation:
     dependency: transitive
     description:
@@ -529,10 +529,10 @@ packages:
     dependency: transitive
     description:
       name: uuid
-      sha256: "83d37c7ad7aaf9aa8e275490669535c8080377cfa7a7004c24dfac53afffaa90"
+      sha256: f33d6bb662f0e4f79dcd7ada2e6170f3b3a2530c28fc41f49a411ddedd576a77
       url: "https://pub.dev"
     source: hosted
-    version: "4.4.2"
+    version: "4.5.0"
   vector_math:
     dependency: transitive
     description:
@@ -577,10 +577,10 @@ packages:
     dependency: "direct main"
     description:
       name: window_manager
-      sha256: e052224c7d8f0d1d0b2e03b7b1047bb08ea800d919a79453518311839881fa5f
+      sha256: ab8b2a7f97543d3db2b506c9d875e637149d48ee0c6a5cb5f5fd6e0dac463792
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.0"
+    version: "0.4.2"
   xdg_directories:
     dependency: transitive
     description:
