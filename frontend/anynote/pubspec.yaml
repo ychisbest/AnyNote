@@ -43,6 +43,7 @@ dependencies:
   dio_brotli_transformer: ^2.0.0
   signalr_netcore: ^1.3.9
   shared_preferences: ^2.3.2
+  flutter_keyboard_visibility: ^6.0.0
 
 dev_dependencies:
   flutter_test:

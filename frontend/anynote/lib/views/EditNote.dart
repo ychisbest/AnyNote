@@ -13,6 +13,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
 
 import '../AiHelper.dart';
@@ -66,8 +67,6 @@ class _EditNotePageState extends State<EditNotePage> {
       Future.microtask((){
         c.addNote(item!).then((res) => item?.id = res.id);
       });
-
-
       tfn.requestFocus();
     } else {
       item = widget.item;
@@ -78,13 +77,26 @@ class _EditNotePageState extends State<EditNotePage> {
 
     c.updateEditTextCallback = updatingEditText;
 
-
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      KeyboardVisibilityController().onChange.listen((bool visible) {
+        if (!visible) {
+          tfn.unfocus();
+          setState(() {
+            tc.selection =
+                const TextSelection.collapsed(offset: 0);
+          });
+        }
+      });
+    });
   }
 
   @override
   void dispose() {
     tc.removeListener(textUpdate);
     _debounce?.cancel();
+    tc.dispose();
+    tfn.dispose();
+    fn.dispose();
     super.dispose();
   }
 
