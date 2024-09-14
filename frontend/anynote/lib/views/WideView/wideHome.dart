@@ -118,7 +118,7 @@ class WideHome extends StatelessWidget {
         return Center(
           child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 800),
-              child: ArchieveList()),
+              child: ArchiveList()),
         );
       case 'Archived':
         return Padding(
@@ -126,7 +126,7 @@ class WideHome extends StatelessWidget {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 800),
-              child: ArchieveList(isArchive: true),
+              child: ArchiveList(isArchive: true),
             ),
           ),
         );

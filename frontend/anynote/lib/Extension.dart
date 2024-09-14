@@ -278,7 +278,7 @@ class MarkdownEditingController extends TextEditingController {
             !(matchText.trimLeft().startsWith("- [")) &&
             !(matchText.trimLeft().startsWith("--"))) {
           if (!showLine) {
-            matchText = matchText.replaceFirst('-', '·');
+            matchText = matchText.replaceFirst('-', '•');
           }
 
           matchStyle = matchStyle.copyWith(
@@ -401,8 +401,8 @@ class MarkdownEditingController extends TextEditingController {
 
 class CustomMarkdownDisplay extends StatelessWidget {
   final String text;
-
-  CustomMarkdownDisplay({required this.text});
+  final double lineheight;
+  CustomMarkdownDisplay({required this.text,this.lineheight=1.5});
 
   final String zeroWidthChar = '';
 
@@ -580,7 +580,7 @@ class CustomMarkdownDisplay extends StatelessWidget {
         if (matchText.trimLeft().startsWith("-") &&
             !(matchText.trimLeft().startsWith("- [")) &&
             !(matchText.trimLeft().startsWith("--"))) {
-          matchText = matchText.replaceFirst('-', '·');
+          matchText = matchText.replaceFirst('-', '•');
           matchStyle = matchStyle.copyWith(
               color: Colors.black, fontWeight: FontWeight.bold);
         }
@@ -686,7 +686,7 @@ class CustomMarkdownDisplay extends StatelessWidget {
               color: Colors.grey[800],
               fontSize: mainController.fontSize.toDouble(),
               letterSpacing: 1,
-              height: 2),
+              height: lineheight),
           children: _buildTextSpans(text),
         ),
       ),

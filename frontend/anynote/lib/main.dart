@@ -148,7 +148,7 @@ class NerrowHome extends StatelessWidget {
               Expanded(
                 child: Obx(() => c.isLoading.isTrue
                     ? const Center(child: CircularProgressIndicator())
-                    : ArchieveList()),
+                    : ArchiveList()),
               ),
             ],
           ),

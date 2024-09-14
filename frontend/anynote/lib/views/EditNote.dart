@@ -1,4 +1,4 @@
-import 'dart:math';
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:anynote/Extension.dart';
@@ -6,38 +6,32 @@ import 'package:anynote/GlobalConfig.dart';
 import 'package:anynote/MainController.dart';
 import 'package:anynote/note_api_service.dart';
 import 'package:anynote/views/MarkdwonShortcutBar.dart';
-import 'package:anynote/views/note_list.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
-
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
 
 import '../AiHelper.dart';
-import '../models/upload_faild.dart';
 
 enum SyncStatus { waiting, syncing, completed, error }
 
 class EditNotePage extends StatefulWidget {
-  NoteItem? item;
-  EditNotePage({super.key, this.item});
+  final NoteItem? item;
+  const EditNotePage({Key? key, this.item}) : super(key: key);
 
   @override
   State<EditNotePage> createState() => _EditNotePageState();
 }
 
 class _EditNotePageState extends State<EditNotePage> {
-  MainController c = Get.find<MainController>();
-  TextEditingController tc = MarkdownEditingController();
-  FocusNode fn = FocusNode();
-  FocusNode tfn = FocusNode();
+  final MainController controller = Get.find<MainController>();
+  late final TextEditingController textController;
+  final FocusNode focusNode = FocusNode();
+  final FocusNode textFocusNode = FocusNode();
   Timer? _debounce;
   String _lastChange = "";
-  NoteItem? item;
-  SyncStatus _syncStatus = SyncStatus.completed; // 初始状态为完成
+  late NoteItem item;
+  SyncStatus _syncStatus = SyncStatus.completed;
 
   final List<Color> _colors = [
     Colors.white,
@@ -58,98 +52,88 @@ class _EditNotePageState extends State<EditNotePage> {
   @override
   void initState() {
     super.initState();
+
     if (widget.item == null) {
-
       item = NoteItem(
-          createTime: DateTime.now(),
-          index: 0,
-          id: IDGenerator.generateOfflineId());
+        createTime: DateTime.now(),
+        index: 0,
+        id: IDGenerator.generateOfflineId(),
+      );
       Future.microtask((){
-        c.addNote(item!).then((res) => item?.id = res.id);
+        controller.addNote(item).then((res) {
+          item.id = res.id;
+        });
       });
-      tfn.requestFocus();
+
+      textFocusNode.requestFocus();
     } else {
-      item = widget.item;
-      tc.text = widget.item!.content ?? "";
-      _lastChange = tc.text;
+      item = widget.item!;
     }
-    tc.addListener(textUpdate);
 
-    c.updateEditTextCallback = updatingEditText;
+    textController = MarkdownEditingController();
+    textController.text= item.content ?? "";
+    _lastChange = textController.text;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      KeyboardVisibilityController().onChange.listen((bool visible) {
-        if (!visible) {
-          tfn.unfocus();
-          setState(() {
-            tc.selection =
-                const TextSelection.collapsed(offset: 0);
-          });
-        }
-      });
+    textController.addListener(_textUpdate);
+    controller.updateEditTextCallback = _updatingEditText;
+
+    KeyboardVisibilityController().onChange.listen((bool visible) {
+      if (!visible) {
+        textFocusNode.unfocus();
+        textController.selection = const TextSelection.collapsed(offset: 0);
+      }
     });
   }
 
   @override
   void dispose() {
-    tc.removeListener(textUpdate);
+
+    textController.removeListener(_textUpdate);
     _debounce?.cancel();
-    tc.dispose();
-    tfn.dispose();
-    fn.dispose();
+    textController.dispose();
+    textFocusNode.dispose();
+    focusNode.dispose();
     super.dispose();
   }
 
-  void updatingEditText(String id, String newText) {
-    if (item == null || tc == null || id.isEmpty) {
-      print('无效的参数或未初始化的对象');
-      return;
-    }
-
-    if (item!.id.toString() != id || item!.content == newText) {
+  void _updatingEditText(String id, String newText) {
+    if (item.id.toString() != id || item.content == newText) {
       return;
     }
 
     if (newText == "_%_delete_%_") {
       Get.back();
+      return;
     }
 
     try {
-      String oldText = item!.content ?? "";
-      int oldCursorPosition = tc.selection.baseOffset;
+      String oldText = item.content ?? "";
+      int oldCursorPosition = textController.selection.baseOffset;
 
-      // 计算新的光标位置
-      int newCursorPosition =
-          calculateNewCursorPosition(oldText, newText, oldCursorPosition);
+      int newCursorPosition = _calculateNewCursorPosition(
+        oldText,
+        newText,
+        oldCursorPosition,
+      );
 
-      // 更新内容和光标位置
-      item!.content = newText;
-      tc.value = TextEditingValue(
+      item.content = newText;
+      textController.value = TextEditingValue(
         text: newText,
         selection: TextSelection.collapsed(offset: newCursorPosition),
       );
 
-      if (tfn != null) {
-        tfn.requestFocus();
-      }
+      textFocusNode.requestFocus();
     } catch (e) {
-      print('Error occurred while updating text 🚨: $e');
+      print('Error occurred while updating text: $e');
     }
   }
 
-  int calculateNewCursorPosition(
+  int _calculateNewCursorPosition(
       String oldText, String newText, int oldCursorPosition) {
-    // 如果旧文本为空，将光标放在新文本的开始
-    if (oldText.isEmpty) {
+    if (oldText.isEmpty || newText.isEmpty) {
       return 0;
     }
 
-    // 如果新文本为空，将光标放在开始位置
-    if (newText.isEmpty) {
-      return 0;
-    }
-
-    // 找到共同前缀长度
     int commonPrefixLength = 0;
     while (commonPrefixLength < oldText.length &&
         commonPrefixLength < newText.length &&
@@ -157,7 +141,6 @@ class _EditNotePageState extends State<EditNotePage> {
       commonPrefixLength++;
     }
 
-    // 找到共同后缀长度
     int commonSuffixLength = 0;
     while (commonSuffixLength < oldText.length - commonPrefixLength &&
         commonSuffixLength < newText.length - commonPrefixLength &&
@@ -166,81 +149,40 @@ class _EditNotePageState extends State<EditNotePage> {
       commonSuffixLength++;
     }
 
-    // 如果光标在共同前缀内，保持原位置
     if (oldCursorPosition <= commonPrefixLength) {
       return oldCursorPosition;
     }
 
-    // 如果光标在共同后缀内，调整位置
     if (oldCursorPosition > oldText.length - commonSuffixLength) {
       return newText.length - (oldText.length - oldCursorPosition);
     }
 
-    // 如果文本完全不匹配或光标在中间变化的部分
     double relativePosition =
-        oldText.isEmpty ? 0 : oldCursorPosition / oldText.length;
+    oldText.isEmpty ? 0 : oldCursorPosition / oldText.length;
     return (relativePosition * newText.length).round();
   }
 
-  // void textUpdate() {
-  //   if (item == null) return;
-  //   if (item!.content == tc.text) return;
-  //   item!.content = tc.text;
-  //
-  //   setState(() {
-  //     _syncStatus = SyncStatus.waiting; // 设置为等待状态
-  //   });
-  //
-  //   if (_debounce?.isActive ?? false) _debounce?.cancel();
-  //   _debounce = Timer(const Duration(milliseconds: 500), () async {
-  //     setState(() {
-  //       _syncStatus = SyncStatus.syncing; // 开始同步
-  //     });
-  //
-  //     c.updateNote(item!.id!, item!).then((res) async {
-  //       setState(() {
-  //         if (res) {
-  //           _syncStatus = SyncStatus.completed; // 同步完成
-  //         } else {
-  //           _syncStatus = SyncStatus.error; // 同步失败
-  //         }
-  //       });
-  //     });
-  //   });
-  //
-  //   TextChangeEx(tc, _lastChange);
-  //   _lastChange = tc.text;
-  // }
+  void _textUpdate() {
+    if (item.content == textController.text) return;
+    item.content = textController.text;
 
-  void textUpdate() {
-    if (item == null) return;
-    if (item!.content == tc.text) return;
-    item!.content = tc.text;
+    _syncStatus = SyncStatus.waiting;
 
-    if (!mounted) return; // 检查 widget 是否仍然挂载
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), _executeUpdate);
 
-    setState(() {
-      _syncStatus = SyncStatus.waiting; // 设置为等待状态
-    });
-
-    if (_debounce?.isActive ?? false) _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), excuteUpdate);
-
-    TextChangeEx(tc, _lastChange);
-    _lastChange = tc.text;
+    TextChangeEx(textController, _lastChange);
+    _lastChange = textController.text;
   }
 
-  excuteUpdate() async {
-
-    if (mounted) {
-      setState(() {
-        _syncStatus = SyncStatus.syncing; // 开始同步
-      });
-    }
+  Future<void> _executeUpdate() async {
+    setState(() {
+      _syncStatus = SyncStatus.syncing;
+    });
 
     try {
-      bool res = await c.updateNote(item!.id!, item!);
-      if (!mounted) return; // 在设置状态之前再次检查
+      bool res = await controller.updateNote(item.id!, item);
+      if (!mounted) return;
 
       setState(() {
         _syncStatus = res ? SyncStatus.completed : SyncStatus.error;
@@ -248,169 +190,148 @@ class _EditNotePageState extends State<EditNotePage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _syncStatus = SyncStatus.error; // 发生错误时设置状态
+        _syncStatus = SyncStatus.error;
       });
-      print('更新笔记时发生错误: $e');
+      print('Error updating note: $e');
     }
   }
 
   void _changeNoteColor(Color color) {
     setState(() {
-      item?.color = color.value & 0x00FFFFFF;
-      _syncStatus = SyncStatus.waiting; // 设置为等待状态
+      item.color = color.value & 0x00FFFFFF;
+      _syncStatus = SyncStatus.waiting;
     });
-    if (item != null) {
-      setState(() {
-        _syncStatus = SyncStatus.syncing; // 开始同步
-      });
-      c.updateNote(item!.id!, item!).then((_) {
-        setState(() {
-          _syncStatus = SyncStatus.completed; // 同步完成
-        });
-      });
-    }
+    _executeUpdate();
   }
 
   Widget _getSyncIcon() {
     switch (_syncStatus) {
       case SyncStatus.waiting:
-        return const Icon(key: ValueKey(1), Icons.schedule, color: Colors.orange);
+        return const Icon(Icons.schedule, color: Colors.orange, key: ValueKey(1));
       case SyncStatus.syncing:
-        return const Icon(key: ValueKey(2),Icons.sync, color: Colors.blue);
+        return const Icon(Icons.sync, color: Colors.blue, key: ValueKey(2));
       case SyncStatus.completed:
-        return const Icon(key: ValueKey(3),Icons.check_circle, color: Colors.green);
+        return const Icon(Icons.check_circle, color: Colors.green, key: ValueKey(3));
       case SyncStatus.error:
-        return const Icon(key: ValueKey(4),Icons.error, color: Colors.red);
+        return const Icon(Icons.error, color: Colors.red, key: ValueKey(4));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      onPopInvoked: (handle) {
-
+    return WillPopScope(
+      onWillPop: () async {
+        ScaffoldMessenger.of(context).clearSnackBars();
         _debounce?.cancel();
-        excuteUpdate();
+        await _executeUpdate();
 
-
-        if (item != null && (item!.content ?? "").trim().isEmpty) {
-          c.deleteNoteWithoutPrompt(item!.id!);
+        if ((item.content ?? "").trim().isEmpty) {
+          controller.deleteNoteWithoutPrompt(item.id!);
         }
+        return true;
       },
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
-          statusBarColor:
-              item != null ? item!.color.toFullARGB() : Colors.white,
-          systemNavigationBarColor:
-              item != null ? item!.color.toFullARGB() : Colors.white,
+          statusBarColor: item.color.toFullARGB(),
+          systemNavigationBarColor: item.color.toFullARGB(),
         ),
         child: Scaffold(
-          backgroundColor:
-              item != null ? item!.color.toFullARGB() : Colors.white,
+          backgroundColor: item.color.toFullARGB(),
           appBar: AppBar(
             title: Text(widget.item == null ? "Add New" : "Edit"),
-            backgroundColor:
-                item != null ? item!.color.toFullARGB() : Colors.white,
+            backgroundColor: item.color.toFullARGB(),
             actions: [
               IconButton(
                 onPressed: () {},
                 icon: AnimatedSwitcher(
-                    transitionBuilder: (Widget child, Animation<double> animation) {
-                      return ScaleTransition(
-                        scale: Tween<double>(begin: 0, end: 1.0).animate(animation),
-                        child: child,
-                      );
-                    },
-                    duration: const Duration(milliseconds: 300),
-                    child: _getSyncIcon(
-                    )),
-              )
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (Widget child, Animation<double> animation) {
+                    return ScaleTransition(
+                      scale: Tween<double>(begin: 0, end: 1.0).animate(animation),
+                      child: child,
+                    );
+                  },
+                  child: _getSyncIcon(),
+                ),
+              ),
             ],
           ),
           body: Column(
             children: [
-              ScrollConfiguration(
-                behavior: const ScrollBehavior().copyWith(
-                  scrollbars: true,
-                  dragDevices: {
-                    PointerDeviceKind.touch,
-                    PointerDeviceKind.mouse,
-                  },
-                ),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: _colors.map((color) {
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: GestureDetector(
-                          onTap: () => _changeNoteColor(color),
-                          child: Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: color,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: item?.color == color.value
-                                    ? Colors.black
-                                    : Colors.grey,
-                                width: item?.color == color.value ? 2 : 1,
-                              ),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _colors.map((color) {
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: GestureDetector(
+                        onTap: () => _changeNoteColor(color),
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: item.color == color.value
+                                  ? Colors.black
+                                  : Colors.grey,
+                              width: item.color == color.value ? 2 : 1,
                             ),
                           ),
                         ),
-                      );
-                    }).toList(),
-                  ),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
               Expanded(
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 800),
                   child: RawKeyboardListener(
-                    focusNode: fn,
+                    focusNode: focusNode,
                     onKey: (event) async {
                       if (event is RawKeyDownEvent) {
                         if (event.isControlPressed &&
                             event.logicalKey == LogicalKeyboardKey.keyJ) {
-                          await CallAI();
+                          await _callAI();
                         }
 
                         if (event.isShiftPressed &&
                             event.logicalKey == LogicalKeyboardKey.tab) {
-                          UnindentText(tc, tfn);
+                          UnindentText(textController, textFocusNode);
                         } else if (event.logicalKey == LogicalKeyboardKey.tab) {
-                          IndentText(tc, tfn);
+                          IndentText(textController, textFocusNode);
                         }
                       }
                     },
                     child: TextField(
-                      controller: tc,
-                      focusNode: tfn,
+                      controller: textController,
+                      focusNode: textFocusNode,
                       minLines: null,
                       maxLines: null,
                       expands: true,
-
                       style: TextStyle(
-                          color: Colors.grey[800],
-                          fontSize: GlobalConfig.fontSize.toDouble(),
-                          letterSpacing: 1,
-                          height: 2),
+                        color: Colors.grey[800],
+                        fontSize: GlobalConfig.fontSize.toDouble(),
+                        letterSpacing: 1,
+                        height: 1.5,
+                      ),
                       textAlignVertical: TextAlignVertical.top,
                       decoration: const InputDecoration(
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 10,vertical: 30),
+                        contentPadding:
+                        EdgeInsets.symmetric(horizontal: 10, vertical: 30),
                       ),
                     ),
                   ),
                 ),
               ),
               MarkdownShortcutBar(
-                controller: tc,
-                focusNode: tfn,
-                onAiTap: CallAI,
-              )
+                controller: textController,
+                focusNode: textFocusNode,
+                onAiTap: _callAI,
+              ),
             ],
           ),
         ),
@@ -418,14 +339,20 @@ class _EditNotePageState extends State<EditNotePage> {
     );
   }
 
-  Future<void> CallAI() async {
+  Future<void> _callAI() async {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('AI Generating 🚀...'),
-        duration: Duration(seconds: 60), // 设置显示时间
+        duration: Duration(seconds: 60),
       ),
     );
-    await SendMessage(tc);
+    try{
+    await SendMessage(textController);
+    }catch(e){
+      print(e);
+    }finally{
     ScaffoldMessenger.of(context).clearSnackBars();
+  }
+
   }
 }

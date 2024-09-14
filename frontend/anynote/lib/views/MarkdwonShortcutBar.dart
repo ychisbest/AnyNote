@@ -207,7 +207,7 @@ class _MarkdownShortcutBarState extends State<MarkdownShortcutBar> {
                 if (widget.onAiTap != null)
                   _buildIconButton(Icons.generating_tokens_outlined, () {
                     widget.onAiTap!.call();
-                  }),
+                  },isEnable:(!(widget.controller.selection.baseOffset==-1 || widget.controller.text.trim().isEmpty))),
               ],
             ),
           ),

@@ -12,50 +12,48 @@ import 'note_api_service.dart';
 typedef UpdateEditTextCallback = void Function(String id, String text);
 
 class MainController extends GetxController {
-  static String baseurl = GlobalConfig.baseUrl;
+  static String baseUrl = GlobalConfig.baseUrl;
   static String secret = GlobalConfig.secretStr;
-  final NotesApi _api = NotesApi(baseurl, secret);
+  late final NotesApi _api;
   final RxList<NoteItem> notes = <NoteItem>[].obs;
   final RxBool isLoading = false.obs;
   final RxString filterText = ''.obs;
   HubConnection? hubConnection;
   UpdateEditTextCallback? updateEditTextCallback;
 
-  RxInt fontSize = GlobalConfig.fontSize.obs;
+  final RxInt fontSize = GlobalConfig.fontSize.obs;
 
   @override
   void onInit() {
     super.onInit();
+    _api = NotesApi(baseUrl, secret);
+    initData();
   }
 
   void initData() {
-    fetchNotes(readlocalfirst: true);
+    fetchNotes(readLocalFirst: true);
     initSignalR();
   }
 
-  void updateBaseUrl(String url, String newsecret) {
-    baseurl = url;
-    secret = newsecret;
+  void updateBaseUrl(String url, String newSecret) {
+    baseUrl = url;
+    secret = newSecret;
     _api.updateBaseUrl(url, secret);
     initSignalR();
   }
 
   Future<void> initSignalR() async {
-    hubConnection?.stop();
+    await hubConnection?.stop();
 
     hubConnection = HubConnectionBuilder()
-        .withUrl(
-          '$baseurl/notehub',
-        )
+        .withUrl('$baseUrl/notehub')
         .withAutomaticReconnect()
         .build();
 
     hubConnection?.on("ReceiveNoteUpdate", (arguments) {
       if (arguments != null && arguments.isNotEmpty) {
-        final updatedNote =
-            NoteItem.fromJson(arguments[0] as Map<String, dynamic>);
-        updateEditTextCallback?.call(
-            updatedNote.id.toString(), updatedNote.content.toString());
+        final updatedNote = NoteItem.fromJson(arguments[0] as Map<String, dynamic>);
+        updateEditTextCallback?.call(updatedNote.id.toString(), updatedNote.content ?? "");
         updateNoteLocally(updatedNote);
       }
     });
@@ -91,30 +89,25 @@ class MainController extends GetxController {
 
     hubConnection?.on("ReceiveNoteIndicesUpdate", (arguments) {
       if (arguments != null && arguments.length == 2) {
-        final ids = (arguments[0] as List<dynamic>).cast<int>().toList();
-        final indices = (arguments[1] as List<dynamic>).cast<int>().toList();
+        final ids = (arguments[0] as List<dynamic>).cast<int>();
+        final indices = (arguments[1] as List<dynamic>).cast<int>();
         updateIndicesLocally(ids, indices);
       }
     });
 
     try {
+
       await hubConnection?.start();
       _api.signalrID = hubConnection?.connectionId;
-      print("SignalR Connected!" +
-          "id=" +
-          hubConnection!.connectionId.toString());
+      print("SignalR Connected! id=${hubConnection?.connectionId}");
     } catch (e) {
       print("Error connecting to SignalR: $e");
     }
   }
 
   void updateNoteLocally(NoteItem updatedNote, {int? id}) {
-    int index = -1;
-    if (id == null) {
-      index = notes.indexWhere((note) => note.id == updatedNote.id);
-    } else {
-      index = notes.indexWhere((note) => note.id == id!);
-    }
+    final noteId = id ?? updatedNote.id;
+    final index = notes.indexWhere((note) => note.id == noteId);
     if (index != -1) {
       notes[index] = updatedNote;
       notes.refresh();
@@ -143,7 +136,6 @@ class MainController extends GetxController {
 
   void addNoteLocally(NoteItem newNote) {
     notes.add(newNote);
-    //notes.refresh();
   }
 
   void updateIndicesLocally(List<int> ids, List<int> indices) {
@@ -173,79 +165,81 @@ class MainController extends GetxController {
     }
   }
 
-  Future<bool> fetchNotes({bool readlocalfirst = false}) async {
+  Future<bool> fetchNotes({bool readLocalFirst = false}) async {
     isLoading.value = true;
-    try {
-      List<NoteItem> res = [];
 
-      _api.getNotes().then((r) {
-        res = r;
-        notes.assignAll(res);
+    if (readLocalFirst) {
+      final localNotes = await loadNotesFromLocal();
+      if (localNotes.isNotEmpty) {
+        notes.assignAll(localNotes);
         isLoading.value = false;
-        Future.microtask(UploadOfflineData);
-        Future.microtask(saveNotesToLocal);
-
-      }).catchError((e){
-        isLoading.value = false;
-        Get.snackbar('Network Error', 'offline mode');
-      });
-
-      if(readlocalfirst) {
-        loadNotesFromLocal().then((r) {
-          if (res.isEmpty) {
-            res = r;
-            notes.assignAll(res);
-            isLoading.value = false;
-          }
-        });
       }
+    }
 
-
+    try {
+      final fetchedNotes = await _api.getNotes();
+      notes.assignAll(fetchedNotes);
+      isLoading.value = false;
+      await uploadOfflineData();
+      await saveNotesToLocal();
       return true;
     } catch (e) {
-      print(e);
-      Get.snackbar('Network Error', 'offline mode');
+      isLoading.value = false;
+      if (!readLocalFirst) {
+        Get.snackbar('Network Error', 'Offline mode');
+      }
+      print('Error fetching notes: $e');
       return false;
     }
   }
 
-  void UploadOfflineData() async {
+  Future<void> uploadOfflineData() async {
     var map = await GlobalConfig.getUpdateFailedNotes();
+    List<String> idsToRemove = [];
 
-    List<String> ids = [];
     for (var key in map.keys) {
       var item = map[key];
-      if (IDGenerator.isOfflineId(item!.faildNote.id!)) {
-        var note = await _api.addNoteItem(item.faildNote.content!);
-        notes.add(note);
-        ids.add(key);
+      if (item == null) continue;
+
+      if (IDGenerator.isOfflineId(item.failedNote.id!)) {
+        try {
+          var note = await _api.addNoteItem(item.failedNote.content!);
+          notes.add(note);
+          idsToRemove.add(key);
+        } catch (e) {
+          print('Error uploading offline note: $e');
+        }
         continue;
       }
 
-      var fetchedNote =
-          notes.firstWhereOrNull((note) => note.id == item!.faildNote.id);
+      var fetchedNote = notes.firstWhereOrNull((note) => note.id == item.failedNote.id);
 
       if (fetchedNote == null) {
-        ids.add(key);
+        idsToRemove.add(key);
         continue;
       }
 
-      if ((item!.oldNote.lastUpdateTime == fetchedNote!.lastUpdateTime ||
-          item!.faildNote.lastUpdateTime == null)) {
-        updateNote(item.faildNote.id!, item.faildNote);
-        ids.add(key);
+      if (item.oldNote.lastUpdateTime == fetchedNote.lastUpdateTime ||
+          item.failedNote.lastUpdateTime == null) {
+        await updateNote(item.failedNote.id!, item.failedNote);
+        idsToRemove.add(key);
       } else {
-        var content = "# offline content\n---\n${item.faildNote.content!}";
-        var note = await _api.addNoteItem(content);
-        notes.add(note);
-        ids.add(key);
+        var content = "# offline content\n---\n${item.failedNote.content!}";
+        try {
+          var note = await _api.addNoteItem(content);
+          notes.add(note);
+          idsToRemove.add(key);
+        } catch (e) {
+          print('Error adding note: $e');
+        }
       }
     }
-    map.removeWhere((key, value) => ids.contains(key));
-    GlobalConfig.setUpdateFailedNotes(map);
+
+    map.removeWhere((key, value) => idsToRemove.contains(key));
+    await GlobalConfig.setUpdateFailedNotes(map);
 
     for (var note in notes) {
-      updateEditTextCallback?.call(note.id.toString(), note.content.toString());
+      updateEditTextCallback?.call(note.id.toString(), note.content ?? "");
     }
   }
 
@@ -253,26 +247,14 @@ class MainController extends GetxController {
     try {
       int statusCode = await _api.login();
       if (statusCode >= 200 && statusCode < 300) {
-        return {
-          'isLoginSuccess': true,
-          'errorContent': null,
-        };
+        return {'isLoginSuccess': true, 'errorContent': null};
       } else if (statusCode == 401) {
-        return {
-          'isLoginSuccess': false,
-          'errorContent': 'Secret is incorrect',
-        };
+        return {'isLoginSuccess': false, 'errorContent': 'Secret is incorrect'};
       } else {
-        return {
-          'isLoginSuccess': false,
-          'errorContent': 'Login Failed',
-        };
+        return {'isLoginSuccess': false, 'errorContent': 'Login Failed'};
       }
     } catch (e) {
-      return {
-        'isLoginSuccess': false,
-        'errorContent': e.toString(),
-      };
+      return {'isLoginSuccess': false, 'errorContent': e.toString()};
     }
   }
 
@@ -285,11 +267,11 @@ class MainController extends GetxController {
   Future<bool> updateNote(int id, NoteItem noteItem) async {
     try {
       if (IDGenerator.isOfflineId(id)) {
-        throw Exception("offline");
+        throw Exception("Offline ID");
       }
       final updatedNote = await _api.putNoteItem(id, noteItem);
       updateNoteLocally(updatedNote);
-      saveNotesToLocal();
+      await saveNotesToLocal();
 
       var map = await GlobalConfig.getUpdateFailedNotes();
       map.remove(id.toString());
@@ -297,20 +279,16 @@ class MainController extends GetxController {
 
       return true;
     } catch (e) {
-      print(e);
+      print('Error updating note: $e');
 
       var map = await GlobalConfig.getUpdateFailedNotes();
-      if (map[id.toString()]?.oldNote.content != null &&
-          map[id.toString()]!.oldNote!.content!.isNotEmpty) {
-        map[id.toString()] = UploadFailedNote(
-            faildNote: noteItem, oldNote: map[id.toString()]!.oldNote);
-      } else {
-        map[id.toString()] =
-            UploadFailedNote(faildNote: noteItem, oldNote: noteItem);
-      }
+      var existingFailedNote = map[id.toString()];
+      map[id.toString()] = UploadFailedNote(
+        oldNote: existingFailedNote?.oldNote ?? noteItem, failedNote: noteItem,
+      );
       await GlobalConfig.setUpdateFailedNotes(map);
       updateNoteLocally(noteItem);
-      saveNotesToLocal();
+      await saveNotesToLocal();
 
       return false;
     }
@@ -319,13 +297,12 @@ class MainController extends GetxController {
   Future<NoteItem> addNote(NoteItem newNote) async {
     addNoteLocally(newNote);
     try {
-      var localid = newNote.id;
-      newNote = await _api.addNote();
-      updateNoteLocally(newNote, id: localid);
-      return newNote;
+      final localId = newNote.id;
+      final addedNote = await _api.addNoteItem(newNote.content ?? "");
+      updateNoteLocally(addedNote, id: localId);
+      return addedNote;
     } catch (e) {
-      print(e);
-    } finally {
+      print('Error adding note: $e');
       return newNote;
     }
   }
@@ -335,8 +312,7 @@ class MainController extends GetxController {
       await _api.archiveItem(id);
       archiveNoteLocally(id);
     } catch (e) {
-      print(e);
-      //Get.snackbar('错误', '归档笔记失败: $e');
+      print('Error archiving note: $e');
     }
   }
 
@@ -345,28 +321,27 @@ class MainController extends GetxController {
       await _api.unarchiveItem(id);
       unarchiveNoteLocally(id);
     } catch (e) {
-      print(e);
-      //Get.snackbar('错误', '取消归档笔记失败: $e');
+      print('Error unarchiving note: $e');
     }
   }
 
   Future<void> deleteNote(int id) async {
-    bool confirm = await Get.dialog<bool>(
-          AlertDialog(
-            title: Text('Confirm Delete'),
-            content: Text('Are you sure you want to delete this note?'),
-            actions: [
-              TextButton(
-                child: Text('Cancel'),
-                onPressed: () => Get.back(result: false),
-              ),
-              TextButton(
-                child: Text('Delete'),
-                onPressed: () => Get.back(result: true),
-              ),
-            ],
+    final confirm = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Confirm Delete'),
+        content: const Text('Are you sure you want to delete this note?'),
+        actions: [
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () => Get.back(result: false),
           ),
-        ) ??
+          TextButton(
+            child: const Text('Delete'),
+            onPressed: () => Get.back(result: true),
+          ),
+        ],
+      ),
+    ) ??
         false;
 
     if (confirm) {
@@ -374,8 +349,7 @@ class MainController extends GetxController {
         deleteNoteLocally(id);
         await _api.deleteNoteItem(id);
       } catch (e) {
-        print(e);
-        //Get.snackbar('错误', '删除笔记失败: $e');
+        print('Error deleting note: $e');
       }
     }
   }
@@ -385,8 +359,7 @@ class MainController extends GetxController {
       deleteNoteLocally(id);
       await _api.deleteNoteItem(id);
     } catch (e) {
-      print(e);
-      //Get.snackbar('错误', '删除空笔记失败: $e');
+      print('Error deleting note without prompt: $e');
     }
   }
 
@@ -397,50 +370,60 @@ class MainController extends GetxController {
       updateIndicesLocally(ids, indices);
       await _api.updateIndex(ids, indices);
     } catch (e) {
-      print(e);
-      //Get.snackbar('错误', '更新笔记顺序失败: $e');
+      print('Error updating note indices: $e');
     }
   }
+
 
   void updateFilter(String value) {
-    filterText.value = value;
+    final trimmedValue = value.trim().toLowerCase();
+    if (filterText.value != trimmedValue) {
+      filterText.value = trimmedValue;
+    }
   }
 
+  // 优化后的 filteredNotes 方法
   List<NoteItem> get filteredNotes {
     final filter = filterText.value;
-    List<NoteItem> res = notes.toList();
+    final words = filter.isNotEmpty ? filter.split(' ') : [];
+    Iterable<NoteItem> res = notes;
 
-    if (filter.isNotEmpty) {
+    if (words.isNotEmpty) {
       res = res.where((item) {
-        List<String> words = filter.split(' ');
-        return words.every((word) {
-          bool contentMatches =
-              (item.content ?? "").toLowerCase().contains(word.toLowerCase());
-          String dateString = item.createTime.toString().replaceAll("-", "");
-          bool dateMatches = dateString.contains(word);
-          return contentMatches || dateMatches;
-        });
-      }).toList();
+        final content = (item.content ?? "").toLowerCase();
+        final dateString = item.createTime.toIso8601String().replaceAll("-", "");
+        for (final word in words) {
+          if (!(content.contains(word) || dateString.contains(word))) {
+            return false;
+          }
+        }
+        return true;
+      });
     }
 
-    sortNotes(res, false);
-    return res;
+    return sortNotes(res.toList(), false);
   }
 
-  void sortNotes(List<NoteItem> res, bool withIndex) {
-    res.sort((a, b) {
+
+
+  List<NoteItem> sortNotes(List<NoteItem> notesList, bool withIndex) {
+    notesList.sort((a, b) {
       if (a.isTopMost != b.isTopMost) {
         return b.isTopMost ? 1 : -1;
       }
-
-      if (withIndex) {
-        if (a.index != b.index) {
-          return a.index.compareTo(b.index);
-        }
+      if (withIndex && a.index != b.index) {
+        return a.index.compareTo(b.index);
       }
       return b.createTime.compareTo(a.createTime);
     });
+    return notesList;
   }
+
+
+
+
+
+
 
   List<NoteItem> get filteredArchivedNotes {
     return filteredNotes.where((note) => note.isArchived).toList();
@@ -456,14 +439,11 @@ class MainController extends GetxController {
     final RegExp tagRegExp = RegExp(r'#([0-9a-zA-Z\u4e00-\u9fa5]+)');
     Map<String, List<NoteItem>> tagMap = {};
 
-    for (var obj in notes) {
-      final matches = tagRegExp.allMatches(obj.content ?? "");
+    for (var note in notes) {
+      final matches = tagRegExp.allMatches(note.content ?? "");
       for (var match in matches) {
         String tag = match.group(1)!;
-        if (!tagMap.containsKey(tag)) {
-          tagMap[tag] = [];
-        }
-        tagMap[tag]!.add(obj);
+        tagMap.putIfAbsent(tag, () => []).add(note);
       }
     }
 
@@ -472,31 +452,27 @@ class MainController extends GetxController {
 
   List<String> get tags {
     final RegExp tagRegExp = RegExp(r'#([0-9a-zA-Z\u4e00-\u9fa5]+)');
-    Set<String> tags = {};
+    Set<String> tagsSet = {};
 
-    var copynotes = notes.toList();
+    var sortedNotes = notes.toList();
+    sortNotes(sortedNotes, true);
 
-    sortNotes(copynotes, true);
-
-    for (var obj in copynotes) {
-      final matches = tagRegExp.allMatches(obj.content ?? "");
+    for (var note in sortedNotes) {
+      final matches = tagRegExp.allMatches(note.content ?? "");
       for (var match in matches) {
         String tag = match.group(1)!;
-        tags.add(tag);
+        tagsSet.add(tag);
       }
     }
 
-    return tags.toList();
+    return tagsSet.toList();
   }
 
   List<NoteItem> get notesWithoutTag {
     final RegExp tagRegExp = RegExp(r'#([0-9a-zA-Z\u4e00-\u9fa5]+)');
-
-    var res = filteredArchivedNotes.where((item) {
+    return filteredArchivedNotes.where((item) {
       return !tagRegExp.hasMatch(item.content ?? "");
     }).toList();
-
-    return res;
   }
 
   @override

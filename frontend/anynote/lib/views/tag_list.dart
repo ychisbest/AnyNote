@@ -50,7 +50,7 @@ class NoteTagListView extends StatelessWidget {
           return ListView.builder(
               itemCount: items?.length,
               itemBuilder: (cc, ci) {
-                return BuildNoteItem(c, items[ci], ci, true);
+              return  NoteItemWidget(controller:c,item:  items[ci], index:  ci,isArchive:  true);
               });
         }));
   }
@@ -72,7 +72,7 @@ class AddTagListView extends StatelessWidget {
               itemBuilder: (cc, ci) {
                 return Column(
                   children: [
-                    BuildNoteItem(c, items[ci], ci, true),
+                    NoteItemWidget(controller:c,item:  items[ci], index:  ci,isArchive:  true),
                     Wrap(
                       direction: Axis.horizontal,
                       children: [
