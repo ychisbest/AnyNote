@@ -1,0 +1,203 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Get version
+      id: get_version
+      run: echo "VERSION=$(cat version.txt)" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.get_version.outputs.VERSION }}
+        release_name: Release v${{ steps.get_version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+
+  build-windows:
+    needs: create-release
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.22.3'
+
+    - name: Install dependencies
+      run: flutter pub get
+      working-directory: frontend/anynote
+
+    - name: Build Windows
+      run: flutter build windows --release
+      working-directory: frontend/anynote
+
+    - name: Create output dir
+      run: mkdir C:\output
+
+    - name: Zip Windows build
+      run: Compress-Archive -Path ${{ github.workspace }}\frontend\anynote\build\windows\x64\runner\Release -DestinationPath C:\output\windows.zip
+
+    - name: Upload Windows build to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: C:\output\windows.zip
+        asset_name: windows.zip
+        asset_content_type: application/zip
+
+  # build-macos:
+  #   needs: create-release
+  #   runs-on: macos-latest
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v3
+
+  #   - name: Set up Flutter
+  #     uses: subosito/flutter-action@v2
+  #     with:
+  #       flutter-version: '3.22.3'
+
+  #   - name: Install dependencies
+  #     run: flutter pub get
+  #     working-directory: frontend/anynote
+
+  #   - name: Install Apple Certificate
+  #     uses: apple-actions/import-codesign-certs@v1
+  #     with: 
+  #       p12-file-base64: ${{ secrets.IOS_DIST_SIGNING_KEY }}
+  #       p12-password: ${{ secrets.IOS_DIST_SIGNING_KEY_PASSWORD }}
+
+  #   - name: Install provisioning profile
+  #     run: |
+  #       mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+  #       echo -n "${{ secrets.IOS_PROVISIONING_PROFILE }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+
+  #   - name: Build macOS
+  #     run: flutter build macos --release
+  #     working-directory: frontend/anynote
+
+  #   - name: Build iOS
+  #     run: flutter build ios --release
+  #     working-directory: frontend/anynote
+
+  #   - name: Zip macOS build
+  #     run: zip -r macos.zip frontend/anynote/build/macos/Build/Products/Release/*.app
+
+  #   - name: Zip iOS build
+  #     run: zip -r ios.zip frontend/anynote/build/ios/iphoneos
+
+  #   - name: Upload macOS build to Release
+  #     uses: actions/upload-release-asset@v1
+  #     env:
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     with:
+  #       upload_url: ${{ needs.create-release.outputs.upload_url }}
+  #       asset_path: ./macos.zip
+  #       asset_name: macos.zip
+  #       asset_content_type: application/zip
+
+  #   - name: Upload iOS build to Release
+  #     uses: actions/upload-release-asset@v1
+  #     env:
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     with:
+  #       upload_url: ${{ needs.create-release.outputs.upload_url }}
+  #       asset_path: ./ios.zip
+  #       asset_name: ios.zip
+  #       asset_content_type: application/zip
+
+  build-linux-web-android:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Java JDK
+      uses: actions/setup-java@v4.2.2
+      with:
+        java-version: 11
+        distribution: microsoft
+        java-package: jdk
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.22.3'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y ninja-build libgtk-3-dev
+        flutter pub get
+      working-directory: frontend/anynote
+
+    - name: Build Linux
+      run: flutter build linux --release
+      working-directory: frontend/anynote
+
+    - name: Build Web
+      run: flutter build web --release
+      working-directory: frontend/anynote
+
+    - name: Build APK
+      run: flutter build apk --release
+      working-directory: frontend/anynote
+
+    - name: Zip Linux build
+      run: |
+        cd frontend/anynote/build/linux/x64/release/bundle
+        zip -r linux.zip .
+
+    - name: Zip Web build
+      run: |
+        cd frontend/anynote/build/web
+        zip -r web.zip .
+
+    - name: Upload Linux build to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: frontend/anynote/build/linux/x64/release/bundle/linux.zip
+        asset_name: linux.zip
+        asset_content_type: application/zip
+
+    - name: Upload Web build to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: frontend/anynote/build/web/web.zip
+        asset_name: web.zip
+        asset_content_type: application/zip
+
+    - name: Upload APK to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: frontend/anynote/build/app/outputs/flutter-apk/app-release.apk
+        asset_name: android.apk
+        asset_content_type: application/vnd.android.package-archive
