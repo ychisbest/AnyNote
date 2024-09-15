@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:math';
 import 'dart:ui';
 
@@ -209,7 +210,7 @@ class MarkdownEditingController extends TextEditingController {
                 color: Colors.black, fontWeight: FontWeight.bold),
           ));
         } else {
-          var restext = line.replaceFirst('```', '');
+          var restext = line.replaceFirst('```', '').replaceAll(" ", zeroWidthChar);
 
           var blankcount = (restext.length + 3);
 
@@ -402,7 +403,7 @@ class MarkdownEditingController extends TextEditingController {
 class CustomMarkdownDisplay extends StatelessWidget {
   final String text;
   final double lineheight;
-  CustomMarkdownDisplay({required this.text,this.lineheight=1.5});
+  CustomMarkdownDisplay({required this.text, this.lineheight = 1.5});
 
   final String zeroWidthChar = '';
 
@@ -514,7 +515,7 @@ class CustomMarkdownDisplay extends StatelessWidget {
       }
 
       if (RegExp(r'^\s*```[0-9a-zA-Z]*$').hasMatch(line)) {
-        var restext = line.replaceFirst('```', '');
+        var restext = line.trim().replaceFirst('```', '');
 
         var blankcount = (restext.length + 3);
 

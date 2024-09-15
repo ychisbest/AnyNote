@@ -59,7 +59,7 @@ class _EditNotePageState extends State<EditNotePage> {
         index: 0,
         id: IDGenerator.generateOfflineId(),
       );
-      Future.microtask((){
+      Future.microtask(() {
         controller.addNote(item).then((res) {
           item.id = res.id;
         });
@@ -71,7 +71,7 @@ class _EditNotePageState extends State<EditNotePage> {
     }
 
     textController = MarkdownEditingController();
-    textController.text= item.content ?? "";
+    textController.text = item.content ?? "";
     _lastChange = textController.text;
 
     textController.addListener(_textUpdate);
@@ -80,14 +80,13 @@ class _EditNotePageState extends State<EditNotePage> {
     KeyboardVisibilityController().onChange.listen((bool visible) {
       if (!visible) {
         textFocusNode.unfocus();
-        textController.selection = const TextSelection.collapsed(offset: 0);
+        textController.selection = const TextSelection.collapsed(offset: -1);
       }
     });
   }
 
   @override
   void dispose() {
-
     textController.removeListener(_textUpdate);
     _debounce?.cancel();
     textController.dispose();
@@ -158,7 +157,7 @@ class _EditNotePageState extends State<EditNotePage> {
     }
 
     double relativePosition =
-    oldText.isEmpty ? 0 : oldCursorPosition / oldText.length;
+        oldText.isEmpty ? 0 : oldCursorPosition / oldText.length;
     return (relativePosition * newText.length).round();
   }
 
@@ -207,11 +206,13 @@ class _EditNotePageState extends State<EditNotePage> {
   Widget _getSyncIcon() {
     switch (_syncStatus) {
       case SyncStatus.waiting:
-        return const Icon(Icons.schedule, color: Colors.orange, key: ValueKey(1));
+        return const Icon(Icons.schedule,
+            color: Colors.orange, key: ValueKey(1));
       case SyncStatus.syncing:
         return const Icon(Icons.sync, color: Colors.blue, key: ValueKey(2));
       case SyncStatus.completed:
-        return const Icon(Icons.check_circle, color: Colors.green, key: ValueKey(3));
+        return const Icon(Icons.check_circle,
+            color: Colors.green, key: ValueKey(3));
       case SyncStatus.error:
         return const Icon(Icons.error, color: Colors.red, key: ValueKey(4));
     }
@@ -221,9 +222,9 @@ class _EditNotePageState extends State<EditNotePage> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        ScaffoldMessenger.of(context).clearSnackBars();
         _debounce?.cancel();
-        await _executeUpdate();
+
+        Future.microtask(_executeUpdate);
 
         if ((item.content ?? "").trim().isEmpty) {
           controller.deleteNoteWithoutPrompt(item.id!);
@@ -245,9 +246,11 @@ class _EditNotePageState extends State<EditNotePage> {
                 onPressed: () {},
                 icon: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (Widget child, Animation<double> animation) {
+                  transitionBuilder:
+                      (Widget child, Animation<double> animation) {
                     return ScaleTransition(
-                      scale: Tween<double>(begin: 0, end: 1.0).animate(animation),
+                      scale:
+                          Tween<double>(begin: 0, end: 1.0).animate(animation),
                       child: child,
                     );
                   },
@@ -321,7 +324,7 @@ class _EditNotePageState extends State<EditNotePage> {
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         contentPadding:
-                        EdgeInsets.symmetric(horizontal: 10, vertical: 30),
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 20),
                       ),
                     ),
                   ),
@@ -346,13 +349,12 @@ class _EditNotePageState extends State<EditNotePage> {
         duration: Duration(seconds: 60),
       ),
     );
-    try{
-    await SendMessage(textController);
-    }catch(e){
+    try {
+      await SendMessage(textController);
+    } catch (e) {
       print(e);
-    }finally{
-    ScaffoldMessenger.of(context).clearSnackBars();
-  }
-
+    } finally {
+      ScaffoldMessenger.of(context).clearSnackBars();
+    }
   }
 }

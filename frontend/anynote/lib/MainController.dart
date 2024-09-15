@@ -52,8 +52,10 @@ class MainController extends GetxController {
 
     hubConnection?.on("ReceiveNoteUpdate", (arguments) {
       if (arguments != null && arguments.isNotEmpty) {
-        final updatedNote = NoteItem.fromJson(arguments[0] as Map<String, dynamic>);
-        updateEditTextCallback?.call(updatedNote.id.toString(), updatedNote.content ?? "");
+        final updatedNote =
+            NoteItem.fromJson(arguments[0] as Map<String, dynamic>);
+        updateEditTextCallback?.call(
+            updatedNote.id.toString(), updatedNote.content ?? "");
         updateNoteLocally(updatedNote);
       }
     });
@@ -96,7 +98,6 @@ class MainController extends GetxController {
     });
 
     try {
-
       await hubConnection?.start();
       _api.signalrID = hubConnection?.connectionId;
       print("SignalR Connected! id=${hubConnection?.connectionId}");
@@ -212,7 +213,8 @@ class MainController extends GetxController {
         continue;
       }
 
-      var fetchedNote = notes.firstWhereOrNull((note) => note.id == item.failedNote.id);
+      var fetchedNote =
+          notes.firstWhereOrNull((note) => note.id == item.failedNote.id);
 
       if (fetchedNote == null) {
         idsToRemove.add(key);
@@ -284,7 +286,8 @@ class MainController extends GetxController {
       var map = await GlobalConfig.getUpdateFailedNotes();
       var existingFailedNote = map[id.toString()];
       map[id.toString()] = UploadFailedNote(
-        oldNote: existingFailedNote?.oldNote ?? noteItem, failedNote: noteItem,
+        oldNote: existingFailedNote?.oldNote ?? noteItem,
+        failedNote: noteItem,
       );
       await GlobalConfig.setUpdateFailedNotes(map);
       updateNoteLocally(noteItem);
@@ -327,21 +330,21 @@ class MainController extends GetxController {
 
   Future<void> deleteNote(int id) async {
     final confirm = await Get.dialog<bool>(
-      AlertDialog(
-        title: const Text('Confirm Delete'),
-        content: const Text('Are you sure you want to delete this note?'),
-        actions: [
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Get.back(result: false),
+          AlertDialog(
+            title: const Text('Confirm Delete'),
+            content: const Text('Are you sure you want to delete this note?'),
+            actions: [
+              TextButton(
+                child: const Text('Cancel'),
+                onPressed: () => Get.back(result: false),
+              ),
+              TextButton(
+                child: const Text('Delete'),
+                onPressed: () => Get.back(result: true),
+              ),
+            ],
           ),
-          TextButton(
-            child: const Text('Delete'),
-            onPressed: () => Get.back(result: true),
-          ),
-        ],
-      ),
-    ) ??
+        ) ??
         false;
 
     if (confirm) {
@@ -374,7 +377,6 @@ class MainController extends GetxController {
     }
   }
 
-
   void updateFilter(String value) {
     final trimmedValue = value.trim().toLowerCase();
     if (filterText.value != trimmedValue) {
@@ -391,7 +393,8 @@ class MainController extends GetxController {
     if (words.isNotEmpty) {
       res = res.where((item) {
         final content = (item.content ?? "").toLowerCase();
-        final dateString = item.createTime.toIso8601String().replaceAll("-", "");
+        final dateString =
+            item.createTime.toIso8601String().replaceAll("-", "");
         for (final word in words) {
           if (!(content.contains(word) || dateString.contains(word))) {
             return false;
@@ -403,8 +406,6 @@ class MainController extends GetxController {
 
     return sortNotes(res.toList(), false);
   }
-
-
 
   List<NoteItem> sortNotes(List<NoteItem> notesList, bool withIndex) {
     notesList.sort((a, b) {
@@ -418,12 +419,6 @@ class MainController extends GetxController {
     });
     return notesList;
   }
-
-
-
-
-
-
 
   List<NoteItem> get filteredArchivedNotes {
     return filteredNotes.where((note) => note.isArchived).toList();

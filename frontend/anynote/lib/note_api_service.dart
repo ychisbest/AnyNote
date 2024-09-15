@@ -134,7 +134,7 @@ class NotesApi {
       return NoteItem.fromJson(response.data);
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
-        return NoteItem(createTime: DateTime.now(), index: 0);
+        return NoteItem(createTime: DateTime.now().toUtc(), index: 0);
       }
       throw Exception('Failed to update note: $e');
     }

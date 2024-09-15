@@ -51,6 +51,8 @@ Future<void> SendMessage(TextEditingController controller) async {
     insertPosition = currentLineEnd + 1;
 
     final client = http.Client();
+
+
     final request = http.Request('POST', Uri.parse(GlobalConfig.aiUrl))
       ..headers['Content-Type'] = 'application/json'
       ..headers['Authorization'] = 'Bearer $apiKey'
@@ -81,8 +83,9 @@ You are an AI assistant embedded in my note-taking software. I will send you the
         "stream": true
       });
 
+
     final streamedResponse = await client.send(request).timeout(
-      const Duration(seconds: 10),
+      const Duration(seconds: 5),
       onTimeout: () {
         throw TimeoutException('The request timed out');
       },

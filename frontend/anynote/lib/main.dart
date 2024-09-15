@@ -157,7 +157,7 @@ class NerrowHome extends StatelessWidget {
           return FloatingActionButton(
             onPressed: () async {
               await Navigator.push(
-                  context, MaterialPageRoute(builder: (c) => EditNotePage()));
+                  context, MaterialPageRoute(builder: (c) => const EditNotePage()));
             },
             child: const Icon(Icons.add),
           );
@@ -184,8 +184,10 @@ class SafeScrollAnimation {
       final targetPosition = scrollController.position.maxScrollExtent;
 
       _animateTo(0 - 30, const Duration(milliseconds: 500), Curves.easeInOut)
-          .then((_) => _animateTo(targetPosition + 30, const Duration(milliseconds: 1000), Curves.easeInOut))
-          .then((_) => _animateTo(targetPosition, const Duration(milliseconds: 500), Curves.elasticOut));
+          .then((_) => _animateTo(targetPosition + 30,
+              const Duration(milliseconds: 1000), Curves.easeInOut))
+          .then((_) => _animateTo(targetPosition,
+              const Duration(milliseconds: 500), Curves.easeOutBack));
     });
   }
 
@@ -251,10 +253,13 @@ class _BuildDrawerState extends State<BuildDrawer> {
                 physics: const BouncingScrollPhysics(),
                 controller: _scrollController,
                 child: Container(
-                  height: 90,
-                  width: 500,
+                  height: 150,
+                  width: 950,
                   padding: const EdgeInsets.all(10),
-                  child: const RepaintBoundary(child: GithubHeatmap()),
+                  child: const RepaintBoundary(
+                      child: GithubHeatmap(
+                    cellSize: 17,
+                  )),
                 ),
               ),
             ),

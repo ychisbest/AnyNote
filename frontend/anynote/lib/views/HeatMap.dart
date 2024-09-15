@@ -12,41 +12,40 @@ class Item {
 }
 
 class GithubHeatmap extends StatelessWidget {
-  const GithubHeatmap({Key? key}) : super(key: key);
+  final double cellSize; // 新增参数来控制每个热力点的大小
+
+  const GithubHeatmap({Key? key, required this.cellSize}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     RxList<NoteItem> items = Get.find<MainController>().notes;
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (Platform.isAndroid || Platform.isIOS) {
-          return CustomPaint(
+        return GestureDetector(
+          onTapUp: (details) =>
+              _handleTap(context, details, constraints.maxWidth),
+          child: CustomPaint(
             size: Size(constraints.maxWidth, constraints.maxHeight),
-            painter: HeatmapPainter(items: items),
-          );
-
-        } else {
-          return GestureDetector(
-            onTapUp: (details) =>
-                _handleTap(context, details, constraints.maxWidth),
-            child: CustomPaint(
-              size: Size(constraints.maxWidth, constraints.maxHeight),
-              painter: HeatmapPainter(items: items),
-            ),
-          );
-        }
+            painter:
+                HeatmapPainter(items: items, cellSize: cellSize), // 传入 cellSize
+          ),
+        );
       },
     );
   }
 
   void _handleTap(BuildContext context, TapUpDetails details, double width) {
-    final cellSize = width / 53;
     final weekIndex = (details.localPosition.dx / cellSize).floor();
     final dayIndex = (details.localPosition.dy / cellSize).floor();
 
     final now = DateTime.now();
     final oneYearAgo = now.subtract(const Duration(days: 365));
     final tappedDate = oneYearAgo.add(Duration(days: weekIndex * 7 + dayIndex));
+
+    // 如果点击的日期大于今天，直接返回
+    if (tappedDate.isAfter(now)) {
+      return;
+    }
 
     final MainController c = Get.find<MainController>();
     final count = c.notes
@@ -78,12 +77,12 @@ class GithubHeatmap extends StatelessWidget {
 
 class HeatmapPainter extends CustomPainter {
   final List<NoteItem> items;
+  final double cellSize; // 新增参数来控制每个热力点的大小
 
-  HeatmapPainter({required this.items});
+  HeatmapPainter({required this.items, required this.cellSize});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final cellSize = size.width / 53; // 52 weeks + 1 for padding
     final now = DateTime.now();
     final oneYearAgo = now.subtract(const Duration(days: 365));
 
@@ -103,10 +102,25 @@ class HeatmapPainter extends CustomPainter {
           cellSize - 2,
         );
 
+        // 绘制每个方块的热力图颜色
         canvas.drawRRect(
-          RRect.fromRectAndRadius(rect, Radius.circular(2)),
+          RRect.fromRectAndRadius(rect, Radius.circular(5)),
           Paint()..color = color,
         );
+
+        // 如果当前日期是今天，绘制一个标记
+        if (isSameDay(date, now)) {
+          final borderPaint = Paint()
+            ..color = Colors.orange // 你可以使用任何颜色来标记今天
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1; // 边框宽度
+
+          // 绘制今天的边框
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(rect, Radius.circular(5)),
+            borderPaint,
+          );
+        }
       }
     }
   }
