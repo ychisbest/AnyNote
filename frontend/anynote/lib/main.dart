@@ -135,9 +135,9 @@ class NerrowHome extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () {
-                Get.to(() => RandomView());
+                Get.to(() => Archiveview());
               },
-              child: const Icon(Icons.casino),
+              child: const Icon(Icons.archive_outlined),
             ),
           ],
         ),
@@ -155,6 +155,8 @@ class NerrowHome extends StatelessWidget {
         ),
         floatingActionButton: Builder(builder: (context) {
           return FloatingActionButton(
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
             onPressed: () async {
               await Navigator.push(
                   context, MaterialPageRoute(builder: (c) => const EditNotePage()));
@@ -265,11 +267,11 @@ class _BuildDrawerState extends State<BuildDrawer> {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.search_rounded),
-            title: const Text('Archived & Search'),
+            leading: const Icon(Icons.casino),
+            title: const Text('Random'),
             onTap: () async {
               Get.back();
-              Get.to(() => Archiveview());
+              Get.to(() => RandomView());
             },
           ),
           ListTile(

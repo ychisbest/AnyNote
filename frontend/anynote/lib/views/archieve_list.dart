@@ -198,7 +198,7 @@ class NoteItemWidget extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
       decoration: BoxDecoration(
         border: Border.all(
-          color: darkenColor(item.color.toFullARGB(), 0.2),
+          color: darkenColor(item.color.toFullARGB(), 0.3),
           width: 1,
         ),
         borderRadius: BorderRadius.circular(15),
@@ -237,38 +237,48 @@ class NoteItemWidget extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: darkenColor(item.color.toFullARGB(), 0.1),
+        color: darkenColor(item.color.toFullARGB(), 0.04),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Row(
         children: [
-          const Icon(
-            Icons.event_note,
-            size: 18,
-            color: Colors.grey,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            DateFormat.yMd().add_Hm().format(item.createTime),
-            style: const TextStyle(
-              color: Colors.black87,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const Spacer(),
+          // const Icon(
+          //   Icons.event_note,
+          //   size: 18,
+          //   color: Colors.grey,
+          // ),
           if (item.isTopMost)
             const Padding(
               padding: EdgeInsets.only(right: 8),
               child: Icon(
                 Icons.star,
                 color: Colors.orange,
-                size: 20,
+                size: 15,
               ),
             ),
+          Text(
+            DateFormat("yyyy-MM-dd HH:mm:ss").format(item.createTime),
+            style: const TextStyle(
+              color: Colors.black54,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+
+          const Spacer(),
+
+          IconButton(onPressed: (){
+            if (isArchive) {
+              controller.unarchiveNote(item.id!);
+            } else {
+              controller.archiveNote(item.id!);
+            }
+          }, icon: Icon(item.isArchived?Icons.unarchive_outlined:Icons.archive_outlined,size: 15,)),
+
           PopupMenuButton<String>(
             icon: const Icon(
+              size: 15,
               Icons.more_vert,
               color: Colors.black54,
             ),
@@ -311,16 +321,16 @@ class NoteItemWidget extends StatelessWidget {
           title: Text(item.isTopMost ? 'Remove from Top' : 'Add to Top'),
         ),
       ),
-      PopupMenuItem<String>(
-        value: 'toggleArchive',
-        child: ListTile(
-          leading: Icon(
-            isArchive ? Icons.unarchive : Icons.archive,
-            color: Colors.blue,
-          ),
-          title: Text(isArchive ? 'Unarchive' : 'Archive'),
-        ),
-      ),
+      // PopupMenuItem<String>(
+      //   value: 'toggleArchive',
+      //   child: ListTile(
+      //     leading: Icon(
+      //       isArchive ? Icons.unarchive : Icons.archive,
+      //       color: Colors.blue,
+      //     ),
+      //     title: Text(isArchive ? 'Unarchive' : 'Archive'),
+      //   ),
+      // ),
       const PopupMenuItem<String>(
         value: 'delete',
         child: ListTile(

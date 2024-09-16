@@ -315,16 +315,16 @@ class _EditNotePageState extends State<EditNotePage> {
                       maxLines: null,
                       expands: true,
                       style: TextStyle(
-                        color: Colors.grey[800],
+                        color: Colors.grey[700],
                         fontSize: GlobalConfig.fontSize.toDouble(),
-                        letterSpacing: 1,
-                        height: 1.5,
+                        letterSpacing: 1.2,
+                        height: 1.8,
                       ),
                       textAlignVertical: TextAlignVertical.top,
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         contentPadding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                       ),
                     ),
                   ),

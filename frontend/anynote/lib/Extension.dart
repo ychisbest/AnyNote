@@ -684,10 +684,10 @@ class CustomMarkdownDisplay extends StatelessWidget {
         overflow: TextOverflow.clip,
         text: TextSpan(
           style: DefaultTextStyle.of(context).style.copyWith(
-              color: Colors.grey[800],
+              color: Colors.grey[700],
               fontSize: mainController.fontSize.toDouble(),
-              letterSpacing: 1,
-              height: lineheight),
+              letterSpacing: 1.2,
+              height: 1.8),
           children: _buildTextSpans(text),
         ),
       ),
