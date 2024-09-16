@@ -258,7 +258,7 @@ class NoteItemWidget extends StatelessWidget {
               ),
             ),
           Text(
-            DateFormat("yyyy-MM-dd HH:mm:ss").format(item.createTime),
+            timeAgo(item.createTime),
             style: const TextStyle(
               color: Colors.black54,
               fontSize: 10,
@@ -344,3 +344,24 @@ class NoteItemWidget extends StatelessWidget {
     ];
   }
 }
+
+String timeAgo(DateTime dateTime) {
+  final Duration difference = DateTime.now().difference(dateTime);
+
+  if (difference.inSeconds < 60) {
+    return '${difference.inSeconds} seconds ago';
+  } else if (difference.inMinutes < 60) {
+    return '${difference.inMinutes} minutes ago';
+  } else if (difference.inHours < 24) {
+    return '${difference.inHours} hours ago';
+  } else if (difference.inDays < 7) {
+    return '${difference.inDays} days ago';
+  } else if (difference.inDays < 30) {
+    return '${(difference.inDays / 7).floor()} weeks ago';
+  } else if (difference.inDays < 365) {
+    return '${(difference.inDays / 30).floor()} months ago';
+  } else {
+    return DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
+  }
+}
+

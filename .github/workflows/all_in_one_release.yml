@@ -154,9 +154,9 @@ jobs:
       run: flutter build linux --release
       working-directory: frontend/anynote
 
-    - name: Build Web
-      run: flutter build web --release
-      working-directory: frontend/anynote
+    # - name: Build Web
+    #   run: flutter build web --release
+    #   working-directory: frontend/anynote
 
     - name: Build APK
       run: flutter build apk --release
@@ -167,10 +167,10 @@ jobs:
         cd frontend/anynote/build/linux/x64/release/bundle
         zip -r linux.zip .
 
-    - name: Zip Web build
-      run: |
-        cd frontend/anynote/build/web
-        zip -r web.zip .
+    # - name: Zip Web build
+    #   run: |
+    #     cd frontend/anynote/build/web
+    #     zip -r web.zip .
 
     - name: Upload Linux build to Release
       uses: actions/upload-release-asset@v1
@@ -182,15 +182,15 @@ jobs:
         asset_name: linux.zip
         asset_content_type: application/zip
 
-    - name: Upload Web build to Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: frontend/anynote/build/web/web.zip
-        asset_name: web.zip
-        asset_content_type: application/zip
+    # - name: Upload Web build to Release
+    #   uses: actions/upload-release-asset@v1
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   with:
+    #     upload_url: ${{ needs.create-release.outputs.upload_url }}
+    #     asset_path: frontend/anynote/build/web/web.zip
+    #     asset_name: web.zip
+    #     asset_content_type: application/zip
 
     - name: Upload APK to Release
       uses: actions/upload-release-asset@v1
