@@ -12,42 +12,60 @@ class Item {
 }
 
 class GithubHeatmap extends StatelessWidget {
-  final double cellSize; // 新增参数来控制每个热力点的大小
+  final double cellSize; // 控制每个热力点的大小
 
   const GithubHeatmap({Key? key, required this.cellSize}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     RxList<NoteItem> items = Get.find<MainController>().notes;
+    // return LayoutBuilder(
+    //   builder: (context, constraints) {
+    //     return GestureDetector(
+    //       onTapUp: (details) =>
+    //           _handleTap(context, details, constraints.maxWidth),
+    //       child: CustomPaint(
+    //         size: Size(constraints.maxWidth, constraints.maxHeight),
+    //         painter:
+    //         HeatmapPainter(items: items, cellSize: cellSize), // 传入 cellSize
+    //       ),
+    //     );
+    //   },
+    // );
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        return GestureDetector(
-          onTapUp: (details) =>
-              _handleTap(context, details, constraints.maxWidth),
-          child: CustomPaint(
-            size: Size(constraints.maxWidth, constraints.maxHeight),
-            painter:
-                HeatmapPainter(items: items, cellSize: cellSize), // 传入 cellSize
-          ),
+        return CustomPaint(
+          size: Size(constraints.maxWidth, constraints.maxHeight),
+          painter:
+          HeatmapPainter(items: items, cellSize: cellSize), // 传入 cellSize
         );
       },
     );
   }
 
   void _handleTap(BuildContext context, TapUpDetails details, double width) {
+    final MainController c = Get.find<MainController>();
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, 1, 1);
+    final endDate = DateTime(now.year, 12, 31);
+    final totalDays = endDate.difference(startDate).inDays + 1;
+    final totalWeeks = (totalDays + startDate.weekday - 1) ~/ 7;
+
     final weekIndex = (details.localPosition.dx / cellSize).floor();
     final dayIndex = (details.localPosition.dy / cellSize).floor();
 
-    final now = DateTime.now();
-    final oneYearAgo = now.subtract(const Duration(days: 365));
-    final tappedDate = oneYearAgo.add(Duration(days: weekIndex * 7 + dayIndex));
+    if (weekIndex >= totalWeeks || dayIndex >= 7) {
+      return; // 点击超出范围
+    }
 
-    // 如果点击的日期大于今天，直接返回
-    if (tappedDate.isAfter(now)) {
+    final tappedDate = startDate.add(Duration(days: weekIndex * 7 + dayIndex - (startDate.weekday - 1)));
+
+    // 如果点击的日期小于起始日期或大于结束日期，直接返回
+    if (tappedDate.isBefore(startDate) || tappedDate.isAfter(endDate)) {
       return;
     }
 
-    final MainController c = Get.find<MainController>();
     final count = c.notes
         .where((item) => HeatmapPainter.isSameDay(item.createTime, tappedDate))
         .length;
@@ -59,7 +77,7 @@ class GithubHeatmap extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('notes'),
+          title: const Text('Notes'),
           content: Text('Date: $formattedDate\nCount: $count'),
           actions: <Widget>[
             TextButton(
@@ -77,19 +95,24 @@ class GithubHeatmap extends StatelessWidget {
 
 class HeatmapPainter extends CustomPainter {
   final List<NoteItem> items;
-  final double cellSize; // 新增参数来控制每个热力点的大小
+  final double cellSize; // 控制每个热力点的大小
 
   HeatmapPainter({required this.items, required this.cellSize});
 
   @override
   void paint(Canvas canvas, Size size) {
     final now = DateTime.now();
-    final oneYearAgo = now.subtract(const Duration(days: 365));
+    final startDate = DateTime(now.year, 1, 1);
+    final endDate = DateTime(now.year, 12, 31);
+    final totalDays = endDate.difference(startDate).inDays + 1;
+    final totalWeeks = (totalDays + startDate.weekday - 1) ~/ 7;
 
-    for (int week = 0; week < 53; week++) {
+    for (int week = 0; week < totalWeeks; week++) {
       for (int day = 0; day < 7; day++) {
-        final date = oneYearAgo.add(Duration(days: week * 7 + day));
-        if (date.isAfter(now)) continue;
+        final currentDayOffset = week * 7 + day - (startDate.weekday - 1);
+        final date = startDate.add(Duration(days: currentDayOffset));
+
+        if (date.isBefore(startDate) || date.isAfter(endDate)) continue;
 
         final count =
             items.where((item) => isSameDay(item.createTime, date)).length;
@@ -98,26 +121,26 @@ class HeatmapPainter extends CustomPainter {
         final rect = Rect.fromLTWH(
           week * cellSize,
           day * cellSize,
-          cellSize - 2, // -2 for gap
+          cellSize - 2, // -2 保持间隙
           cellSize - 2,
         );
 
         // 绘制每个方块的热力图颜色
         canvas.drawRRect(
-          RRect.fromRectAndRadius(rect, Radius.circular(5)),
+          RRect.fromRectAndRadius(rect, const Radius.circular(2)),
           Paint()..color = color,
         );
 
         // 如果当前日期是今天，绘制一个标记
         if (isSameDay(date, now)) {
           final borderPaint = Paint()
-            ..color = Colors.orange // 你可以使用任何颜色来标记今天
+            ..color = Colors.orange // 标记今天的颜色
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1; // 边框宽度
 
           // 绘制今天的边框
           canvas.drawRRect(
-            RRect.fromRectAndRadius(rect, Radius.circular(5)),
+            RRect.fromRectAndRadius(rect, const Radius.circular(2)),
             borderPaint,
           );
         }

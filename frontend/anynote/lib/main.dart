@@ -9,6 +9,7 @@ import 'package:anynote/views/HeatMap.dart';
 import 'package:anynote/views/WideView/wideHome.dart';
 import 'package:anynote/views/archieve_list.dart';
 import 'package:anynote/views/archiveView.dart';
+import 'package:anynote/views/date_view.dart';
 import 'package:anynote/views/login.dart';
 import 'package:anynote/views/random_view.dart';
 import 'package:anynote/views/setting_view.dart';
@@ -255,16 +256,32 @@ class _BuildDrawerState extends State<BuildDrawer> {
                 physics: const BouncingScrollPhysics(),
                 controller: _scrollController,
                 child: Container(
-                  height: 150,
-                  width: 950,
+                  height: 100,
+                  width: 550,
                   padding: const EdgeInsets.all(10),
                   child: const RepaintBoundary(
                       child: GithubHeatmap(
-                    cellSize: 17,
+                    cellSize: 10,
                   )),
                 ),
               ),
             ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.search_rounded),
+            title: const Text('Archived & Search'),
+            onTap: () async {
+              Get.back();
+              Get.to(() => Archiveview());
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.date_range),
+            title: const Text('Browse by date'),
+            onTap: () async {
+              Get.back();
+              Get.to(() => const Browser());
+            },
           ),
           ListTile(
             leading: const Icon(Icons.casino),

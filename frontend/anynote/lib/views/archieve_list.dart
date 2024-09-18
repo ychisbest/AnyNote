@@ -85,7 +85,6 @@ class _ArchiveListState extends State<ArchiveList> {
             key: ValueKey(item.id),
             controller: controller,
             item: item,
-            index: index,
             isArchive: isArchive,
           );
         },
@@ -102,7 +101,6 @@ class _ArchiveListState extends State<ArchiveList> {
           key: ValueKey(item.id),
           controller: controller,
           item: item,
-          index: index,
           isArchive: isArchive,
         );
       },
@@ -144,14 +142,12 @@ class _ArchiveListState extends State<ArchiveList> {
 class NoteItemWidget extends StatelessWidget {
   final MainController controller;
   final NoteItem item;
-  final int index;
   final bool isArchive;
 
   const NoteItemWidget({
     Key? key,
     required this.controller,
     required this.item,
-    required this.index,
     required this.isArchive,
   }) : super(key: key);
 
