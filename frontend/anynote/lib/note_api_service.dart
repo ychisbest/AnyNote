@@ -72,7 +72,7 @@ class NotesApi {
     try {
       _dio = Dio(BaseOptions(
         followRedirects:
-            true, // Ensure that Dio follows redirects automatically
+            false, // Ensure that Dio follows redirects automatically
         baseUrl: baseUrl,
         headers: {
           'Accept-Encoding': 'gzip br',

@@ -163,7 +163,11 @@ class _EditNotePageState extends State<EditNotePage> {
 
   void _textUpdate() {
     if (item.content == textController.text) return;
-    item.content = textController.text;
+    setState(() {
+      item.content = textController.text;
+    });
+
+
 
     _syncStatus = SyncStatus.waiting;
 

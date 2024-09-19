@@ -264,6 +264,7 @@ class MainController extends GetxController {
     hubConnection?.stop();
     notes.clear();
     saveNotesToLocal();
+    GlobalConfig.clear();
   }
 
   Future<bool> updateNote(int id, NoteItem noteItem) async {
