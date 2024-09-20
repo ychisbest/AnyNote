@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'package:anynote/Extension.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 import 'GlobalConfig.dart';
-import 'models/upload_faild.dart';
 import 'note_api_service.dart';
 
 typedef UpdateEditTextCallback = void Function(String id, String text);
@@ -133,10 +133,16 @@ class MainController extends GetxController {
 
   void deleteNoteLocally(int noteId) {
     notes.removeWhere((note) => note.id == noteId);
+    saveNotesToLocal();
   }
 
   void addNoteLocally(NoteItem newNote) {
-    notes.add(newNote);
+    final existingNoteIndex = notes.indexWhere((note) => note.id == newNote.id);
+    if (existingNoteIndex != -1) {
+      notes[existingNoteIndex] = newNote;
+    } else {
+      notes.add(newNote);
+    }
   }
 
   void updateIndicesLocally(List<int> ids, List<int> indices) {
@@ -150,20 +156,14 @@ class MainController extends GetxController {
   }
 
   Future<void> saveNotesToLocal() async {
-    final prefs = await SharedPreferences.getInstance();
-    final notesJson = jsonEncode(notes.map((note) => note.toJson()).toList());
-    await prefs.setString('offline_notes', notesJson);
+    final box = Hive.box<NoteItem>('offline_notes');
+    await box.clear();
+    await box.addAll(notes);
   }
 
   Future<List<NoteItem>> loadNotesFromLocal() async {
-    final prefs = await SharedPreferences.getInstance();
-    final notesJson = prefs.getString('offline_notes');
-    if (notesJson != null) {
-      final List<dynamic> decodedNotes = jsonDecode(notesJson);
-      return decodedNotes.map((json) => NoteItem.fromJson(json)).toList();
-    } else {
-      return [];
-    }
+    final box = Hive.box<NoteItem>('offline_notes');
+    return box.values.toList();
   }
 
   Future<bool> fetchNotes({bool readLocalFirst = false}) async {
@@ -181,7 +181,7 @@ class MainController extends GetxController {
       final fetchedNotes = await _api.getNotes();
       notes.assignAll(fetchedNotes);
       isLoading.value = false;
-      await uploadOfflineData();
+
       await saveNotesToLocal();
       return true;
     } catch (e) {
@@ -191,57 +191,6 @@ class MainController extends GetxController {
       }
       print('Error fetching notes: $e');
       return false;
-    }
-  }
-
-  Future<void> uploadOfflineData() async {
-    var map = await GlobalConfig.getUpdateFailedNotes();
-    List<String> idsToRemove = [];
-
-    for (var key in map.keys) {
-      var item = map[key];
-      if (item == null) continue;
-
-      if (IDGenerator.isOfflineId(item.failedNote.id!)) {
-        try {
-          var note = await _api.addNoteItem(item.failedNote.content!);
-          notes.add(note);
-          idsToRemove.add(key);
-        } catch (e) {
-          print('Error uploading offline note: $e');
-        }
-        continue;
-      }
-
-      var fetchedNote =
-          notes.firstWhereOrNull((note) => note.id == item.failedNote.id);
-
-      if (fetchedNote == null) {
-        idsToRemove.add(key);
-        continue;
-      }
-
-      if (item.oldNote.lastUpdateTime == fetchedNote.lastUpdateTime ||
-          item.failedNote.lastUpdateTime == null) {
-        await updateNote(item.failedNote.id!, item.failedNote);
-        idsToRemove.add(key);
-      } else {
-        var content = "# offline content\n---\n${item.failedNote.content!}";
-        try {
-          var note = await _api.addNoteItem(content);
-          notes.add(note);
-          idsToRemove.add(key);
-        } catch (e) {
-          print('Error adding note: $e');
-        }
-      }
-    }
-
-    map.removeWhere((key, value) => idsToRemove.contains(key));
-    await GlobalConfig.setUpdateFailedNotes(map);
-
-    for (var note in notes) {
-      updateEditTextCallback?.call(note.id.toString(), note.content ?? "");
     }
   }
 
@@ -269,41 +218,29 @@ class MainController extends GetxController {
 
   Future<bool> updateNote(int id, NoteItem noteItem) async {
     try {
-      if (IDGenerator.isOfflineId(id)) {
-        throw Exception("Offline ID");
+
+      if(IDGenerator.isOfflineId(id)){
+        throw Exception("offline id");
       }
+
       final updatedNote = await _api.putNoteItem(id, noteItem);
       updateNoteLocally(updatedNote);
       await saveNotesToLocal();
 
-      var map = await GlobalConfig.getUpdateFailedNotes();
-      map.remove(id.toString());
-      await GlobalConfig.setUpdateFailedNotes(map);
-
       return true;
     } catch (e) {
       print('Error updating note: $e');
-
-      var map = await GlobalConfig.getUpdateFailedNotes();
-      var existingFailedNote = map[id.toString()];
-      map[id.toString()] = UploadFailedNote(
-        oldNote: existingFailedNote?.oldNote ?? noteItem,
-        failedNote: noteItem,
-      );
-      await GlobalConfig.setUpdateFailedNotes(map);
-      updateNoteLocally(noteItem);
-      await saveNotesToLocal();
-
       return false;
     }
   }
 
   Future<NoteItem> addNote(NoteItem newNote) async {
-    addNoteLocally(newNote);
+
     try {
       final localId = newNote.id;
       final addedNote = await _api.addNoteItem(newNote.content ?? "");
-      updateNoteLocally(addedNote, id: localId);
+      addNoteLocally(newNote);
+      //updateNoteLocally(addedNote, id: localId);
       return addedNote;
     } catch (e) {
       print('Error adding note: $e');

@@ -121,13 +121,15 @@ class _ArchiveListState extends State<ArchiveList> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0,vertical: 10),
       child: TextField(
         style: const TextStyle(fontSize: 12),
         onChanged: (value) {
           controller.updateFilter(value);
         },
         decoration: InputDecoration(
+          fillColor: Colors.white,
+          filled: true,
           hintText: "Search...",
           prefixIcon: const Icon(Icons.search),
           border: OutlineInputBorder(

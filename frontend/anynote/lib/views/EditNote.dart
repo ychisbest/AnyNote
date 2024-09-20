@@ -29,8 +29,14 @@ class _EditNotePageState extends State<EditNotePage> {
   final FocusNode focusNode = FocusNode();
   final FocusNode textFocusNode = FocusNode();
   Timer? _debounce;
+  bool _isAdding = false;
   String _lastChange = "";
-  late NoteItem item;
+  NoteItem item=NoteItem(
+    createTime: DateTime.now(),
+    index: 0,
+    id: IDGenerator.generateOfflineId(),
+    content: ""
+  );
   SyncStatus _syncStatus = SyncStatus.completed;
 
   final List<Color> _colors = [
@@ -54,17 +60,6 @@ class _EditNotePageState extends State<EditNotePage> {
     super.initState();
 
     if (widget.item == null) {
-      item = NoteItem(
-        createTime: DateTime.now(),
-        index: 0,
-        id: IDGenerator.generateOfflineId(),
-      );
-      Future.microtask(() {
-        controller.addNote(item).then((res) {
-          item.id = res.id;
-        });
-      });
-
       textFocusNode.requestFocus();
     } else {
       item = widget.item!;
@@ -88,6 +83,7 @@ class _EditNotePageState extends State<EditNotePage> {
   @override
   void dispose() {
     textController.removeListener(_textUpdate);
+    controller.updateEditTextCallback=null;
     _debounce?.cancel();
     textController.dispose();
     textFocusNode.dispose();
@@ -179,12 +175,29 @@ class _EditNotePageState extends State<EditNotePage> {
   }
 
   Future<void> _executeUpdate() async {
+    // 如果正在添加中，且使用的是离线 ID，则不进行重复添加
+    if (_isAdding && IDGenerator.isOfflineId(item.id!)) {
+      return;
+    }
+
     setState(() {
       _syncStatus = SyncStatus.syncing;
     });
 
     try {
-      bool res = await controller.updateNote(item.id!, item);
+      bool res=false;
+
+      if (IDGenerator.isOfflineId(item.id!)) {
+        _isAdding = true; // 标记正在添加
+        var note = await controller.addNote(item);
+        res=!(note.id==item.id!);
+        item.id=note.id;
+        _isAdding = false; // 添加完成
+      } else {
+        res = await controller.updateNote(item.id!, item);
+      }
+
+
       if (!mounted) return;
 
       setState(() {
@@ -195,6 +208,7 @@ class _EditNotePageState extends State<EditNotePage> {
       setState(() {
         _syncStatus = SyncStatus.error;
       });
+      _isAdding=false;
       print('Error updating note: $e');
     }
   }
@@ -227,6 +241,10 @@ class _EditNotePageState extends State<EditNotePage> {
     return WillPopScope(
       onWillPop: () async {
         _debounce?.cancel();
+
+        if(IDGenerator.isOfflineId(item.id!) && item.content!.trim().isEmpty){
+          return true;
+        }
 
         Future.microtask(_executeUpdate);
 

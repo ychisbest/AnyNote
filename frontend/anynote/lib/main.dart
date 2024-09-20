@@ -17,11 +17,13 @@ import 'package:anynote/views/tag_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:intl/intl.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'Extension.dart';
 import 'MainController.dart';
+import 'note_api_service.dart';
 import 'views/WideView/windowManger.dart';
 
 void main() async {
@@ -29,6 +31,15 @@ void main() async {
   if (!kIsWeb) {
     setwindow();
   }
+
+  // 初始化 Hive
+  await Hive.initFlutter();
+
+  // 注册 NoteItem 的适配器
+  Hive.registerAdapter(NoteItemAdapter());
+
+  // 打开 Box
+  await Hive.openBox<NoteItem>('offline_notes');
 
   await GlobalConfig.init();
   Get.put(MainController());

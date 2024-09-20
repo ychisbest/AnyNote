@@ -1,16 +1,37 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:dio_brotli_transformer/dio_brotli_transformer.dart';
+import 'package:hive/hive.dart';
 
+part 'note_api_service.g.dart'; // 用于代码生成
+
+@HiveType(typeId: 0) // 每个适配器需要唯一的 typeId
 class NoteItem {
+  @HiveField(0)
   int? id;
+
+  @HiveField(1)
   bool isTopMost;
+
+  @HiveField(2)
   String? content;
+
+  @HiveField(3)
   DateTime createTime;
+
+  @HiveField(4)
   DateTime? lastUpdateTime;
+
+  @HiveField(5)
   DateTime? archiveTime;
+
+  @HiveField(6)
   bool isArchived;
+
+  @HiveField(7)
   int? color;
+
+  @HiveField(8)
   int index;
 
   NoteItem({
@@ -209,7 +230,10 @@ class NotesApi {
     try {
       await _dio.delete('/api/Notes/$id');
     } catch (e) {
-      throw Exception('Failed to delete note: $e');
+      if ((e as DioException).response?.statusCode != 404) {
+        print("not found");
+        throw Exception('Failed to delete note: $e');
+      }
     }
   }
 }
