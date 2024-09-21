@@ -27,11 +27,12 @@ class MainController extends GetxController {
   void onInit() {
     super.onInit();
     _api = NotesApi(baseUrl, secret);
-    initData();
+    //initData();
   }
 
-  void initData() {
-    fetchNotes(readLocalFirst: true);
+  void initData()async {
+    print("调用了initdata");
+    await fetchNotes(readLocalFirst: true);
     initSignalR();
   }
 
@@ -43,8 +44,7 @@ class MainController extends GetxController {
   }
 
   Future<void> initSignalR() async {
-    await hubConnection?.stop();
-
+    //await hubConnection?.stop();
     hubConnection = HubConnectionBuilder()
         .withUrl('$baseUrl/notehub')
         .withAutomaticReconnect()

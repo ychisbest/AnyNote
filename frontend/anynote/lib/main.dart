@@ -38,11 +38,12 @@ void main() async {
   // 注册 NoteItem 的适配器
   Hive.registerAdapter(NoteItemAdapter());
 
-  // 打开 Box
-  await Hive.openBox<NoteItem>('offline_notes');
+  await Hive.openBox<NoteItem>('offline_notes').catchError((e){print("file locked");  exit(0);});
 
   await GlobalConfig.init();
+
   Get.put(MainController());
+
   runApp(MyApp());
 }
 
