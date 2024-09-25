@@ -50,11 +50,17 @@ class NoteTagListView extends StatelessWidget {
           return ListView.builder(
               itemCount: items?.length,
               itemBuilder: (cc, ci) {
-              return  NoteItemWidget(controller:c,item:  items[ci],isArchive:  true);
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: NoteItemWidget(
+                      controller: c, item: items[ci], isArchive: true),
+                );
               });
         }));
   }
 }
+
+//add
 
 class AddTagListView extends StatelessWidget {
   const AddTagListView({super.key});
@@ -72,7 +78,11 @@ class AddTagListView extends StatelessWidget {
               itemBuilder: (cc, ci) {
                 return Column(
                   children: [
-                    NoteItemWidget(controller:c,item:  items[ci], isArchive:  true),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: NoteItemWidget(
+                          controller: c, item: items[ci], isArchive: true),
+                    ),
                     Wrap(
                       direction: Axis.horizontal,
                       children: [

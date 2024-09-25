@@ -1,4 +1,5 @@
 // markdown_parser.dart
+import 'package:anynote/GlobalConfig.dart';
 import 'package:flutter/material.dart';
 
 class MarkdownNode {
@@ -55,27 +56,12 @@ class MarkdownParser {
         continue;
       }
 
-      // 解析待办事项（任务列表）
-      RegExp todoExp = RegExp(r'^(\s*)-\s+\[( |x)\]\s+(.*)');
-      Match? todoMatch = todoExp.firstMatch(line);
-      if (todoMatch != null) {
-        nodes.add(parseList(state, todoExp, 'todo'));
-        continue;
-      }
-
-      // 解析无序列表
-      RegExp ulExp = RegExp(r'^(\s*)-\s+(.*)');
-      Match? ulMatch = ulExp.firstMatch(line);
-      if (ulMatch != null) {
-        nodes.add(parseList(state, ulExp, 'ul'));
-        continue;
-      }
-
-      // 解析有序列表
-      RegExp olExp = RegExp(r'^(\s*)\d+\.\s+(.*)');
-      Match? olMatch = olExp.firstMatch(line);
-      if (olMatch != null) {
-        nodes.add(parseList(state, olExp, 'ol'));
+      // 解析列表（包括待办事项、无序列表和有序列表）
+      RegExp listExp =
+          RegExp(r'^(\s*)(?:(-\s+\[( |x)\]\s+.*)|(-\s+.*)|(\d+\.\s+.*))');
+      Match? listMatch = listExp.firstMatch(line);
+      if (listMatch != null) {
+        nodes.add(parseList(state, listExp));
         continue;
       }
 
@@ -84,8 +70,9 @@ class MarkdownParser {
         String language = line.trim().substring(3).trim();
         state.index++;
         String code = '';
-        while (state.index < state.lines.length && !state.lines[state.index].trim().startsWith('```')) {
-          code += state.lines[state.index] + '\n';
+        while (state.index < state.lines.length &&
+            !state.lines[state.index].trim().startsWith('```')) {
+          code += '${state.lines[state.index]}\n';
           state.index++;
         }
         state.index++; // 跳过结束的 ```
@@ -118,9 +105,10 @@ class MarkdownParser {
     return nodes;
   }
 
-  MarkdownNode parseList(ParserState state, RegExp listExp, String type) {
+  MarkdownNode parseList(ParserState state, RegExp listExp) {
     List<MarkdownNode> items = [];
     int baseIndent = getIndentLevel(state.lines[state.index], listExp);
+    String? listType;
 
     while (state.index < state.lines.length) {
       String line = state.lines[state.index];
@@ -131,69 +119,56 @@ class MarkdownParser {
       if (currentIndent < baseIndent) break;
 
       String content;
-      bool isTodo = false;
-      bool checked = false;
+      String type;
+      bool? checked;
 
-      if (type == 'todo') {
-        checked = match.group(2)! == 'x';
-        content = match.group(3)!;
-        isTodo = true;
+      if (match.group(2) != null) {
+        // Todo list item
+        type = 'todo';
+        checked = match.group(3) == 'x';
+        content = match.group(2)!.substring(5).trim();
+      } else if (match.group(4) != null) {
+        // Unordered list item
+        type = 'ul';
+        content = match.group(4)!.substring(2);
       } else {
-        content = match.group(2)!;
+        // Ordered list item
+        type = 'ol';
+        content = match.group(5)!.substring(match.group(5)!.indexOf('.') + 2);
+      }
+
+      // Set listType only once
+      if (listType == null) {
+        listType = type == 'todo' ? 'todo' : type;
+      } else if (listType != (type == 'todo' ? 'todo' : type)) {
+        // Different type detected, break to start a new list
+        break;
       }
 
       state.index++;
 
-      // 检查是否有子列表
+      // Check for sublist
       List<MarkdownNode>? children;
       if (state.index < state.lines.length) {
         String nextLine = state.lines[state.index];
-        Match? childMatch;
-        if (type == 'todo') {
-          childMatch = listExp.firstMatch(nextLine);
-          // 特殊处理待办事项的子列表
-          RegExp subListExp = RegExp(r'^(\s{2,})-\s+\[( |x)\]\s+(.*)');
-          Match? subMatch = subListExp.firstMatch(nextLine);
-          if (subMatch != null && subMatch.group(1)!.length > currentIndent) {
-            children = [parseList(state, subListExp, 'todo')];
-          }
-        } else {
-          childMatch = listExp.firstMatch(nextLine);
-          RegExp subListExp;
-          if (type == 'ul') {
-            subListExp = RegExp(r'^(\s{2,})-\s+(.*)');
-          } else {
-            subListExp = RegExp(r'^(\s{2,})\d+\.\s+(.*)');
-          }
-          Match? subMatch = subListExp.firstMatch(nextLine);
-          if (subMatch != null && subMatch.group(1)!.length > currentIndent) {
-            children = [parseList(state, subListExp, type)];
-          }
+        Match? childMatch = listExp.firstMatch(nextLine);
+        if (childMatch != null && childMatch.group(1)!.length > currentIndent) {
+          children = [parseList(state, listExp)];
         }
       }
 
-      if (type == 'todo') {
-        items.add(MarkdownNode(
-          type: 'todo_item',
-          content: {
-            'checked': checked,
-            'text': content,
-            'children': children,
-          },
-        ));
-      } else {
-        items.add(MarkdownNode(
-          type: '${type}_item',
-          content: {
-            'text': content,
-            'children': children,
-          },
-        ));
-      }
+      items.add(MarkdownNode(
+        type: '${type}_item', // Use item's own type
+        content: {
+          'text': content,
+          'children': children,
+          if (type == 'todo') 'checked': checked,
+        },
+      ));
     }
 
     return MarkdownNode(
-      type: type,
+      type: listType ?? '',
       content: items,
     );
   }
@@ -206,9 +181,6 @@ class MarkdownParser {
     return 0;
   }
 }
-
-
-
 
 class MarkdownRenderer extends StatelessWidget {
   final String data;
@@ -223,11 +195,10 @@ class MarkdownRenderer extends StatelessWidget {
     MarkdownParser parser = MarkdownParser(data);
     List<MarkdownNode> nodes = parser.parse();
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: nodes.map((node) => _renderNode(node, level: 0)).toList(),
-      ),
+    return ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      children: nodes.map((node) => _renderNode(node, level: 0)).toList(),
     );
   }
 
@@ -236,35 +207,30 @@ class MarkdownRenderer extends StatelessWidget {
       case 'header':
         int levelHeader = node.content['level'];
         String text = node.content['text'];
-        double fontSize;
+        Color color;
         switch (levelHeader) {
           case 1:
-            fontSize = 32;
+            color = Colors.red;
             break;
           case 2:
-            fontSize = 28;
+            color = Colors.orange;
             break;
           case 3:
-            fontSize = 24;
+            color = Colors.blue;
             break;
           case 4:
-            fontSize = 20;
-            break;
-          case 5:
-            fontSize = 16;
+            color = Colors.blueAccent;
             break;
           default:
-            fontSize = 14;
+            color = Colors.black;
         }
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: _renderStyledText(
-            text,
-            style: TextStyle(
-              fontSize: fontSize,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          child: _renderStyledText(text,
+              style: TextStyle(
+                  fontSize: 9 * (2 - 0.1 * levelHeader),
+                  fontWeight: FontWeight.bold,
+                  color: color)),
         );
       case 'paragraph':
         String text = node.content;
@@ -281,13 +247,13 @@ class MarkdownRenderer extends StatelessWidget {
             borderRadius: BorderRadius.circular(4.0),
             border: Border.all(color: Colors.grey[300]!),
           ),
-          padding: EdgeInsets.all(8.0),
-          margin: EdgeInsets.symmetric(vertical: 4.0),
+          padding: const EdgeInsets.all(8.0),
+          margin: const EdgeInsets.symmetric(vertical: 4.0),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Text(
               code,
-              style: TextStyle(
+              style: const TextStyle(
                 fontFamily: 'monospace',
               ),
             ),
@@ -297,7 +263,7 @@ class MarkdownRenderer extends StatelessWidget {
         String src = node.content['src'];
         String alt = node.content['alt'];
         return Padding(
-          padding: EdgeInsets.symmetric(vertical: 4.0),
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Image.network(
             src,
             errorBuilder: (context, error, stackTrace) {
@@ -315,7 +281,7 @@ class MarkdownRenderer extends StatelessWidget {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('• '),
+                  const Text('• '),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,7 +289,8 @@ class MarkdownRenderer extends StatelessWidget {
                         _renderInlineText(item.content['text']),
                         if (item.content['children'] != null)
                           ...item.content['children']!
-                              .map((child) => _renderNode(child, level: level + 1))
+                              .map((child) =>
+                                  _renderNode(child, level: level + 1))
                               .toList(),
                       ],
                     ),
@@ -353,7 +320,8 @@ class MarkdownRenderer extends StatelessWidget {
                         _renderInlineText(item.content['text']),
                         if (item.content['children'] != null)
                           ...item.content['children']!
-                              .map((child) => _renderNode(child, level: level + 1))
+                              .map((child) =>
+                                  _renderNode(child, level: level + 1))
                               .toList(),
                       ],
                     ),
@@ -369,23 +337,32 @@ class MarkdownRenderer extends StatelessWidget {
           padding: EdgeInsets.only(left: level * 16.0),
           child: Column(
             children: items.map<Widget>((item) {
-              bool checked = item.content['checked'];
+              bool checked = item.content['checked'] ?? false;
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Checkbox(
-                    value: checked,
-                    onChanged: null, // 禁用点击事件
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, right: 5),
+                    child: Icon(
+                      size: 16,
+                      checked
+                          ? Icons.check
+                          : Icons.check_box_outline_blank_outlined,
+                      color: checked ? Colors.green : Colors.grey,
+                    ),
                   ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(height: 6,),
+                        const SizedBox(
+                          height: 6,
+                        ),
                         _renderInlineText(item.content['text']),
                         if (item.content['children'] != null)
                           ...item.content['children']!
-                              .map((child) => _renderNode(child, level: level + 1))
+                              .map((child) =>
+                                  _renderNode(child, level: level + 1))
                               .toList(),
                       ],
                     ),
@@ -396,12 +373,12 @@ class MarkdownRenderer extends StatelessWidget {
           ),
         );
       case 'todo_item':
-      // 待办事项项在 'todo' 类型中已经处理，无需单独渲染
-        return SizedBox.shrink();
+        // 待办事项项在 'todo' 类型中已经处理，无需单独渲染
+        return const SizedBox.shrink();
       case 'ul_item':
       case 'ol_item':
-      // 列表项在 'ul' 和 'ol' 类型中已经处理，无需单独渲染
-        return SizedBox.shrink();
+        // 列表项在 'ul' 和 'ol' 类型中已经处理，无需单独渲染
+        return const SizedBox.shrink();
       case 'hr':
         return Divider(
           color: Colors.grey[400],
@@ -409,7 +386,7 @@ class MarkdownRenderer extends StatelessWidget {
           height: 20.0,
         );
       default:
-        return SizedBox.shrink();
+        return const SizedBox.shrink();
     }
   }
 
@@ -417,7 +394,8 @@ class MarkdownRenderer extends StatelessWidget {
   Widget _renderInlineText(String text) {
     return RichText(
       text: TextSpan(
-        style: DefaultTextStyle.of(_context).style.copyWith(color: Colors.black),
+        style: DefaultTextStyle.of(_context).style.copyWith(
+            color: Colors.black54, fontSize: GlobalConfig.fontSize.toDouble()),
         children: _getInlineSpans(text),
       ),
     );
@@ -427,7 +405,7 @@ class MarkdownRenderer extends StatelessWidget {
   Widget _renderStyledText(String text, {TextStyle? style}) {
     return RichText(
       text: TextSpan(
-        style: style?.copyWith(color: Colors.black),
+        style: style,
         children: _getInlineSpans(text),
       ),
     );
@@ -449,7 +427,7 @@ class MarkdownRenderer extends StatelessWidget {
         // ***加粗斜体***
         spans.add(TextSpan(
           text: match.group(2),
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontStyle: FontStyle.italic,
           ),
@@ -458,7 +436,7 @@ class MarkdownRenderer extends StatelessWidget {
         // ___加粗___
         spans.add(TextSpan(
           text: match.group(4),
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
           ),
         ));
@@ -466,7 +444,7 @@ class MarkdownRenderer extends StatelessWidget {
         // **加粗** 或 __加粗__
         spans.add(TextSpan(
           text: match.group(6),
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
           ),
         ));
@@ -474,7 +452,7 @@ class MarkdownRenderer extends StatelessWidget {
         // *斜体* 或 _斜体_
         spans.add(TextSpan(
           text: match.group(8),
-          style: TextStyle(
+          style: const TextStyle(
             fontStyle: FontStyle.italic,
           ),
         ));
@@ -482,7 +460,7 @@ class MarkdownRenderer extends StatelessWidget {
         // ~~删除线~~
         spans.add(TextSpan(
           text: match.group(10),
-          style: TextStyle(
+          style: const TextStyle(
             decoration: TextDecoration.lineThrough,
           ),
         ));

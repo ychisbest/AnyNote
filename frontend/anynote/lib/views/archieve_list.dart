@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:anynote/views/markdown_render/markdown_render.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -63,7 +64,10 @@ class _ArchiveListState extends State<ArchiveList> {
                       // Handle error, e.g., show a SnackBar
                     }
                   },
-                  child: _buildList(archivedNotes, widget.isArchive),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: _buildList(archivedNotes, widget.isArchive),
+                  ),
                 ),
               ),
             );
@@ -74,10 +78,15 @@ class _ArchiveListState extends State<ArchiveList> {
   }
 
   Widget _buildList(List<NoteItem> archivedNotes, bool isArchive) {
-    if (isArchive) {
-      return ListView.builder(
+    return GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            mainAxisExtent: 280),
         controller: sc,
-        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics()),
         itemCount: archivedNotes.length,
         itemBuilder: (BuildContext context, int index) {
           final item = archivedNotes[index];
@@ -87,41 +96,12 @@ class _ArchiveListState extends State<ArchiveList> {
             item: item,
             isArchive: isArchive,
           );
-        },
-      );
-    }
-
-    return ReorderableListView.builder(
-      scrollController: sc,
-      physics:const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-      itemCount: archivedNotes.length,
-      itemBuilder: (context, index) {
-        final item = archivedNotes[index];
-        return NoteItemWidget(
-          key: ValueKey(item.id),
-          controller: controller,
-          item: item,
-          isArchive: isArchive,
-        );
-      },
-      onReorder: (oldIndex, newIndex) {
-        if (newIndex > oldIndex) {
-          newIndex -= 1;
-        }
-        final updatedNotes = List<NoteItem>.from(archivedNotes);
-        final item = updatedNotes.removeAt(oldIndex);
-        updatedNotes.insert(newIndex, item);
-        for (int i = 0; i < updatedNotes.length; i++) {
-          updatedNotes[i].index = i;
-        }
-        controller.updateIndex(updatedNotes);
-      },
-    );
+        });
   }
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0,vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10),
       child: TextField(
         style: const TextStyle(fontSize: 12),
         onChanged: (value) {
@@ -155,12 +135,12 @@ class NoteItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool overflow = (item.content ?? "").trim().split("\n").length > 5;
+    final bool overflow = (item.content ?? "").trim().split("\n").length > 3;
 
     final Widget content = ClipRect(
       child: Container(
         constraints: const BoxConstraints(maxHeight: 200),
-        child: CustomMarkdownDisplay(text: item.content?.trimRight() ?? ""),
+        child: MarkdownRenderer(data: item.content?.trimRight() ?? ""),
       ),
     );
 
@@ -193,7 +173,6 @@ class NoteItemWidget extends StatelessWidget {
 
     return Container(
       key: ValueKey(item.id),
-      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
       decoration: BoxDecoration(
         border: Border.all(
           color: darkenColor(item.color.toFullARGB(), 0.3),
@@ -222,7 +201,7 @@ class NoteItemWidget extends StatelessWidget {
               _buildHeader(context),
               Padding(
                 padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: overflow ? shadowContent : content,
               ),
             ],
@@ -266,13 +245,20 @@ class NoteItemWidget extends StatelessWidget {
 
           const Spacer(),
 
-          IconButton(onPressed: (){
-            if (isArchive) {
-              controller.unarchiveNote(item.id!);
-            } else {
-              controller.archiveNote(item.id!);
-            }
-          }, icon: Icon(item.isArchived?Icons.unarchive_outlined:Icons.archive_outlined,size: 15,)),
+          // IconButton(
+          //     onPressed: () {
+          //       if (isArchive) {
+          //         controller.unarchiveNote(item.id!);
+          //       } else {
+          //         controller.archiveNote(item.id!);
+          //       }
+          //     },
+          //     icon: Icon(
+          //       item.isArchived
+          //           ? Icons.unarchive_outlined
+          //           : Icons.archive_outlined,
+          //       size: 15,
+          //     )),
 
           PopupMenuButton<String>(
             icon: const Icon(
@@ -319,16 +305,16 @@ class NoteItemWidget extends StatelessWidget {
           title: Text(item.isTopMost ? 'Remove from Top' : 'Add to Top'),
         ),
       ),
-      // PopupMenuItem<String>(
-      //   value: 'toggleArchive',
-      //   child: ListTile(
-      //     leading: Icon(
-      //       isArchive ? Icons.unarchive : Icons.archive,
-      //       color: Colors.blue,
-      //     ),
-      //     title: Text(isArchive ? 'Unarchive' : 'Archive'),
-      //   ),
-      // ),
+      PopupMenuItem<String>(
+        value: 'toggleArchive',
+        child: ListTile(
+          leading: Icon(
+            isArchive ? Icons.unarchive : Icons.archive,
+            color: Colors.blue,
+          ),
+          title: Text(isArchive ? 'Unarchive' : 'Archive'),
+        ),
+      ),
       const PopupMenuItem<String>(
         value: 'delete',
         child: ListTile(
@@ -362,4 +348,3 @@ String timeAgo(DateTime dateTime) {
     return DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
   }
 }
-

@@ -6,8 +6,10 @@ import 'package:anynote/GlobalConfig.dart';
 import 'package:anynote/MainController.dart';
 import 'package:anynote/note_api_service.dart';
 import 'package:anynote/views/MarkdwonShortcutBar.dart';
+import 'package:anynote/views/markdown_render/markdown_render.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
 
@@ -24,6 +26,7 @@ class EditNotePage extends StatefulWidget {
 }
 
 class _EditNotePageState extends State<EditNotePage> {
+  bool isEdit = false;
   final MainController controller = Get.find<MainController>();
   late final TextEditingController textController;
   final FocusNode focusNode = FocusNode();
@@ -31,12 +34,11 @@ class _EditNotePageState extends State<EditNotePage> {
   Timer? _debounce;
   bool _isAdding = false;
   String _lastChange = "";
-  NoteItem item=NoteItem(
-    createTime: DateTime.now(),
-    index: 0,
-    id: IDGenerator.generateOfflineId(),
-    content: ""
-  );
+  NoteItem item = NoteItem(
+      createTime: DateTime.now(),
+      index: 0,
+      id: IDGenerator.generateOfflineId(),
+      content: "");
   SyncStatus _syncStatus = SyncStatus.completed;
 
   final List<Color> _colors = [
@@ -83,7 +85,7 @@ class _EditNotePageState extends State<EditNotePage> {
   @override
   void dispose() {
     textController.removeListener(_textUpdate);
-    controller.updateEditTextCallback=null;
+    controller.updateEditTextCallback = null;
     _debounce?.cancel();
     textController.dispose();
     textFocusNode.dispose();
@@ -163,8 +165,6 @@ class _EditNotePageState extends State<EditNotePage> {
       item.content = textController.text;
     });
 
-
-
     _syncStatus = SyncStatus.waiting;
 
     _debounce?.cancel();
@@ -185,18 +185,17 @@ class _EditNotePageState extends State<EditNotePage> {
     });
 
     try {
-      bool res=false;
+      bool res = false;
 
       if (IDGenerator.isOfflineId(item.id!)) {
         _isAdding = true; // 标记正在添加
         var note = await controller.addNote(item);
-        res=!(note.id==item.id!);
-        item.id=note.id;
+        res = !(note.id == item.id!);
+        item.id = note.id;
         _isAdding = false; // 添加完成
       } else {
         res = await controller.updateNote(item.id!, item);
       }
-
 
       if (!mounted) return;
 
@@ -208,7 +207,7 @@ class _EditNotePageState extends State<EditNotePage> {
       setState(() {
         _syncStatus = SyncStatus.error;
       });
-      _isAdding=false;
+      _isAdding = false;
       print('Error updating note: $e');
     }
   }
@@ -242,7 +241,7 @@ class _EditNotePageState extends State<EditNotePage> {
       onWillPop: () async {
         _debounce?.cancel();
 
-        if(IDGenerator.isOfflineId(item.id!) && item.content!.trim().isEmpty){
+        if (IDGenerator.isOfflineId(item.id!) && item.content!.trim().isEmpty) {
           return true;
         }
 
@@ -261,12 +260,26 @@ class _EditNotePageState extends State<EditNotePage> {
         child: Scaffold(
           backgroundColor: item.color.toFullARGB(),
           appBar: AppBar(
-            title: Text(widget.item == null ? "Add New" : "Edit"),
+            title: Row(
+              children: [
+                const Text("Edit"),
+                const SizedBox(
+                  width: 10,
+                ),
+                TextButton(
+                    onPressed: () {
+                      setState(() {
+                        isEdit = !isEdit;
+                      });
+                    },
+                    child: const Icon(Icons.edit))
+              ],
+            ),
             backgroundColor: item.color.toFullARGB(),
             actions: [
               Row(
                 children: [
-                  Text(countCharacters(item.content??"").toString()),
+                  Text(countCharacters(item.content ?? "").toString()),
                   IconButton(
                     onPressed: () {},
                     icon: AnimatedSwitcher(
@@ -274,8 +287,8 @@ class _EditNotePageState extends State<EditNotePage> {
                       transitionBuilder:
                           (Widget child, Animation<double> animation) {
                         return ScaleTransition(
-                          scale:
-                              Tween<double>(begin: 0, end: 1.0).animate(animation),
+                          scale: Tween<double>(begin: 0, end: 1.0)
+                              .animate(animation),
                           child: child,
                         );
                       },
@@ -286,86 +299,105 @@ class _EditNotePageState extends State<EditNotePage> {
               ),
             ],
           ),
-          body: Column(
-            children: [
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: _colors.map((color) {
-                    return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: GestureDetector(
-                        onTap: () => _changeNoteColor(color),
-                        child: Container(
-                          width: 30,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: item.color == color.value
-                                  ? Colors.black
-                                  : Colors.grey,
-                              width: item.color == color.value ? 2 : 1,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 800),
-                  child: RawKeyboardListener(
-                    focusNode: focusNode,
-                    onKey: (event) async {
-                      if (event is RawKeyDownEvent) {
-                        if (event.isControlPressed &&
-                            event.logicalKey == LogicalKeyboardKey.keyJ) {
-                          await _callAI();
-                        }
+          body: isEdit ? EditBody() : PreviewBody(),
+        ),
+      ),
+    );
+  }
 
-                        if (event.isShiftPressed &&
-                            event.logicalKey == LogicalKeyboardKey.tab) {
-                          UnindentText(textController, textFocusNode);
-                        } else if (event.logicalKey == LogicalKeyboardKey.tab) {
-                          IndentText(textController, textFocusNode);
-                        }
-                      }
-                    },
-                    child: TextField(
-                      controller: textController,
-                      focusNode: textFocusNode,
-                      minLines: null,
-                      maxLines: null,
-                      expands: true,
-                      style: TextStyle(
-                        color: Colors.grey[700],
-                        fontSize: GlobalConfig.fontSize.toDouble(),
-                        letterSpacing: 1.2,
-                        height: 1.8,
-                      ),
-                      textAlignVertical: TextAlignVertical.top,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+  Widget PreviewBody() {
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: MarkdownRenderer(data: textController.text),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget EditBody() {
+    return Column(
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: _colors.map((color) {
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GestureDetector(
+                  onTap: () => _changeNoteColor(color),
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: item.color == color.value
+                            ? Colors.black
+                            : Colors.grey,
+                        width: item.color == color.value ? 2 : 1,
                       ),
                     ),
                   ),
                 ),
-              ),
-              MarkdownShortcutBar(
-                controller: textController,
-                focusNode: textFocusNode,
-                onAiTap: _callAI,
-              ),
-            ],
+              );
+            }).toList(),
           ),
         ),
-      ),
+        Expanded(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: RawKeyboardListener(
+              focusNode: focusNode,
+              onKey: (event) async {
+                if (event is RawKeyDownEvent) {
+                  if (event.isControlPressed &&
+                      event.logicalKey == LogicalKeyboardKey.keyJ) {
+                    await _callAI();
+                  }
+
+                  if (event.isShiftPressed &&
+                      event.logicalKey == LogicalKeyboardKey.tab) {
+                    UnindentText(textController, textFocusNode);
+                  } else if (event.logicalKey == LogicalKeyboardKey.tab) {
+                    IndentText(textController, textFocusNode);
+                  }
+                }
+              },
+              child: TextField(
+                controller: textController,
+                focusNode: textFocusNode,
+                minLines: null,
+                maxLines: null,
+                expands: true,
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontSize: GlobalConfig.fontSize.toDouble(),
+                  letterSpacing: 1.2,
+                  height: 1.8,
+                ),
+                textAlignVertical: TextAlignVertical.top,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                ),
+              ),
+            ),
+          ),
+        ),
+        MarkdownShortcutBar(
+          controller: textController,
+          focusNode: textFocusNode,
+          onAiTap: _callAI,
+        ),
+      ],
     );
   }
 
@@ -394,7 +426,7 @@ bool isChineseCharacter(int codeUnit) {
       (codeUnit >= 0x2B740 && codeUnit <= 0x2B81F) || // CJK 扩展 D
       (codeUnit >= 0x2B820 && codeUnit <= 0x2CEAF) || // CJK 扩展 E
       (codeUnit >= 0xF900 && codeUnit <= 0xFAFF) || // CJK 兼容汉字
-      (codeUnit >= 0x2F800 && codeUnit <= 0x2FA1F);   // CJK 兼容汉字补充
+      (codeUnit >= 0x2F800 && codeUnit <= 0x2FA1F); // CJK 兼容汉字补充
 }
 
 bool isLetterOrDigit(int codeUnit) {
@@ -414,10 +446,11 @@ bool isLetterOrDigit(int codeUnit) {
       (codeUnit >= 0x0600 && codeUnit <= 0x06FF) || // Arabic
       (codeUnit >= 0x0900 && codeUnit <= 0x097F) || // Devanagari
       (codeUnit >= 0x4E00 && codeUnit <= 0x9FFF) || // CJK Unified Ideographs
-      (codeUnit >= 0x3400 && codeUnit <= 0x4DBF) || // CJK Unified Ideographs Extension A
+      (codeUnit >= 0x3400 &&
+          codeUnit <= 0x4DBF) || // CJK Unified Ideographs Extension A
       (codeUnit >= 0xAC00 && codeUnit <= 0xD7AF) || // Hangul Syllables
       (codeUnit >= 0x3040 && codeUnit <= 0x309F) || // Hiragana
-      (codeUnit >= 0x30A0 && codeUnit <= 0x30FF);   // Katakana
+      (codeUnit >= 0x30A0 && codeUnit <= 0x30FF); // Katakana
 }
 
 int countCharacters(String input) {
