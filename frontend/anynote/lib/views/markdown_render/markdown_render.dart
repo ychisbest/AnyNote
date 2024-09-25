@@ -121,6 +121,7 @@ class MarkdownParser {
       String content;
       String type;
       bool? checked;
+      String? numberStr;
 
       if (match.group(2) != null) {
         // Todo list item
@@ -130,11 +131,16 @@ class MarkdownParser {
       } else if (match.group(4) != null) {
         // Unordered list item
         type = 'ul';
-        content = match.group(4)!.substring(2);
-      } else {
+        content = match.group(4)!.substring(2).trim();
+      } else if (match.group(5) != null) {
         // Ordered list item
         type = 'ol';
-        content = match.group(5)!.substring(match.group(5)!.indexOf('.') + 2);
+        String fullMatch = match.group(5)!; // e.g., '1. item text'
+        int dotIndex = fullMatch.indexOf('.');
+        numberStr = fullMatch.substring(0, dotIndex).trim(); // 提取序号
+        content = fullMatch.substring(dotIndex + 1).trim(); // 提取内容
+      } else {
+        break;
       }
 
       // Set listType only once
@@ -161,6 +167,7 @@ class MarkdownParser {
         type: '${type}_item', // Use item's own type
         content: {
           'text': content,
+          'number': numberStr, // 将序号存储在内容中
           'children': children,
           if (type == 'todo') 'checked': checked,
         },
@@ -280,8 +287,16 @@ class MarkdownRenderer extends StatelessWidget {
             children: items.map<Widget>((item) {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                textBaseline: TextBaseline.alphabetic,
                 children: [
-                  const Text('• '),
+                  Padding(
+                    padding: EdgeInsets.only(
+                        top: GlobalConfig.fontSize.toDouble() - 4, right: 5),
+                    child: const Icon(
+                      Icons.circle,
+                      size: 5,
+                    ),
+                  ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,13 +321,13 @@ class MarkdownRenderer extends StatelessWidget {
           padding: EdgeInsets.only(left: level * 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: items.asMap().entries.map<Widget>((entry) {
-              int idx = entry.key + 1;
-              MarkdownNode item = entry.value;
+            children: items.map<Widget>((item) {
+              String number = item.content['number'] ?? '1'; // 使用存储的序号
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text('$idx. '),
+                  Text('$number. '), // 显示序号
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -340,9 +355,11 @@ class MarkdownRenderer extends StatelessWidget {
               bool checked = item.content['checked'] ?? false;
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                textBaseline: TextBaseline.alphabetic,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top: 8, right: 5),
+                    padding: EdgeInsets.only(
+                        top: GlobalConfig.fontSize.toDouble() - 4, right: 5),
                     child: Icon(
                       size: 16,
                       checked
@@ -392,21 +409,28 @@ class MarkdownRenderer extends StatelessWidget {
 
   // 更新行内文本渲染，支持加粗、斜体、删除线和行内代码
   Widget _renderInlineText(String text) {
-    return RichText(
-      text: TextSpan(
-        style: DefaultTextStyle.of(_context).style.copyWith(
-            color: Colors.black54, fontSize: GlobalConfig.fontSize.toDouble()),
-        children: _getInlineSpans(text),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: RichText(
+        text: TextSpan(
+          style: DefaultTextStyle.of(_context).style.copyWith(
+              color: Colors.black87,
+              fontSize: GlobalConfig.fontSize.toDouble()),
+          children: _getInlineSpans(text),
+        ),
       ),
     );
   }
 
   // 处理标题中的行内样式
   Widget _renderStyledText(String text, {TextStyle? style}) {
-    return RichText(
-      text: TextSpan(
-        style: style,
-        children: _getInlineSpans(text),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 0),
+      child: RichText(
+        text: TextSpan(
+          style: style,
+          children: _getInlineSpans(text),
+        ),
       ),
     );
   }

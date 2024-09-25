@@ -63,6 +63,7 @@ class _EditNotePageState extends State<EditNotePage> {
 
     if (widget.item == null) {
       textFocusNode.requestFocus();
+      isEdit = true;
     } else {
       item = widget.item!;
     }
@@ -259,22 +260,31 @@ class _EditNotePageState extends State<EditNotePage> {
         ),
         child: Scaffold(
           backgroundColor: item.color.toFullARGB(),
+          floatingActionButton: Padding(
+            padding: const EdgeInsets.only(bottom: 40),
+            child: FloatingActionButton(
+                onPressed: () {
+                  setState(() {
+                    isEdit = !isEdit;
+                  });
+                },
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder:
+                      (Widget child, Animation<double> animation) {
+                    return ScaleTransition(
+                      scale:
+                          Tween<double>(begin: 0, end: 1.0).animate(animation),
+                      child: child,
+                    );
+                  },
+                  child: isEdit
+                      ? const Icon(key: ValueKey(0), Icons.edit)
+                      : const Icon(key: ValueKey(1), Icons.remove_red_eye),
+                )),
+          ),
           appBar: AppBar(
-            title: Row(
-              children: [
-                const Text("Edit"),
-                const SizedBox(
-                  width: 10,
-                ),
-                TextButton(
-                    onPressed: () {
-                      setState(() {
-                        isEdit = !isEdit;
-                      });
-                    },
-                    child: const Icon(Icons.edit))
-              ],
-            ),
+            title: Text(isEdit ? "Edit" : "Preview"),
             backgroundColor: item.color.toFullARGB(),
             actions: [
               Row(
@@ -379,8 +389,8 @@ class _EditNotePageState extends State<EditNotePage> {
                 style: TextStyle(
                   color: Colors.grey[700],
                   fontSize: GlobalConfig.fontSize.toDouble(),
-                  letterSpacing: 1.2,
-                  height: 1.8,
+                  //letterSpacing: 1.2,
+                  //height: 1.8,
                 ),
                 textAlignVertical: TextAlignVertical.top,
                 decoration: const InputDecoration(

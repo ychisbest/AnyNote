@@ -79,6 +79,8 @@ class _ArchiveListState extends State<ArchiveList> {
 
   Widget _buildList(List<NoteItem> archivedNotes, bool isArchive) {
     return GridView.builder(
+        padding: const EdgeInsets.only(bottom: 20),
+        shrinkWrap: true,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             mainAxisSpacing: 10,

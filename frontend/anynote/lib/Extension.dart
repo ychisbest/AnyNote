@@ -84,8 +84,10 @@ class MarkdownEditingController extends TextEditingController {
     int lastMatchEnd;
 
     for (String line in lines) {
-      bool showLine =
-          currentLineIndex <= endLine && currentLineIndex >= startLine;
+      // bool showLine =
+      //     currentLineIndex <= endLine && currentLineIndex >= startLine;
+
+      var showLine = true;
 
       if (RegExp("^#+ ").hasMatch(line)) {
         int level = 0;
@@ -209,7 +211,8 @@ class MarkdownEditingController extends TextEditingController {
                 color: Colors.black, fontWeight: FontWeight.bold),
           ));
         } else {
-          var restext = line.replaceFirst('```', '').replaceAll(" ", zeroWidthChar);
+          var restext =
+              line.replaceFirst('```', '').replaceAll(" ", zeroWidthChar);
 
           var blankcount = (restext.length + 3);
 
@@ -291,7 +294,7 @@ class MarkdownEditingController extends TextEditingController {
                 matchText.replaceFirst('- [ ]', "${zeroWidthChar * 4}▢");
           }
           matchStyle = matchStyle.copyWith(
-            color: Colors.red,
+            color: Colors.grey,
             fontWeight: FontWeight.bold,
           );
         }
@@ -683,10 +686,11 @@ class CustomMarkdownDisplay extends StatelessWidget {
         overflow: TextOverflow.clip,
         text: TextSpan(
           style: DefaultTextStyle.of(context).style.copyWith(
-              color: Colors.grey[700],
-              fontSize: mainController.fontSize.toDouble(),
-              letterSpacing: 1.2,
-              height: 1.8),
+                color: Colors.grey[700],
+                fontSize: mainController.fontSize.toDouble(),
+                //letterSpacing: 1.2,
+                //height: 1.8
+              ),
           children: _buildTextSpans(text),
         ),
       ),
