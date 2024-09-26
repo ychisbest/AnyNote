@@ -84,10 +84,8 @@ class MarkdownEditingController extends TextEditingController {
     int lastMatchEnd;
 
     for (String line in lines) {
-      // bool showLine =
-      //     currentLineIndex <= endLine && currentLineIndex >= startLine;
-
-      var showLine = true;
+      bool showLine =
+          currentLineIndex <= endLine && currentLineIndex >= startLine;
 
       if (RegExp("^#+ ").hasMatch(line)) {
         int level = 0;

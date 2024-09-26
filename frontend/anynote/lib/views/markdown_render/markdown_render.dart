@@ -99,6 +99,7 @@ class MarkdownParser {
 
       // 解析段落
       nodes.add(MarkdownNode(type: 'paragraph', content: line.trim()));
+
       state.index++;
     }
 
@@ -414,7 +415,7 @@ class MarkdownRenderer extends StatelessWidget {
       child: RichText(
         text: TextSpan(
           style: DefaultTextStyle.of(_context).style.copyWith(
-              color: Colors.black87,
+              color: Colors.grey[800],
               fontSize: GlobalConfig.fontSize.toDouble()),
           children: _getInlineSpans(text),
         ),
@@ -438,7 +439,7 @@ class MarkdownRenderer extends StatelessWidget {
   List<TextSpan> _getInlineSpans(String text) {
     List<TextSpan> spans = [];
     RegExp exp = RegExp(
-        r'(\*\*\*)(.*?)\1|(___)(.*?)\3|(\*\*|__)(.*?)\5|(\*|_)(.*?)\7|(~~)(.*?)\9|(`)(.*?)\11');
+        r'(\*\*\*)(.*?)\1|(___)(.*?)\3|(\*\*|__)(.*?)\5|(\*|_)(.*?)\7|(~~)(.*?)\9|(`)(.*?)\11|(#)([\u4e00-\u9fa5a-zA-Z0-9]+)');
     int start = 0;
 
     Iterable<Match> matches = exp.allMatches(text);
@@ -497,6 +498,30 @@ class MarkdownRenderer extends StatelessWidget {
             backgroundColor: Colors.grey[200],
           ),
         ));
+      } else if (match.group(13) != null) {
+        spans.add(TextSpan(children: [
+          WidgetSpan(
+              child: Container(
+            decoration: const BoxDecoration(
+                color: Colors.green,
+                borderRadius: (BorderRadius.all(Radius.circular(5)))),
+            padding: const EdgeInsets.all(5),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.bookmark_outline_outlined,
+                  size: 15,
+                  color: Colors.white,
+                ),
+                Text(
+                  match.group(14) ?? "",
+                  style: const TextStyle(color: Colors.white, fontSize: 10),
+                )
+              ],
+            ),
+          )),
+        ]));
       }
 
       start = match.end;

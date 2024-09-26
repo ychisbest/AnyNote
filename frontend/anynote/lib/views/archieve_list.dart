@@ -80,7 +80,7 @@ class _ArchiveListState extends State<ArchiveList> {
   Widget _buildList(List<NoteItem> archivedNotes, bool isArchive) {
     return GridView.builder(
         padding: const EdgeInsets.only(bottom: 20),
-        shrinkWrap: true,
+        shrinkWrap: false,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             mainAxisSpacing: 10,
@@ -123,7 +123,7 @@ class _ArchiveListState extends State<ArchiveList> {
   }
 }
 
-class NoteItemWidget extends StatelessWidget {
+class NoteItemWidget extends StatefulWidget {
   final MainController controller;
   final NoteItem item;
   final bool isArchive;
@@ -136,13 +136,35 @@ class NoteItemWidget extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final bool overflow = (item.content ?? "").trim().split("\n").length > 3;
+  State<NoteItemWidget> createState() => _NoteItemWidgetState();
+}
 
+class _NoteItemWidgetState extends State<NoteItemWidget> {
+  final GlobalKey _key = GlobalKey();
+
+  double _contentHeight = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final RenderBox renderBox =
+          _key.currentContext!.findRenderObject() as RenderBox;
+      setState(() {
+        _contentHeight = renderBox.size.height;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final Widget content = ClipRect(
       child: Container(
         constraints: const BoxConstraints(maxHeight: 200),
-        child: MarkdownRenderer(data: item.content?.trimRight() ?? ""),
+        child: Container(
+            key: _key,
+            child:
+                MarkdownRenderer(data: widget.item.content?.trimRight() ?? "")),
       ),
     );
 
@@ -166,57 +188,73 @@ class NoteItemWidget extends StatelessWidget {
           right: 0,
           child: Icon(
             Icons.more_horiz,
-            color: darkenColor(item.color.toFullARGB(), 0.55),
+            color: darkenColor(widget.item.color.toFullARGB(), 0.55),
             size: 20,
           ),
         ),
       ],
     );
 
-    return Container(
-      key: ValueKey(item.id),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: darkenColor(item.color.toFullARGB(), 0.3),
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(15),
-        color: item.color.toFullARGB(),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+    return Builder(builder: (context) {
+      return Container(
+        key: ValueKey(widget.item.id),
+        //constraints: const BoxConstraints(maxHeight: 200),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: darkenColor(widget.item.color.toFullARGB(), 0.3),
+            width: 1,
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
           borderRadius: BorderRadius.circular(15),
-          onTap: () async {
-            await Get.to(() => EditNotePage(item: item));
-          },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeader(context),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: overflow ? shadowContent : content,
-              ),
-            ],
+          color: widget.item.color.toFullARGB(),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(15),
+            onTap: () async {
+              await Get.to(() => EditNotePage(item: widget.item));
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildHeader(context),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: LayoutBuilder(
+                    builder:
+                        (BuildContext context, BoxConstraints constraints) {
+                      if (_key.currentContext == null) return content;
+
+                      final RenderBox renderBox =
+                          _key.currentContext!.findRenderObject() as RenderBox;
+
+                      _contentHeight = renderBox.size.height;
+
+                      return _contentHeight >= 200 ? shadowContent : content;
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildHeader(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: darkenColor(item.color.toFullARGB(), 0.04),
+        color: darkenColor(widget.item.color.toFullARGB(), 0.04),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -227,7 +265,7 @@ class NoteItemWidget extends StatelessWidget {
           //   size: 18,
           //   color: Colors.grey,
           // ),
-          if (item.isTopMost)
+          if (widget.item.isTopMost)
             const Padding(
               padding: EdgeInsets.only(right: 8),
               child: Icon(
@@ -237,7 +275,7 @@ class NoteItemWidget extends StatelessWidget {
               ),
             ),
           Text(
-            timeAgo(item.createTime),
+            timeAgo(widget.item.createTime),
             style: const TextStyle(
               color: Colors.black54,
               fontSize: 10,
@@ -271,23 +309,23 @@ class NoteItemWidget extends StatelessWidget {
             onSelected: (String result) {
               switch (result) {
                 case 'toggleTopMost':
-                  item.isTopMost = !item.isTopMost;
-                  controller.updateNote(item.id!, item);
+                  widget.item.isTopMost = !widget.item.isTopMost;
+                  widget.controller.updateNote(widget.item.id!, widget.item);
                   break;
                 case 'toggleArchive':
-                  if (isArchive) {
-                    controller.unarchiveNote(item.id!);
+                  if (widget.isArchive) {
+                    widget.controller.unarchiveNote(widget.item.id!);
                   } else {
-                    controller.archiveNote(item.id!);
+                    widget.controller.archiveNote(widget.item.id!);
                   }
                   break;
                 case 'delete':
-                  controller.deleteNote(item.id!);
+                  widget.controller.deleteNote(widget.item.id!);
                   break;
               }
             },
             itemBuilder: (BuildContext context) =>
-                _buildPopupMenuItems(item, isArchive),
+                _buildPopupMenuItems(widget.item, widget.isArchive),
           ),
         ],
       ),

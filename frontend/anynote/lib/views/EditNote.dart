@@ -26,7 +26,6 @@ class EditNotePage extends StatefulWidget {
 }
 
 class _EditNotePageState extends State<EditNotePage> {
-  bool isEdit = false;
   final MainController controller = Get.find<MainController>();
   late final TextEditingController textController;
   final FocusNode focusNode = FocusNode();
@@ -63,7 +62,6 @@ class _EditNotePageState extends State<EditNotePage> {
 
     if (widget.item == null) {
       textFocusNode.requestFocus();
-      isEdit = true;
     } else {
       item = widget.item!;
     }
@@ -260,31 +258,8 @@ class _EditNotePageState extends State<EditNotePage> {
         ),
         child: Scaffold(
           backgroundColor: item.color.toFullARGB(),
-          floatingActionButton: Padding(
-            padding: const EdgeInsets.only(bottom: 40),
-            child: FloatingActionButton(
-                onPressed: () {
-                  setState(() {
-                    isEdit = !isEdit;
-                  });
-                },
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  transitionBuilder:
-                      (Widget child, Animation<double> animation) {
-                    return ScaleTransition(
-                      scale:
-                          Tween<double>(begin: 0, end: 1.0).animate(animation),
-                      child: child,
-                    );
-                  },
-                  child: isEdit
-                      ? const Icon(key: ValueKey(0), Icons.edit)
-                      : const Icon(key: ValueKey(1), Icons.remove_red_eye),
-                )),
-          ),
           appBar: AppBar(
-            title: Text(isEdit ? "Edit" : "Preview"),
+            title: Text(_isAdding ? "Add New Note" : "Edit Note"),
             backgroundColor: item.color.toFullARGB(),
             actions: [
               Row(
@@ -309,24 +284,9 @@ class _EditNotePageState extends State<EditNotePage> {
               ),
             ],
           ),
-          body: isEdit ? EditBody() : PreviewBody(),
+          body: EditBody(),
         ),
       ),
-    );
-  }
-
-  Widget PreviewBody() {
-    return Column(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: MarkdownRenderer(data: textController.text),
-            ),
-          ),
-        ),
-      ],
     );
   }
 

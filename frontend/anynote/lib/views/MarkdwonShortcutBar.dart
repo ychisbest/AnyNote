@@ -1,5 +1,7 @@
+import 'package:anynote/views/markdown_render/markdown_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart';
 
 class MarkdownShortcutBar extends StatefulWidget {
   final TextEditingController controller;
@@ -193,6 +195,9 @@ class _MarkdownShortcutBarState extends State<MarkdownShortcutBar> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                _buildIconButton(Icons.remove_red_eye_outlined, () {
+                  Get.to(() => MarkdownPreview(data: widget.controller.text));
+                }),
                 _buildIconButton(Icons.undo, _undo, isEnable: _canUndo),
                 _buildIconButton(Icons.redo, _redo, isEnable: _canRedo),
                 // _buildIconButton(
@@ -207,7 +212,10 @@ class _MarkdownShortcutBarState extends State<MarkdownShortcutBar> {
                 if (widget.onAiTap != null)
                   _buildIconButton(Icons.generating_tokens_outlined, () {
                     widget.onAiTap!.call();
-                  },isEnable:(!(widget.controller.selection.baseOffset==-1 || widget.controller.text.trim().isEmpty))),
+                  },
+                      isEnable:
+                          (!(widget.controller.selection.baseOffset == -1 ||
+                              widget.controller.text.trim().isEmpty))),
               ],
             ),
           ),
