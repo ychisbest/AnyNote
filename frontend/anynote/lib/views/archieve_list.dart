@@ -1,14 +1,13 @@
 import 'dart:ui';
-
 import 'package:anynote/views/markdown_render/markdown_render.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 
 import 'package:anynote/MainController.dart';
 import 'package:anynote/note_api_service.dart';
 import 'package:anynote/views/EditNote.dart';
 import 'package:anynote/Extension.dart';
+import 'package:intl/intl.dart' as intl;
 
 class ArchiveList extends StatefulWidget {
   ArchiveList({Key? key, this.isArchive = false}) : super(key: key);
@@ -85,7 +84,7 @@ class _ArchiveListState extends State<ArchiveList> {
             crossAxisCount: 2,
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
-            mainAxisExtent: 280),
+            mainAxisExtent: 270),
         controller: sc,
         physics: const BouncingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics()),
@@ -140,115 +139,107 @@ class NoteItemWidget extends StatefulWidget {
 }
 
 class _NoteItemWidgetState extends State<NoteItemWidget> {
-  final GlobalKey _key = GlobalKey();
-
-  double _contentHeight = 0;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final RenderBox renderBox =
-          _key.currentContext!.findRenderObject() as RenderBox;
-      setState(() {
-        _contentHeight = renderBox.size.height;
-      });
-    });
-  }
-
+  bool _isOverflow = false;
+  bool _isHovered=false;
   @override
   Widget build(BuildContext context) {
-    final Widget content = ClipRect(
-      child: Container(
-        constraints: const BoxConstraints(maxHeight: 200),
-        child: Container(
-            key: _key,
-            child:
-                MarkdownRenderer(data: widget.item.content?.trimRight() ?? "")),
+    return Container(
+      key: ValueKey(widget.item.id),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: _isHovered?darkenColor(widget.item.color.toFullARGB(), 0.5):darkenColor(widget.item.color.toFullARGB(), 0.1),
+          width: 2,
+        ),
+        borderRadius: BorderRadius.circular(15),
+        color: widget.item.color.toFullARGB(),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: InkWell(
+          borderRadius: const BorderRadius.all(Radius.circular(20)),
+          onTap: () async {
+            await Get.to(() => EditNotePage(item: widget.item));
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHeader(context),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    return _buildContent(constraints);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
+  }
 
-    final Widget shadowContent = Stack(
-      children: [
-        ShaderMask(
-          shaderCallback: (Rect bounds) {
-            return const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.black, Colors.transparent, Colors.transparent],
-              stops: [0.3, 0.9, 1],
-            ).createShader(bounds);
-          },
-          blendMode: BlendMode.dstIn,
-          child: content,
-        ),
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Icon(
-            Icons.more_horiz,
-            color: darkenColor(widget.item.color.toFullARGB(), 0.55),
-            size: 20,
-          ),
-        ),
-      ],
-    );
+  Widget _buildContent(BoxConstraints constraints) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textPainter = TextPainter(
+          text: TextSpan(text: widget.item.content?.trimRight() ?? ""),
+          maxLines: 9,
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout(maxWidth: constraints.maxWidth-8);
 
-    return Builder(builder: (context) {
-      return Container(
-        key: ValueKey(widget.item.id),
-        //constraints: const BoxConstraints(maxHeight: 200),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: darkenColor(widget.item.color.toFullARGB(), 0.3),
-            width: 1,
-          ),
-          borderRadius: BorderRadius.circular(15),
-          color: widget.item.color.toFullARGB(),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(15),
-            onTap: () async {
-              await Get.to(() => EditNotePage(item: widget.item));
-            },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildHeader(context),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: LayoutBuilder(
-                    builder:
-                        (BuildContext context, BoxConstraints constraints) {
-                      if (_key.currentContext == null) return content;
+        _isOverflow = textPainter.didExceedMaxLines;
 
-                      final RenderBox renderBox =
-                          _key.currentContext!.findRenderObject() as RenderBox;
-
-                      _contentHeight = renderBox.size.height;
-
-                      return _contentHeight >= 200 ? shadowContent : content;
-                    },
+        return Container(
+          constraints: const BoxConstraints(maxHeight: 200),
+          child: Stack(
+            children: [
+              MarkdownRenderer(data: widget.item.content?.trimRight() ?? ""),
+              if (_isOverflow)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 150,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          widget.item.color.toFullARGB().withOpacity(0),
+                          widget.item.color.toFullARGB(),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ],
-            ),
+              if(_isOverflow)
+                Positioned(
+                  bottom: -5,
+                  left: 1/2,
+                  right: 0,
+                  child: Icon(
+                    Icons.more_horiz,
+                    color: darkenColor(widget.item.color.toFullARGB(), 0.55),
+                    size: 20,
+                  ),
+                ),
+            ],
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -385,6 +376,6 @@ String timeAgo(DateTime dateTime) {
   } else if (difference.inDays < 365) {
     return '${(difference.inDays / 30).floor()} months ago';
   } else {
-    return DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
+    return intl.DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
   }
 }
