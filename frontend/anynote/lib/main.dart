@@ -38,7 +38,10 @@ void main() async {
   // 注册 NoteItem 的适配器
   Hive.registerAdapter(NoteItemAdapter());
 
-  await Hive.openBox<NoteItem>('offline_notes').catchError((e){print("file locked");  exit(0);});
+  await Hive.openBox<NoteItem>('offline_notes').catchError((e) {
+    print("file locked");
+    exit(0);
+  });
 
   await GlobalConfig.init();
 
@@ -95,10 +98,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       if (!GlobalConfig.isLoggedIn) {
         return LoginPage();
       }
-      if (Get.width > 600) {
-        resizeableHome ??= WideHome();
-        return resizeableHome!;
-      }
+      // if (Get.width > 600) {
+      //   resizeableHome ??= WideHome();
+      //   return resizeableHome!;
+      // }
 
       return NerrowHome();
     });
@@ -171,8 +174,8 @@ class NerrowHome extends StatelessWidget {
             backgroundColor: Colors.blue,
             foregroundColor: Colors.white,
             onPressed: () async {
-              await Navigator.push(
-                  context, MaterialPageRoute(builder: (c) => const EditNotePage()));
+              await Navigator.push(context,
+                  MaterialPageRoute(builder: (c) => const EditNotePage()));
             },
             child: const Icon(Icons.add),
           );

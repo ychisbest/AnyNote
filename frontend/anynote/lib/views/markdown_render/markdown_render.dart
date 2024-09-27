@@ -1,6 +1,7 @@
 // markdown_parser.dart
 import 'package:anynote/GlobalConfig.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class MarkdownNode {
   final String type;
@@ -192,10 +193,10 @@ class MarkdownParser {
 
 class MarkdownRenderer extends StatelessWidget {
   final String data;
-
+  final int fontsize;
   late BuildContext _context;
 
-  MarkdownRenderer({required this.data});
+  MarkdownRenderer({required this.data, this.fontsize = 12});
 
   @override
   Widget build(BuildContext context) {
@@ -203,10 +204,13 @@ class MarkdownRenderer extends StatelessWidget {
     MarkdownParser parser = MarkdownParser(data);
     List<MarkdownNode> nodes = parser.parse();
 
-    return ListView(
+    return ListView.builder(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      children: nodes.map((node) => _renderNode(node, level: 0)).toList(),
+      itemCount: nodes.length,
+      itemBuilder: (context, index) {
+        return _renderNode(nodes[index], level: 0);
+      },
     );
   }
 
@@ -270,8 +274,8 @@ class MarkdownRenderer extends StatelessWidget {
       case 'image':
         String src = node.content['src'];
         String alt = node.content['alt'];
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
+        return Align(
+          alignment: Alignment.topLeft,
           child: Image.network(
             src,
             errorBuilder: (context, error, stackTrace) {
@@ -279,6 +283,7 @@ class MarkdownRenderer extends StatelessWidget {
             },
           ),
         );
+
       case 'ul':
         List<MarkdownNode> items = node.content;
         return Padding(
@@ -325,10 +330,17 @@ class MarkdownRenderer extends StatelessWidget {
             children: items.map<Widget>((item) {
               String number = item.content['number'] ?? '1'; // 使用存储的序号
               return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text('$number. '), // 显示序号
+                  Padding(
+                    padding:
+                        EdgeInsets.only(top: fontsize.toDouble(), right: 5),
+                    child: Text(
+                      '$number. ',
+                      style: TextStyle(fontSize: fontsize.toDouble()),
+                    ),
+                  ), // 显示序号
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,8 +371,8 @@ class MarkdownRenderer extends StatelessWidget {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Padding(
-                    padding: EdgeInsets.only(
-                        top: GlobalConfig.fontSize.toDouble() - 4, right: 5),
+                    padding:
+                        EdgeInsets.only(top: fontsize.toDouble() - 4, right: 5),
                     child: Icon(
                       size: 16,
                       checked
@@ -414,9 +426,9 @@ class MarkdownRenderer extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: RichText(
         text: TextSpan(
-          style: DefaultTextStyle.of(_context).style.copyWith(
-              color: Colors.grey[800],
-              fontSize: GlobalConfig.fontSize.toDouble()),
+          style: DefaultTextStyle.of(_context)
+              .style
+              .copyWith(color: Colors.grey[800], fontSize: fontsize.toDouble()),
           children: _getInlineSpans(text),
         ),
       ),

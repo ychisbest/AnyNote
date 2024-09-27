@@ -350,7 +350,7 @@ class _EditNotePageState extends State<EditNotePage> {
                   color: Colors.grey[700],
                   fontSize: GlobalConfig.fontSize.toDouble(),
                   //letterSpacing: 1.2,
-                  //height: 1.8,
+                  height: 1.8,
                 ),
                 textAlignVertical: TextAlignVertical.top,
                 decoration: const InputDecoration(

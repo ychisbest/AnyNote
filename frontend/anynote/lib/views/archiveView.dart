@@ -1,12 +1,7 @@
-import 'dart:math';
-
 import 'package:anynote/MainController.dart';
-import 'package:anynote/views/tag_list.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 
-import '../Extension.dart';
 import 'archieve_list.dart';
 
 class Archiveview extends StatelessWidget {

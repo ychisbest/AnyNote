@@ -11,7 +11,7 @@ class MarkdownPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Preview"),
+        title: const Text("Preview"),
       ),
       body: Column(
         children: [

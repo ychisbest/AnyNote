@@ -30,7 +30,7 @@ class MainController extends GetxController {
     //initData();
   }
 
-  void initData()async {
+  void initData() async {
     print("调用了initdata");
     await fetchNotes(readLocalFirst: true);
     initSignalR();
@@ -40,7 +40,7 @@ class MainController extends GetxController {
     baseUrl = url;
     secret = newSecret;
     _api.updateBaseUrl(url, secret);
-    initSignalR();
+    //initSignalR();
   }
 
   Future<void> initSignalR() async {
@@ -211,6 +211,7 @@ class MainController extends GetxController {
 
   void logout() {
     hubConnection?.stop();
+    hubConnection = null;
     notes.clear();
     saveNotesToLocal();
     GlobalConfig.clear();
@@ -218,8 +219,7 @@ class MainController extends GetxController {
 
   Future<bool> updateNote(int id, NoteItem noteItem) async {
     try {
-
-      if(IDGenerator.isOfflineId(id)){
+      if (IDGenerator.isOfflineId(id)) {
         throw Exception("offline id");
       }
 
@@ -235,7 +235,6 @@ class MainController extends GetxController {
   }
 
   Future<NoteItem> addNote(NoteItem newNote) async {
-
     try {
       final localId = newNote.id;
       final addedNote = await _api.addNoteItem(newNote.content ?? "");

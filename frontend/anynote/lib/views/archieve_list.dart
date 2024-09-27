@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:anynote/views/markdown_render/markdown_render.dart';
 import 'package:flutter/material.dart';
@@ -77,27 +78,51 @@ class _ArchiveListState extends State<ArchiveList> {
   }
 
   Widget _buildList(List<NoteItem> archivedNotes, bool isArchive) {
-    return GridView.builder(
-        padding: const EdgeInsets.only(bottom: 20),
-        shrinkWrap: false,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            mainAxisExtent: 270),
-        controller: sc,
-        physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics()),
-        itemCount: archivedNotes.length,
-        itemBuilder: (BuildContext context, int index) {
-          final item = archivedNotes[index];
-          return NoteItemWidget(
-            key: ValueKey(item.id),
-            controller: controller,
-            item: item,
-            isArchive: isArchive,
-          );
-        });
+    return LayoutBuilder(builder: (context, constraints) {
+      if (Get.width <= 560) {
+        return ListView.builder(
+          padding: const EdgeInsets.only(bottom: 20),
+          controller: sc,
+          physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+          itemCount: archivedNotes.length,
+          itemBuilder: (BuildContext context, int index) {
+            final item = archivedNotes[index];
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: NoteItemWidget(
+                key: ValueKey(item.id),
+                controller: controller,
+                item: item,
+                isArchive: isArchive,
+              ),
+            );
+          },
+        );
+      } else {
+        return GridView.builder(
+            padding: const EdgeInsets.only(bottom: 20),
+            shrinkWrap: false,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                mainAxisExtent: 270),
+            controller: sc,
+            physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics()),
+            itemCount: archivedNotes.length,
+            itemBuilder: (BuildContext context, int index) {
+              final item = archivedNotes[index];
+              return NoteItemWidget(
+                key: ValueKey(item.id),
+                controller: controller,
+                item: item,
+                isArchive: isArchive,
+              );
+            });
+      }
+    });
   }
 
   Widget _buildSearchBar() {
@@ -140,14 +165,46 @@ class NoteItemWidget extends StatefulWidget {
 
 class _NoteItemWidgetState extends State<NoteItemWidget> {
   bool _isOverflow = false;
-  bool _isHovered=false;
+  bool _isHovered = false;
+  final ScrollController _scrollController = ScrollController();
+  final MainController c = Get.find<MainController>();
+  @override
+  void initState() {
+    super.initState();
+    _checkOverflow();
+  }
+
+  @override
+  void didUpdateWidget(NoteItemWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _checkOverflow();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _checkOverflow() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _isOverflow = _scrollController.position.maxScrollExtent > 0;
+        });
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       key: ValueKey(widget.item.id),
       decoration: BoxDecoration(
         border: Border.all(
-          color: _isHovered?darkenColor(widget.item.color.toFullARGB(), 0.5):darkenColor(widget.item.color.toFullARGB(), 0.1),
+          color: _isHovered
+              ? darkenColor(widget.item.color.toFullARGB(), 0.5)
+              : darkenColor(widget.item.color.toFullARGB(), 0.1),
           width: 2,
         ),
         borderRadius: BorderRadius.circular(15),
@@ -168,13 +225,17 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
           onTap: () async {
             await Get.to(() => EditNotePage(item: widget.item));
           },
+          onTapDown: (_) => setState(() => _isHovered = true),
+          onTapUp: (_) => setState(() => _isHovered = false),
+          onTapCancel: () => setState(() => _isHovered = false),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildHeader(context),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: LayoutBuilder(
                   builder: (BuildContext context, BoxConstraints constraints) {
                     return _buildContent(constraints);
@@ -191,20 +252,23 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
   Widget _buildContent(BoxConstraints constraints) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final textPainter = TextPainter(
-          text: TextSpan(text: widget.item.content?.trimRight() ?? ""),
-          maxLines: 9,
-          textDirection: TextDirection.ltr,
-        );
-        textPainter.layout(maxWidth: constraints.maxWidth-8);
-
-        _isOverflow = textPainter.didExceedMaxLines;
-
         return Container(
           constraints: const BoxConstraints(maxHeight: 200),
           child: Stack(
             children: [
-              MarkdownRenderer(data: widget.item.content?.trimRight() ?? ""),
+              SingleChildScrollView(
+                controller: _scrollController,
+                physics: const NeverScrollableScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                  child: Obx(() {
+                    return MarkdownRenderer(
+                      fontsize: c.fontSize.value,
+                      data: widget.item.content?.trimRight() ?? "",
+                    );
+                  }),
+                ),
+              ),
               if (_isOverflow)
                 Positioned(
                   bottom: 0,
@@ -224,10 +288,10 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
                     ),
                   ),
                 ),
-              if(_isOverflow)
+              if (_isOverflow)
                 Positioned(
                   bottom: -5,
-                  left: 1/2,
+                  left: 1 / 2,
                   right: 0,
                   child: Icon(
                     Icons.more_horiz,
