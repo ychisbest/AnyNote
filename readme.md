@@ -2,22 +2,27 @@
 
 AnyNote is an open-source, cross-platform note-taking application that puts your data in your hands.
 
-<img src="https://anynote.online/screenshot/show.gif" alt="demo" width="550"/>
+> 
 
-[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/ychisbest/AnyNote)
-[![Website](https://img.shields.io/badge/Website-anynote.online-blue)](https://anynote.online)
+<img src="https://anynote.online/screenshot/show.gif" alt="demo" width="350"/>
+
+> 
+
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/ychisbest/AnyNote) [![Website](https://img.shields.io/badge/Website-anynote.online-blue)](https://anynote.online)
 
 ## ✨ Features
 
-- 🏠 **Self-hosted**: Deploy AnyNote on your own infrastructure and keep your data under your control.
-- 🌐 **Cross-platform**: Supports Windows, Android, and Web platforms.
-- 📝 **WYSIWYG Markdown Editor**: Enjoy an excellent editing experience with a what-you-see-is-what-you-get Markdown editor.
-- 🔄 **Real-time Synchronization**: Automatically sync data across all open clients.
-- 🔍 **Efficient Search**: Find your historical notes instantly with high-performance search capabilities.
+- 🏠 **Self-hosted**
+- 🌐 **Cross-platform**
+- 📝 **WYSIWYG Markdown Editor**
+- 🔄 **Real-time Synchronization**
+- 🔍 **Efficient Search**
+- 🪄 **AI Generated**
+
 
 ## 🚀 Getting Started
 
-### Backend Deployment
+##### 1. Backend Deployment
 
 To deploy the AnyNote backend using Docker, run the following command:
 
@@ -27,27 +32,21 @@ docker run -d -p 8080:8080 -e secret=YOUR_SECRET -v /path/to/data:/data anynoteo
 
 Replace `YOUR_SECRET` with your chosen secret key and `/path/to/data` with the desired path for data storage.
 
-### Client Installation
+##### 2. Client Installation
 
 Download the latest client for your platform from our [GitHub Releases](https://github.com/ychisbest/AnyNote/releases) page.
+
+##### 3. More Information
+
+For more detailed instructions and documentation, please visit our [official website]([URL_ADDRESS](https://anynote.online))
+
 
 ## 🤝 Contributing
 
 We welcome contributions to AnyNote! Please check out our [GitHub repository](https://github.com/ychisbest/AnyNote) for more information on how to get involved.
 
 ## 💬 Support
+Please open an issue on our GitHub repository.
 
-For more information and support, visit our [official website](https://anynote.online) or open an issue on our GitHub repository.
 
----
 
-## 📢 Why Choose AnyNote?
-
-- 🔒 **Privacy-focused**: Your data stays with you, not on someone else's servers.
-- 🚀 **Fast and Efficient**: Designed for speed and responsiveness.
-- 🎨 **Customizable**: Tailor your note-taking experience to your preferences.
-- 🌟 **Always Improving**: Regular updates and new features based on user feedback.
-
----
-
-AnyNote - Your notes, your way, anywhere. 📘🌍
