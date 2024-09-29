@@ -22,6 +22,7 @@ class ArchiveList extends StatefulWidget {
 class _ArchiveListState extends State<ArchiveList> {
   final MainController controller = Get.find<MainController>();
   final ScrollController sc = ScrollController();
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -31,7 +32,7 @@ class _ArchiveListState extends State<ArchiveList> {
 
   @override
   void dispose() {
-    controller.updateFilter('');
+    //controller.updateFilter('');
     sc.dispose();
     super.dispose();
   }
@@ -127,24 +128,36 @@ class _ArchiveListState extends State<ArchiveList> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2),
       child: TextField(
         style: const TextStyle(fontSize: 12),
-        onChanged: (value) {
-          controller.updateFilter(value);
-        },
+        onChanged: _onSearchChanged,
         decoration: InputDecoration(
-          fillColor: Colors.white,
+          fillColor: Colors.white.withOpacity(0.6),
           filled: true,
           hintText: "Search...",
           prefixIcon: const Icon(Icons.search),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
+          border: InputBorder.none,
+         focusedBorder: OutlineInputBorder(
+            borderSide: const BorderSide(width: 1,color: Colors.black54),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: const BorderSide(width: 1,color: Colors.black12),
+            borderRadius: BorderRadius.circular(15),
           ),
         ),
       ),
     );
   }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 200), () {
+      controller.updateFilter(query);
+    });
+  }
+
 }
 
 class NoteItemWidget extends StatefulWidget {
@@ -203,7 +216,7 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
       decoration: BoxDecoration(
         border: Border.all(
           color: _isHovered
-              ? darkenColor(widget.item.color.toFullARGB(), 0.5)
+              ? darkenColor(widget.item.color.toFullARGB(), 0.3)
               : darkenColor(widget.item.color.toFullARGB(), 0.1),
           width: 2,
         ),
@@ -220,8 +233,8 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
-        child: InkWell(
-          borderRadius: const BorderRadius.all(Radius.circular(20)),
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
           onTap: () async {
             await Get.to(() => EditNotePage(item: widget.item));
           },
@@ -233,13 +246,16 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildHeader(context),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints constraints) {
-                    return _buildContent(constraints);
-                  },
+              AnimatedSwitcher(
+                duration: Duration(),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: LayoutBuilder(
+                    builder: (BuildContext context, BoxConstraints constraints) {
+                      return _buildContent(constraints);
+                    },
+                  ),
                 ),
               ),
             ],

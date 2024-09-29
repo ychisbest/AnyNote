@@ -173,16 +173,17 @@ class MainController extends GetxController {
       final localNotes = await loadNotesFromLocal();
       if (localNotes.isNotEmpty) {
         notes.assignAll(localNotes);
-        isLoading.value = false;
       }
     }
 
     try {
       final fetchedNotes = await _api.getNotes();
       notes.assignAll(fetchedNotes);
+
       isLoading.value = false;
 
       await saveNotesToLocal();
+
       return true;
     } catch (e) {
       isLoading.value = false;

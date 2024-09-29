@@ -139,7 +139,20 @@ class NerrowHome extends StatelessWidget {
       ),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("AnyNote"),
+          title: Obx(() {
+              if(c.isLoading.value) {
+                return const Row(
+                  children: [
+                    Text("AnyNote"),
+                    SizedBox(width: 10,),
+                    SizedBox(height: 15,width: 15, child: CircularProgressIndicator())
+                  ],
+                );
+              } else {
+                return const Text("AnyNote");
+              }
+            }
+          ),
           leading: Builder(builder: (context) {
             return IconButton(
               icon: const Icon(Icons.menu),
@@ -162,9 +175,7 @@ class NerrowHome extends StatelessWidget {
           child: Column(
             children: [
               Expanded(
-                child: Obx(() => c.isLoading.isTrue
-                    ? const Center(child: CircularProgressIndicator())
-                    : ArchiveList()),
+                child: ArchiveList(),
               ),
             ],
           ),

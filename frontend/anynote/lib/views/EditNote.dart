@@ -32,6 +32,7 @@ class _EditNotePageState extends State<EditNotePage> {
   final FocusNode textFocusNode = FocusNode();
   Timer? _debounce;
   bool _isAdding = false;
+  bool _isModifyed = false;
   String _lastChange = "";
   NoteItem item = NoteItem(
       createTime: DateTime.now(),
@@ -160,6 +161,9 @@ class _EditNotePageState extends State<EditNotePage> {
 
   void _textUpdate() {
     if (item.content == textController.text) return;
+
+    _isModifyed=true;
+
     setState(() {
       item.content = textController.text;
     });
@@ -240,6 +244,10 @@ class _EditNotePageState extends State<EditNotePage> {
       onWillPop: () async {
         _debounce?.cancel();
 
+        if(!_isModifyed){
+          return true;
+        }
+
         if (IDGenerator.isOfflineId(item.id!) && item.content!.trim().isEmpty) {
           return true;
         }
@@ -249,6 +257,7 @@ class _EditNotePageState extends State<EditNotePage> {
         if ((item.content ?? "").trim().isEmpty) {
           controller.deleteNoteWithoutPrompt(item.id!);
         }
+
         return true;
       },
       child: AnnotatedRegion<SystemUiOverlayStyle>(
@@ -259,7 +268,7 @@ class _EditNotePageState extends State<EditNotePage> {
         child: Scaffold(
           backgroundColor: item.color.toFullARGB(),
           appBar: AppBar(
-            title: Text(_isAdding ? "Add New Note" : "Edit Note"),
+            title: Text(widget.item==null ? "Add New Note" : "Edit Note"),
             backgroundColor: item.color.toFullARGB(),
             actions: [
               Row(
@@ -302,16 +311,24 @@ class _EditNotePageState extends State<EditNotePage> {
                 child: GestureDetector(
                   onTap: () => _changeNoteColor(color),
                   child: Container(
-                    width: 30,
-                    height: 30,
+                    width: 32,
+                    height: 32,
                     decoration: BoxDecoration(
                       color: color,
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 5,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
                       border: Border.all(
-                        color: item.color == color.value
-                            ? Colors.black
-                            : Colors.grey,
-                        width: item.color == color.value ? 2 : 1,
+                        color: item.color.toFullARGB() == color.value.toFullARGB()
+                            ? darkenColor(item.color.toFullARGB(),0.2)
+                            : Colors.black12,
+                        width: item.color.toFullARGB() == color.value.toFullARGB() ? 2 : 0,
                       ),
                     ),
                   ),
