@@ -217,6 +217,7 @@ class _EditNotePageState extends State<EditNotePage> {
 
   void _changeNoteColor(Color color) {
     setState(() {
+      _isModifyed=true;
       item.color = color.value & 0x00FFFFFF;
       _syncStatus = SyncStatus.waiting;
     });
@@ -396,7 +397,7 @@ class _EditNotePageState extends State<EditNotePage> {
       ),
     );
     try {
-      await SendMessage(textController);
+      await continueTheText(textController);
     } catch (e) {
       print(e);
     } finally {

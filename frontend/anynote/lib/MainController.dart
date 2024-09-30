@@ -413,4 +413,25 @@ class MainController extends GetxController {
     hubConnection?.stop();
     super.onClose();
   }
+
+  List<MapEntry<DateTime, List<NoteItem>>> groupMemosByDate(
+      List<NoteItem> memos) {
+    Map<DateTime, List<NoteItem>> memoMap = {};
+
+    for (var memo in memos) {
+      // var adjustDate=memo.createTime.add(Duration(hours: -3));
+      var adjustDate = memo.createTime;
+      DateTime date =
+      DateTime(adjustDate.year, adjustDate.month, adjustDate.day);
+      if (!memoMap.containsKey(date)) {
+        memoMap[date] = [];
+      }
+      memoMap[date]!.add(memo);
+    }
+
+    var sortedEntries = memoMap.entries.toList()
+      ..sort((a, b) => b.key.compareTo(a.key));
+
+    return sortedEntries;
+  }
 }

@@ -8,7 +8,10 @@ import 'package:get/get.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class Browser extends StatefulWidget {
-  const Browser({super.key});
+
+  final DateTime? dateTime;
+
+  const Browser({super.key,this.dateTime});
 
   @override
   State<Browser> createState() => _BrowserState();
@@ -19,6 +22,16 @@ class _BrowserState extends State<Browser> {
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.week;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    if(widget.dateTime!=null){
+      _selectedDay=widget.dateTime!;
+      _focusedDay=widget.dateTime!;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +81,7 @@ class _BrowserState extends State<Browser> {
       ),
       body: SingleChildScrollView(child: Obx(() {
         var c = Get.find<MainController>();
-        var items = groupMemosByDate(c.notes);
+        var items = c.groupMemosByDate(c.notes);
         return Column(
           children: [
             TableCalendar(
@@ -173,26 +186,5 @@ class _BrowserState extends State<Browser> {
         );
       })),
     );
-  }
-
-  List<MapEntry<DateTime, List<NoteItem>>> groupMemosByDate(
-      List<NoteItem> memos) {
-    Map<DateTime, List<NoteItem>> memoMap = {};
-
-    for (var memo in memos) {
-      // var adjustDate=memo.createTime.add(Duration(hours: -3));
-      var adjustDate = memo.createTime;
-      DateTime date =
-          DateTime(adjustDate.year, adjustDate.month, adjustDate.day);
-      if (!memoMap.containsKey(date)) {
-        memoMap[date] = [];
-      }
-      memoMap[date]!.add(memo);
-    }
-
-    var sortedEntries = memoMap.entries.toList()
-      ..sort((a, b) => b.key.compareTo(a.key));
-
-    return sortedEntries;
   }
 }

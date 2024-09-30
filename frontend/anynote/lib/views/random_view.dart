@@ -43,7 +43,7 @@ class RandomView extends StatelessWidget {
           child: SizedBox(
             width: double.infinity,
             // Wrapping with Obx to update the markdown content when index changes
-            child: Obx(() => MarkdownRenderer(
+              child: Obx(() => MarkdownRenderer(
                   data: c.notes[index.value].content ?? "",
                 )),
           ),

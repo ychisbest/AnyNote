@@ -6,7 +6,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
-Future<void> SendMessage(TextEditingController controller) async {
+Future<void> continueTheText(TextEditingController controller) async {
   try {
     String fullText = controller.text;
     String todo = '';
@@ -110,6 +110,91 @@ You are an AI assistant embedded in my note-taking software. I will send you the
             insertPosition += text.toString().length;
             controller.selection =
                 TextSelection.collapsed(offset: insertPosition);
+          }
+        }
+      }
+    } else {
+      // 处理请求失败的情况
+    }
+  } catch (e) {
+    Get.snackbar('Error', e.toString());
+    return;
+  }
+}
+
+
+Future<void> ChatWithAI(TextEditingController controller,String content) async {
+  try {
+
+    print(content);
+
+    String apiKey = GlobalConfig.aiApiKey;
+
+    final client = http.Client();
+
+    final request = http.Request('POST', Uri.parse(GlobalConfig.aiUrl))
+      ..headers['Content-Type'] = 'application/json'
+      ..headers['Authorization'] = 'Bearer $apiKey'
+      ..body = jsonEncode({
+        "model": GlobalConfig.aiModel,
+        "messages": [
+          {
+            "content": """
+**Role Setting:**
+
+You are an AI assistant in my diary software. I will send you the diary content of a random date as an attachment for your reference.
+
+**Please respond according to the following requirements:**
+
+1. **Guide me step by step to recall the events of that day**, helping me relive the experience.
+
+2. **Mind your wording**: "Today" in the diary refers to the date recorded in the diary, not the current day.
+
+3. **Language Selection**: Determine the language of your response based on the language of my attachment. If it's purely in English, reply in English. If there's Chinese, reply in Chinese.
+
+4. **Date Revelation**: Do not directly tell me the date at the beginning. At the end of your response, reveal the specific date of the diary entry (extracted from JSON), then tell me how long ago it was, and today is ${DateTime.now()}.
+
+5. **Diary Summary**: Converse with me in the tone of a nasty internet troll, being often offensive. This makes it feel more authentic.
+        """,
+            "role": "system"
+          },
+          {
+            "role": "user",
+            "content": """
+attachment
+---
+$content
+---
+          """
+          }
+        ],
+        "stream": true
+      });
+
+
+    final streamedResponse = await client.send(request).timeout(
+      const Duration(seconds: 5),
+      onTimeout: () {
+        throw TimeoutException('The request timed out');
+      },
+    );
+
+    if (streamedResponse.statusCode == 200) {
+      final stream = streamedResponse.stream;
+      final lines =
+      stream.transform(utf8.decoder).transform(const LineSplitter());
+
+      await for (var line in lines) {
+        if (line.startsWith('data: ')) {
+          final data = line.substring(6);
+          if (data == '[DONE]') break;
+          final jsonData = jsonDecode(data);
+          final text = jsonData['choices'][0]['delta']['content'];
+          if(controller==null){
+            return;
+          }
+          if (text != null) {
+            controller.text += text;
           }
         }
       }

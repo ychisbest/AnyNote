@@ -193,13 +193,15 @@ class MarkdownParser {
 
 class MarkdownRenderer extends StatelessWidget {
   final String data;
-  final int fontsize;
+  int fontsize;
   late BuildContext _context;
 
   MarkdownRenderer({required this.data, this.fontsize = 12});
 
+
   @override
   Widget build(BuildContext context) {
+    fontsize=GlobalConfig.fontSize;
     _context = context;
     MarkdownParser parser = MarkdownParser(data);
     List<MarkdownNode> nodes = parser.parse();

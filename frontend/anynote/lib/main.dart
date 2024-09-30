@@ -7,6 +7,7 @@ import 'package:anynote/GlobalConfig.dart';
 import 'package:anynote/views/EditNote.dart';
 import 'package:anynote/views/HeatMap.dart';
 import 'package:anynote/views/WideView/wideHome.dart';
+import 'package:anynote/views/aiMemo.dart';
 import 'package:anynote/views/archieve_list.dart';
 import 'package:anynote/views/archiveView.dart';
 import 'package:anynote/views/date_view.dart';
@@ -140,19 +141,21 @@ class NerrowHome extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Obx(() {
-              if(c.isLoading.value) {
-                return const Row(
-                  children: [
-                    Text("AnyNote"),
-                    SizedBox(width: 10,),
-                    SizedBox(height: 15,width: 15, child: CircularProgressIndicator())
-                  ],
-                );
-              } else {
-                return const Text("AnyNote");
-              }
+            if (c.isLoading.value) {
+              return const Row(
+                children: [
+                  Text("AnyNote"),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  SizedBox(
+                      height: 15, width: 15, child: CircularProgressIndicator())
+                ],
+              );
+            } else {
+              return const Text("AnyNote");
             }
-          ),
+          }),
           leading: Builder(builder: (context) {
             return IconButton(
               icon: const Icon(Icons.menu),
@@ -323,6 +326,14 @@ class _BuildDrawerState extends State<BuildDrawer> {
             onTap: () async {
               Get.back();
               Get.to(() => TagList());
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.camera),
+            title: const Text('Help you recall'),
+            onTap: () async {
+              Get.back();
+              Get.to(() => const Aimemo());
             },
           ),
           ListTile(
