@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:anynote/views/markdown_render/markdown_render.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import 'package:anynote/MainController.dart';
@@ -246,16 +247,13 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildHeader(context),
-              AnimatedSwitcher(
-                duration: Duration(),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: LayoutBuilder(
-                    builder: (BuildContext context, BoxConstraints constraints) {
-                      return _buildContent(constraints);
-                    },
-                  ),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    return _buildContent(constraints);
+                  },
                 ),
               ),
             ],
@@ -390,6 +388,9 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
                     widget.controller.archiveNote(widget.item.id!);
                   }
                   break;
+                case 'copy':
+                  Clipboard.setData(ClipboardData(text: widget.item.content??""));
+                  break;
                 case 'delete':
                   widget.controller.deleteNote(widget.item.id!);
                   break;
@@ -424,6 +425,16 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
             color: Colors.blue,
           ),
           title: Text(isArchive ? 'Unarchive' : 'Archive'),
+        ),
+      ),
+      const PopupMenuItem<String>(
+        value: 'copy',
+        child: ListTile(
+          leading: Icon(
+            Icons.copy,
+            color: Colors.blue,
+          ),
+          title: Text("Copy One"),
         ),
       ),
       const PopupMenuItem<String>(

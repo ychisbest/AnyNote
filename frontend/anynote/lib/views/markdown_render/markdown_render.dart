@@ -59,7 +59,7 @@ class MarkdownParser {
 
       // 解析列表（包括待办事项、无序列表和有序列表）
       RegExp listExp =
-          RegExp(r'^(\s*)(?:(-\s+\[( |x)\]\s+.*)|(-\s+.*)|(\d+\.\s+.*))');
+          RegExp(r'^(\s*)(?:(-\s\[( |x)\].*)|(-\s+.*)|(\d+\.\s+.*))');
       Match? listMatch = listExp.firstMatch(line);
       if (listMatch != null) {
         nodes.add(parseList(state, listExp));

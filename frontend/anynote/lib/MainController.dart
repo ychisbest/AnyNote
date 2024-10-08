@@ -237,9 +237,9 @@ class MainController extends GetxController {
 
   Future<NoteItem> addNote(NoteItem newNote) async {
     try {
-      final localId = newNote.id;
+      //final localId = newNote.id;
       final addedNote = await _api.addNoteItem(newNote.content ?? "");
-      addNoteLocally(newNote);
+      addNoteLocally(addedNote);
       //updateNoteLocally(addedNote, id: localId);
       return addedNote;
     } catch (e) {
