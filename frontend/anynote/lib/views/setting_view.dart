@@ -91,7 +91,8 @@ class _SettingViewState extends State<SettingView> {
               const SizedBox(height: 24),
               _buildTextField(_aiUrlController, 'AI URL'),
               const SizedBox(height: 16),
-              _buildTextField(_aiApiKeyController, 'AI API Key',ispassword: true),
+              _buildTextField(_aiApiKeyController, 'AI API Key',
+                  ispassword: true),
               const SizedBox(height: 16),
               _buildTextField(_aiModelController, 'AI Model'),
               const SizedBox(height: 48),
@@ -117,7 +118,8 @@ class _SettingViewState extends State<SettingView> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label,{bool ispassword=false}) {
+  Widget _buildTextField(TextEditingController controller, String label,
+      {bool ispassword = false}) {
     return TextField(
       obscureText: ispassword,
       controller: controller,

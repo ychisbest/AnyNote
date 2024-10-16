@@ -1,6 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 class GlobalConfig {
   static late SharedPreferences _prefs;
 
@@ -19,7 +18,8 @@ class GlobalConfig {
   static const String _aiModelKey = 'aiModel';
 
   static const String _defaultAiApiKey = 'sk-15632193f7784e5eadcf9e7199b301ea';
-  static const String _defaultAiUrl = 'https://api.deepseek.com/chat/completions';
+  static const String _defaultAiUrl =
+      'https://api.deepseek.com/chat/completions';
   static const String _defaultAiModel = 'deepseek-coder';
   static const String _updateFailedNotesKey = 'updateFailedNotes';
 

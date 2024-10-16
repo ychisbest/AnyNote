@@ -66,10 +66,7 @@ class _ArchiveListState extends State<ArchiveList> {
                       // Handle error, e.g., show a SnackBar
                     }
                   },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: _buildList(archivedNotes, widget.isArchive),
-                  ),
+                  child: _buildList(archivedNotes, widget.isArchive),
                 ),
               ),
             );
@@ -81,7 +78,7 @@ class _ArchiveListState extends State<ArchiveList> {
 
   Widget _buildList(List<NoteItem> archivedNotes, bool isArchive) {
     return LayoutBuilder(builder: (context, constraints) {
-      if (Get.width <= 560) {
+      if (Get.width <= 600) {
         return ListView.builder(
           padding: const EdgeInsets.only(bottom: 20),
           controller: sc,
@@ -91,7 +88,7 @@ class _ArchiveListState extends State<ArchiveList> {
           itemBuilder: (BuildContext context, int index) {
             final item = archivedNotes[index];
             return Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.symmetric(horizontal: 8,vertical: 6),
               child: NoteItemWidget(
                 key: ValueKey(item.id),
                 controller: controller,
@@ -139,12 +136,12 @@ class _ArchiveListState extends State<ArchiveList> {
           hintText: "Search...",
           prefixIcon: const Icon(Icons.search),
           border: InputBorder.none,
-         focusedBorder: OutlineInputBorder(
-            borderSide: const BorderSide(width: 1,color: Colors.black54),
-            borderRadius: BorderRadius.circular(15),
+          focusedBorder: OutlineInputBorder(
+            borderSide: const BorderSide(width: 1, color: Colors.black54),
+            borderRadius: BorderRadius.circular(0),
           ),
           enabledBorder: OutlineInputBorder(
-            borderSide: const BorderSide(width: 1,color: Colors.black12),
+            borderSide: const BorderSide(width: 1, color: Colors.black12),
             borderRadius: BorderRadius.circular(15),
           ),
         ),
@@ -158,7 +155,6 @@ class _ArchiveListState extends State<ArchiveList> {
       controller.updateFilter(query);
     });
   }
-
 }
 
 class NoteItemWidget extends StatefulWidget {
@@ -167,11 +163,11 @@ class NoteItemWidget extends StatefulWidget {
   final bool isArchive;
 
   const NoteItemWidget({
-    Key? key,
+    super.key,
     required this.controller,
     required this.item,
     required this.isArchive,
-  }) : super(key: key);
+  });
 
   @override
   State<NoteItemWidget> createState() => _NoteItemWidgetState();
@@ -221,42 +217,64 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
               : darkenColor(widget.item.color.toFullARGB(), 0.1),
           width: 2,
         ),
-        borderRadius: BorderRadius.circular(15),
-        color: widget.item.color.toFullARGB(),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+
+
       ),
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: () async {
-            await Get.to(() => EditNotePage(item: widget.item));
-          },
-          onTapDown: (_) => setState(() => _isHovered = true),
-          onTapUp: (_) => setState(() => _isHovered = false),
-          onTapCancel: () => setState(() => _isHovered = false),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildHeader(context),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints constraints) {
-                    return _buildContent(constraints);
-                  },
+        child: Material(
+          color: widget.item.color.toFullARGB(),
+
+          child: InkWell(
+            //behavior: HitTestBehavior.translucent,
+            onTap: () async {
+              await Get.to(() => EditNotePage(item: widget.item));
+            },
+            onTapDown: (_) => setState(() => _isHovered = true),
+            onTapUp: (_) => setState(() => _isHovered = false),
+            onTapCancel: () => setState(() => _isHovered = false),
+            onLongPress: ()async{var res= await _showOptionsDialog(widget.item);
+                  switch (res) {
+                    case 'toggleTopMost':
+                      widget.item.isTopMost = !widget.item.isTopMost;
+                      widget.controller.updateNote(widget.item.id!, widget.item);
+                      break;
+                    case 'toggleArchive':
+                      if (widget.isArchive) {
+                        widget.controller.unarchiveNote(widget.item.id!);
+                      } else {
+                        widget.controller.archiveNote(widget.item.id!);
+                      }
+                      break;
+                    case 'copy':
+                      Clipboard.setData(
+                          ClipboardData(text: widget.item.content ?? ""));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Copied'),backgroundColor: Colors.green,),
+                      );
+                      break;
+                    case 'delete':
+                      widget.controller.deleteNote(widget.item.id!);
+                      break;
+                  }
+              },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                //_buildHeader(context),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: LayoutBuilder(
+                    builder: (BuildContext context, BoxConstraints constraints) {
+                      return _buildContent(constraints);
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -264,44 +282,44 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
   }
 
   Widget _buildContent(BoxConstraints constraints) {
+
+    var content= SingleChildScrollView(
+      controller: _scrollController,
+      physics: const NeverScrollableScrollPhysics(),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+        child: Obx(() {
+          return MarkdownRenderer(
+            fontsize: c.fontSize.value,
+            data: widget.item.content?.trimRight() ?? "",
+          );
+        }),
+      ),
+    );
+
     return LayoutBuilder(
       builder: (context, constraints) {
         return Container(
-          constraints: const BoxConstraints(maxHeight: 200),
+          constraints: const BoxConstraints(maxHeight: 115),
           child: Stack(
             children: [
-              SingleChildScrollView(
-                controller: _scrollController,
-                physics: const NeverScrollableScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-                  child: Obx(() {
-                    return MarkdownRenderer(
-                      fontsize: c.fontSize.value,
-                      data: widget.item.content?.trimRight() ?? "",
-                    );
-                  }),
-                ),
-              ),
-              if (_isOverflow)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    height: 150,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          widget.item.color.toFullARGB().withOpacity(0),
-                          widget.item.color.toFullARGB(),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+              if(widget.item.isTopMost)
+                const Positioned(right: 0, top: 0, child: Icon(Icons.vertical_align_top,size: 20,color: Colors.orange, )),
+
+              _isOverflow?
+              ShaderMask(
+                shaderCallback: (Rect bounds) {
+                return const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.black, Colors.black,Colors.transparent],
+                stops: [0.0, 0.6,1],
+                ).createShader(bounds);
+                },
+                blendMode: BlendMode.dstIn,
+                child: content,
+              ):content,
+
               if (_isOverflow)
                 Positioned(
                   bottom: -5,
@@ -323,8 +341,7 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
   Widget _buildHeader(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: darkenColor(widget.item.color.toFullARGB(), 0.04),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+        color: _isHovered?darkenColor(widget.item.color.toFullARGB(), 0.1):darkenColor(widget.item.color.toFullARGB(), 0.04),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Row(
@@ -369,40 +386,120 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
           //       size: 15,
           //     )),
 
-          PopupMenuButton<String>(
-            icon: const Icon(
-              size: 15,
-              Icons.more_vert,
-              color: Colors.black54,
-            ),
-            onSelected: (String result) {
-              switch (result) {
-                case 'toggleTopMost':
-                  widget.item.isTopMost = !widget.item.isTopMost;
-                  widget.controller.updateNote(widget.item.id!, widget.item);
-                  break;
-                case 'toggleArchive':
-                  if (widget.isArchive) {
-                    widget.controller.unarchiveNote(widget.item.id!);
-                  } else {
-                    widget.controller.archiveNote(widget.item.id!);
-                  }
-                  break;
-                case 'copy':
-                  Clipboard.setData(ClipboardData(text: widget.item.content??""));
-                  break;
-                case 'delete':
-                  widget.controller.deleteNote(widget.item.id!);
-                  break;
-              }
-            },
-            itemBuilder: (BuildContext context) =>
-                _buildPopupMenuItems(widget.item, widget.isArchive),
-          ),
+          // PopupMenuButton<String>(
+          //   icon: const Icon(
+          //     size: 15,
+          //     Icons.more_vert,
+          //     color: Colors.black54,
+          //   ),
+          //   onSelected: (String result) {
+          //     switch (result) {
+          //       case 'toggleTopMost':
+          //         widget.item.isTopMost = !widget.item.isTopMost;
+          //         widget.controller.updateNote(widget.item.id!, widget.item);
+          //         break;
+          //       case 'toggleArchive':
+          //         if (widget.isArchive) {
+          //           widget.controller.unarchiveNote(widget.item.id!);
+          //         } else {
+          //           widget.controller.archiveNote(widget.item.id!);
+          //         }
+          //         break;
+          //       case 'copy':
+          //         Clipboard.setData(
+          //             ClipboardData(text: widget.item.content ?? ""));
+          //         break;
+          //       case 'delete':
+          //         widget.controller.deleteNote(widget.item.id!);
+          //         break;
+          //     }
+          //   },
+          //   itemBuilder: (BuildContext context) =>
+          //       _buildPopupMenuItems(widget.item, widget.isArchive),
+          // ),
         ],
       ),
     );
   }
+
+  Future<String?> _showOptionsDialog(NoteItem item) {
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Text(
+            'Options',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 显示创建时间和最后更新时间
+              Text(
+                'Created: ${timeAgo(item.createTime!)}',
+                style: TextStyle(color: Colors.grey[600], fontSize: 10),
+              ),
+
+              SizedBox(height: 10,),
+
+              ListTile(
+                leading: Icon(
+                  item.isTopMost ? Icons.star : Icons.star_border,
+                  color: item.isTopMost ? Colors.orange : Colors.grey,
+                ),
+                title: Text(
+                  item.isTopMost ? 'Remove from Top' : 'Add to Top',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                onTap: () => Navigator.of(context).pop('toggleTopMost'),
+              ),
+
+              ListTile(
+                leading: Icon(
+                  item.isArchived ? Icons.unarchive : Icons.archive,
+                  color: Colors.blue,
+                ),
+                title: Text(
+                  item.isArchived ? 'Unarchive' : 'Archive',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                onTap: () => Navigator.of(context).pop('toggleArchive'),
+              ),
+
+              ListTile(
+                leading: const Icon(
+                  Icons.copy,
+                  color: Colors.blue,
+                ),
+                title: const Text(
+                  'Copy',
+                  style: TextStyle(fontSize: 16),
+                ),
+                onTap: () => Navigator.of(context).pop('copy'),
+              ),
+
+              ListTile(
+                leading: const Icon(
+                  Icons.delete_outline,
+                  color: Colors.red,
+                ),
+                title: const Text(
+                  'Delete',
+                  style: TextStyle(fontSize: 16),
+                ),
+                onTap: () => Navigator.of(context).pop('delete'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
 
   List<PopupMenuEntry<String>> _buildPopupMenuItems(
       NoteItem item, bool isArchive) {
@@ -434,7 +531,7 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
             Icons.copy,
             color: Colors.blue,
           ),
-          title: Text("Copy One"),
+          title: Text("Copy"),
         ),
       ),
       const PopupMenuItem<String>(

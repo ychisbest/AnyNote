@@ -350,6 +350,40 @@ class _EditNotePageState extends State<EditNotePage> {
                     await _callAI();
                   }
 
+                  if (event.isControlPressed &&
+                      event.logicalKey == LogicalKeyboardKey.keyL) {
+                    final text = textController.text;
+                    final selection = textController.selection;
+                    final lineStart =
+                    text.isEmpty ? 0 : text.lastIndexOf('\n', selection.start - 1) + 1;
+                    final lineEnd = text.indexOf('\n', selection.end);
+                    final line = text.substring(lineStart, lineEnd == -1 ? null : lineEnd);
+
+                    String newLine;
+                    if (line.trimLeft().startsWith('- [ ] ')) {
+                      newLine = line.replaceFirst('- [ ] ', '- [x] ');
+                    } else if (line.trimLeft().startsWith('- [x] ')) {
+                      newLine = line.replaceFirst('- [x] ', '- [ ] ');
+                    } else if (line.trimLeft().startsWith('- ')) {
+                      newLine = line.replaceFirst('- ', '- [ ] ');
+                    } else {
+                      newLine = '- [ ] $line';
+                    }
+
+                    var newselection =  TextSelection(
+                            baseOffset: lineStart,
+                            extentOffset: lineEnd == -1 ? text.length : lineEnd);
+
+                    final newValue = TextEditingValue(
+                      text: text.replaceRange(newselection.start, newselection.end, newLine),
+                      selection:
+                      TextSelection.collapsed(offset: newselection.start + newLine.length),
+                    );
+                    textController.value = newValue;
+
+                  }
+
+
                   if (event.isShiftPressed &&
                       event.logicalKey == LogicalKeyboardKey.tab) {
                     UnindentText(textController, textFocusNode);

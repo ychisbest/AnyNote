@@ -241,7 +241,9 @@ class MarkdownRenderer extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: _renderStyledText(text,
-              style: TextStyle(
+              style: DefaultTextStyle.of(_context)
+                  .style
+                  .copyWith(
                   fontSize: 9 * (2 - 0.1 * levelHeader),
                   fontWeight: FontWeight.bold,
                   color: color)),
@@ -340,7 +342,9 @@ class MarkdownRenderer extends StatelessWidget {
                         EdgeInsets.only(top: fontsize.toDouble(), right: 5),
                     child: Text(
                       '$number. ',
-                      style: TextStyle(fontSize: fontsize.toDouble()),
+                      style: DefaultTextStyle.of(_context)
+                          .style
+                          .copyWith(fontSize: fontsize.toDouble()),
                     ),
                   ), // 显示序号
                   Expanded(
@@ -466,7 +470,9 @@ class MarkdownRenderer extends StatelessWidget {
         // ***加粗斜体***
         spans.add(TextSpan(
           text: match.group(2),
-          style: const TextStyle(
+          style: DefaultTextStyle.of(_context)
+              .style
+              .copyWith(
             fontWeight: FontWeight.bold,
             fontStyle: FontStyle.italic,
           ),
@@ -475,7 +481,9 @@ class MarkdownRenderer extends StatelessWidget {
         // ___加粗___
         spans.add(TextSpan(
           text: match.group(4),
-          style: const TextStyle(
+          style: DefaultTextStyle.of(_context)
+              .style
+              .copyWith(
             fontWeight: FontWeight.bold,
           ),
         ));
@@ -483,7 +491,9 @@ class MarkdownRenderer extends StatelessWidget {
         // **加粗** 或 __加粗__
         spans.add(TextSpan(
           text: match.group(6),
-          style: const TextStyle(
+          style: DefaultTextStyle.of(_context)
+              .style
+              .copyWith(
             fontWeight: FontWeight.bold,
           ),
         ));
@@ -491,7 +501,9 @@ class MarkdownRenderer extends StatelessWidget {
         // *斜体* 或 _斜体_
         spans.add(TextSpan(
           text: match.group(8),
-          style: const TextStyle(
+          style: DefaultTextStyle.of(_context)
+              .style
+              .copyWith(
             fontStyle: FontStyle.italic,
           ),
         ));
@@ -499,7 +511,9 @@ class MarkdownRenderer extends StatelessWidget {
         // ~~删除线~~
         spans.add(TextSpan(
           text: match.group(10),
-          style: const TextStyle(
+          style: DefaultTextStyle.of(_context)
+              .style
+              .copyWith(
             decoration: TextDecoration.lineThrough,
           ),
         ));
@@ -530,7 +544,9 @@ class MarkdownRenderer extends StatelessWidget {
                 ),
                 Text(
                   match.group(14) ?? "",
-                  style: const TextStyle(color: Colors.white, fontSize: 10),
+                  style: DefaultTextStyle.of(_context)
+                      .style
+                      .copyWith(color: Colors.white, fontSize: 10),
                 )
               ],
             ),

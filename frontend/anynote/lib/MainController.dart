@@ -422,7 +422,7 @@ class MainController extends GetxController {
       // var adjustDate=memo.createTime.add(Duration(hours: -3));
       var adjustDate = memo.createTime;
       DateTime date =
-      DateTime(adjustDate.year, adjustDate.month, adjustDate.day);
+          DateTime(adjustDate.year, adjustDate.month, adjustDate.day);
       if (!memoMap.containsKey(date)) {
         memoMap[date] = [];
       }
