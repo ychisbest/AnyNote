@@ -89,11 +89,18 @@ class _ArchiveListState extends State<ArchiveList> {
             final item = archivedNotes[index];
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8,vertical: 6),
-              child: NoteItemWidget(
-                key: ValueKey(item.id),
-                controller: controller,
-                item: item,
-                isArchive: isArchive,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(timeAgo(item.createTime),style: const TextStyle(fontSize: 10,color: Colors.black38),),
+                  const SizedBox(height: 3,),
+                  NoteItemWidget(
+                    key: ValueKey(item.id),
+                    controller: controller,
+                    item: item,
+                    isArchive: isArchive,
+                  ),
+                ],
               ),
             );
           },
@@ -439,12 +446,12 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 显示创建时间和最后更新时间
-              Text(
-                'Created: ${timeAgo(item.createTime!)}',
-                style: TextStyle(color: Colors.grey[600], fontSize: 10),
-              ),
+              // Text(
+              //   'Created: ${timeAgo(item.createTime!)}',
+              //   style: TextStyle(color: Colors.grey[600], fontSize: 10),
+              // ),
 
-              SizedBox(height: 10,),
+              const SizedBox(height: 10,),
 
               ListTile(
                 leading: Icon(

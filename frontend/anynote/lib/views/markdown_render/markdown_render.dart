@@ -475,6 +475,7 @@ class MarkdownRenderer extends StatelessWidget {
               .copyWith(
             fontWeight: FontWeight.bold,
             fontStyle: FontStyle.italic,
+              fontSize: fontsize.toDouble()
           ),
         ));
       } else if (match.group(3) != null) {
@@ -485,6 +486,7 @@ class MarkdownRenderer extends StatelessWidget {
               .style
               .copyWith(
             fontWeight: FontWeight.bold,
+              fontSize: fontsize.toDouble()
           ),
         ));
       } else if (match.group(5) != null) {
@@ -495,6 +497,7 @@ class MarkdownRenderer extends StatelessWidget {
               .style
               .copyWith(
             fontWeight: FontWeight.bold,
+              fontSize: fontsize.toDouble()
           ),
         ));
       } else if (match.group(7) != null) {
@@ -505,6 +508,7 @@ class MarkdownRenderer extends StatelessWidget {
               .style
               .copyWith(
             fontStyle: FontStyle.italic,
+              fontSize: fontsize.toDouble()
           ),
         ));
       } else if (match.group(9) != null) {
@@ -515,6 +519,7 @@ class MarkdownRenderer extends StatelessWidget {
               .style
               .copyWith(
             decoration: TextDecoration.lineThrough,
+              fontSize: fontsize.toDouble()
           ),
         ));
       } else if (match.group(11) != null) {
@@ -524,6 +529,7 @@ class MarkdownRenderer extends StatelessWidget {
           style: TextStyle(
             fontFamily: 'monospace',
             backgroundColor: Colors.grey[200],
+              fontSize: fontsize.toDouble()
           ),
         ));
       } else if (match.group(13) != null) {
