@@ -307,8 +307,13 @@ class MainController extends GetxController {
   Future<void> updateIndex(List<NoteItem> items) async {
     try {
       List<int> ids = items.map((item) => item.id!).toList();
-      List<int> indices = items.map((item) => item.index).toList();
+      List<int> indices = [];
+      for(int i = 1;i <= ids.length;i++){
+        indices.add(i);
+      }
+
       updateIndicesLocally(ids, indices);
+
       await _api.updateIndex(ids, indices);
     } catch (e) {
       print('Error updating note indices: $e');

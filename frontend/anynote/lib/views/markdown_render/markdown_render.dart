@@ -32,6 +32,12 @@ class MarkdownParser {
       // 忽略空行
       if (line.trim().isEmpty) {
         nodes.add(MarkdownNode(type: 'paragraph', content: ""));
+
+        if(state.index+1<state.lines.length){
+          while(state.lines[state.index+1].trim().isEmpty){
+            state.index++;
+          }
+        }
         state.index++;
         continue;
       }
@@ -244,7 +250,7 @@ class MarkdownRenderer extends StatelessWidget {
               style: DefaultTextStyle.of(_context)
                   .style
                   .copyWith(
-                  fontSize: 9 * (2 - 0.1 * levelHeader),
+                  fontSize: GlobalConfig.fontSize.toDouble(),
                   fontWeight: FontWeight.bold,
                   color: color)),
         );
@@ -339,7 +345,7 @@ class MarkdownRenderer extends StatelessWidget {
                 children: [
                   Padding(
                     padding:
-                        EdgeInsets.only(top: fontsize.toDouble(), right: 5),
+                        const EdgeInsets.only(right: 5),
                     child: Text(
                       '$number. ',
                       style: DefaultTextStyle.of(_context)

@@ -218,13 +218,14 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
     return Container(
       key: ValueKey(widget.item.id),
       decoration: BoxDecoration(
+        boxShadow: [BoxShadow(color:darkenColor(widget.item.color.toFullARGB()),blurRadius: 2)],
         border: Border.all(
           color: _isHovered
               ? darkenColor(widget.item.color.toFullARGB(), 0.3)
               : darkenColor(widget.item.color.toFullARGB(), 0.1),
-          width: 2,
+          width: 1,
         ),
-
+        borderRadius: const BorderRadius.all(Radius.circular(5))
 
       ),
       child: MouseRegion(
@@ -232,8 +233,9 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
         onExit: (_) => setState(() => _isHovered = false),
         child: Material(
           color: widget.item.color.toFullARGB(),
-
+            borderRadius: const BorderRadius.all(Radius.circular(5)),
           child: InkWell(
+              borderRadius: const BorderRadius.all(Radius.circular(5)),
             //behavior: HitTestBehavior.translucent,
             onTap: () async {
               await Get.to(() => EditNotePage(item: widget.item));
@@ -263,6 +265,35 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
                       break;
                     case 'delete':
                       widget.controller.deleteNote(widget.item.id!);
+                      break;
+                    case 'up':
+                      var list = widget.controller.filteredUnarchivedNotes;
+                      int index = list.indexWhere((obj) => obj.id == widget.item.id);
+                      // 如果找到了且该元素不是第一个元素
+                      if (index > 0) {
+                        // 交换当前元素和它前面的一个元素的位置
+                        var temp = list[index - 1];
+                        list[index - 1] = list[index];
+                        list[index] = temp;
+                      }
+
+                      widget.controller.updateIndex(list);
+
+                      break;
+                    case 'down':
+                      var list = widget.controller.filteredUnarchivedNotes;
+                      int index = list.indexWhere((obj) => obj.id == widget.item.id);
+
+                      if(index==list.length-1)break;
+
+                      // 如果找到了且该元素不是第一个元素
+                      if (index > -1) {
+                        // 交换当前元素和它前面的一个元素的位置
+                        var temp = list[index + 1];
+                        list[index + 1] = list[index];
+                        list[index] = temp;
+                      }
+                      widget.controller.updateIndex(list);
                       break;
                   }
               },
@@ -307,7 +338,7 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
     return LayoutBuilder(
       builder: (context, constraints) {
         return Container(
-          constraints: const BoxConstraints(maxHeight: 115),
+          constraints: const BoxConstraints(maxHeight: 500),
           child: Stack(
             children: [
               if(widget.item.isTopMost)
@@ -353,11 +384,6 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Row(
         children: [
-          // const Icon(
-          //   Icons.event_note,
-          //   size: 18,
-          //   color: Colors.grey,
-          // ),
           if (widget.item.isTopMost)
             const Padding(
               padding: EdgeInsets.only(right: 8),
@@ -377,53 +403,6 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
           ),
 
           const Spacer(),
-
-          // IconButton(
-          //     onPressed: () {
-          //       if (isArchive) {
-          //         controller.unarchiveNote(item.id!);
-          //       } else {
-          //         controller.archiveNote(item.id!);
-          //       }
-          //     },
-          //     icon: Icon(
-          //       item.isArchived
-          //           ? Icons.unarchive_outlined
-          //           : Icons.archive_outlined,
-          //       size: 15,
-          //     )),
-
-          // PopupMenuButton<String>(
-          //   icon: const Icon(
-          //     size: 15,
-          //     Icons.more_vert,
-          //     color: Colors.black54,
-          //   ),
-          //   onSelected: (String result) {
-          //     switch (result) {
-          //       case 'toggleTopMost':
-          //         widget.item.isTopMost = !widget.item.isTopMost;
-          //         widget.controller.updateNote(widget.item.id!, widget.item);
-          //         break;
-          //       case 'toggleArchive':
-          //         if (widget.isArchive) {
-          //           widget.controller.unarchiveNote(widget.item.id!);
-          //         } else {
-          //           widget.controller.archiveNote(widget.item.id!);
-          //         }
-          //         break;
-          //       case 'copy':
-          //         Clipboard.setData(
-          //             ClipboardData(text: widget.item.content ?? ""));
-          //         break;
-          //       case 'delete':
-          //         widget.controller.deleteNote(widget.item.id!);
-          //         break;
-          //     }
-          //   },
-          //   itemBuilder: (BuildContext context) =>
-          //       _buildPopupMenuItems(widget.item, widget.isArchive),
-          // ),
         ],
       ),
     );
@@ -464,6 +443,30 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
                 ),
                 onTap: () => Navigator.of(context).pop('toggleTopMost'),
               ),
+
+              if(!widget.isArchive)
+                ListTile(
+                  leading: const Icon(
+                    Icons.arrow_upward
+                  ),
+                  title: const Text(
+                    "Move Up",
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  onTap: () => Navigator.of(context).pop('up'),
+                ),
+
+              if(!widget.isArchive)
+                ListTile(
+                  leading: const Icon(
+                      Icons.arrow_downward
+                  ),
+                  title: const Text(
+                    "Move Down",
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  onTap: () => Navigator.of(context).pop('down'),
+                ),
 
               ListTile(
                 leading: Icon(

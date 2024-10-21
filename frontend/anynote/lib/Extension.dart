@@ -122,7 +122,7 @@ class MarkdownEditingController extends TextEditingController {
         children.add(TextSpan(
             text: "$line\n",
             style: TextStyle(
-                fontSize: 9 * (2 - 0.1 * level),
+                fontSize: GlobalConfig.fontSize.toDouble(),
                 fontWeight: FontWeight.bold,
                 color: color)));
 

@@ -183,13 +183,13 @@ class NotesApi {
       throw ArgumentError(
           'The lists of ids and indices must have the same length.');
     }
-
     try {
       await _dio.post('/api/Notes/UpdateIndex', data: {
         'ids': ids,
         'indices': indices,
       });
     } catch (e) {
+      print(e);
       throw Exception('Failed to update indices: $e');
     }
   }
