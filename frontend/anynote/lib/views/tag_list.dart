@@ -1,12 +1,14 @@
 import 'package:anynote/MainController.dart';
 import 'package:anynote/note_api_service.dart';
 import 'package:anynote/views/archieve_list.dart';
+import 'package:anynote/widgets/NoteList.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class TagList extends StatelessWidget {
   TagList({super.key});
   final MainController c = Get.find<MainController>();
+  ScrollController sc = ScrollController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,6 +23,7 @@ class TagList extends StatelessWidget {
             var map = c.extractTagsWithNotes;
             var tags = map.keys.toList();
             return ListView.builder(
+                controller: sc,
                 itemCount: tags.length,
                 itemBuilder: (context, index) {
                   return ListTile(
@@ -38,6 +41,7 @@ class TagList extends StatelessWidget {
 class NoteTagListView extends StatelessWidget {
   NoteTagListView({super.key, required this.tag});
   final String tag;
+  final ScrollController sc = ScrollController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,15 +51,7 @@ class NoteTagListView extends StatelessWidget {
         body: GetX<MainController>(builder: (c) {
           var items = c.extractTagsWithNotes[tag] ?? [];
 
-          return ListView.builder(
-              itemCount: items?.length,
-              itemBuilder: (cc, ci) {
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: NoteItemWidget(
-                      controller: c, item: items[ci], isArchive: true),
-                );
-              });
+          return BuildNoteList(items,false);
         }));
   }
 }
