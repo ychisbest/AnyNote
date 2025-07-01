@@ -77,7 +77,6 @@ class _ArchiveListState extends State<ArchiveList> {
   }
 
   Widget _buildList(List<NoteItem> archivedNotes, bool isArchive) {
-
     int _calculateItemCount(List<NoteItem> archivedNotes) {
       final topmostCount = archivedNotes.where((item) => item.isTopMost).length;
       final normalCount = archivedNotes.length - topmostCount;
@@ -99,7 +98,10 @@ class _ArchiveListState extends State<ArchiveList> {
           children: [
             Text(
               title,
-              style:  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: Colors.black87),
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87),
             ),
           ],
         ),
@@ -128,53 +130,41 @@ class _ArchiveListState extends State<ArchiveList> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 20),
-      controller: sc,
-      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-      itemCount: _calculateItemCount(archivedNotes),
-      itemBuilder: (BuildContext context, int index) {
-        final topmostItems = archivedNotes.where((item) => item.isTopMost).toList();
-        final normalItems = archivedNotes.where((item) => !item.isTopMost).toList();
-
-        int currentIndex = index;
-
-        // Check if we're displaying the "Topmost" header
-        if (topmostItems.isNotEmpty) {
-          if (currentIndex == 0) {
-            return _buildHeader("📌 Topmost");
-          }
-          currentIndex--;
-
-          // Display topmost items
-          if (currentIndex < topmostItems.length) {
-            final item = topmostItems[currentIndex];
-            return _buildItem(item);
-          }
-          currentIndex -= topmostItems.length;
-        }
-
-        // Check if we're displaying the "Notes" header
-        if (normalItems.isNotEmpty) {
-          if (currentIndex == 0) {
-            // Adjust the top padding based on the presence of topmost items
-            final double topPadding = topmostItems.isNotEmpty ? 30.0 : 10.0;
-            return _buildHeader("🗒️ Notes", topPadding: topPadding);
-          }
-          currentIndex--;
-
-          // Display normal items
-          if (currentIndex < normalItems.length) {
-            final item = normalItems[currentIndex];
-            return _buildItem(item);
-          }
-        }
-
-        return const SizedBox.shrink(); // Fallback for any unexpected indices
-      },
+    final topmostItems = archivedNotes.where((item) => item.isTopMost).toList();
+    final normalItems = archivedNotes.where((item) => !item.isTopMost).toList();
+    const gridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 2,
     );
 
+    return CustomScrollView(
+      controller: sc,
+      physics:
+          const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      slivers: [
+        if (topmostItems.isNotEmpty)
+          SliverToBoxAdapter(child: _buildHeader("📌 Topmost")),
+        SliverList.builder(
+          itemCount: topmostItems.length,
+          itemBuilder: (context, index) {
+            return _buildItem(topmostItems[index]);
+          },
+        ),
+        if (normalItems.isNotEmpty)
+          SliverToBoxAdapter(
+            child: _buildHeader("🗒️ Notes",
+                topPadding: topmostItems.isNotEmpty ? 30.0 : 10.0),
+          ),
+        SliverGrid(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => _buildItem(normalItems[index]),
+            childCount: normalItems.length,
+          ),
+          gridDelegate: gridDelegate,
+        ),
 
+        const SliverToBoxAdapter(child: SizedBox(height: 50,))
+      ],
+    );
   }
 
   Widget _buildSearchBar() {
@@ -264,24 +254,26 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
     return Container(
       key: ValueKey(widget.item.id),
       decoration: BoxDecoration(
-        boxShadow: [BoxShadow(color:darkenColor(widget.item.color.toFullARGB()),blurRadius: 2)],
-        border: Border.all(
-          color: _isHovered
-              ? darkenColor(widget.item.color.toFullARGB(), 0.3)
-              : darkenColor(widget.item.color.toFullARGB(), 0.1),
-          width: 1,
-        ),
-        borderRadius: const BorderRadius.all(Radius.circular(5))
-
-      ),
+          boxShadow: [
+            BoxShadow(
+                color: darkenColor(widget.item.color.toFullARGB()),
+                blurRadius: 2)
+          ],
+          border: Border.all(
+            color: _isHovered
+                ? darkenColor(widget.item.color.toFullARGB(), 0.3)
+                : darkenColor(widget.item.color.toFullARGB(), 0.1),
+            width: 1,
+          ),
+          borderRadius: const BorderRadius.all(Radius.circular(5))),
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
         child: Material(
           color: widget.item.color.toFullARGB(),
-            borderRadius: const BorderRadius.all(Radius.circular(5)),
+          borderRadius: const BorderRadius.all(Radius.circular(5)),
           child: InkWell(
-              borderRadius: const BorderRadius.all(Radius.circular(5)),
+            borderRadius: const BorderRadius.all(Radius.circular(5)),
             //behavior: HitTestBehavior.translucent,
             onTap: () async {
               await Get.to(() => EditNotePage(item: widget.item));
@@ -289,60 +281,66 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
             onTapDown: (_) => setState(() => _isHovered = true),
             onTapUp: (_) => setState(() => _isHovered = false),
             onTapCancel: () => setState(() => _isHovered = false),
-            onLongPress: ()async{var res= await _showOptionsDialog(widget.item);
-                  switch (res) {
-                    case 'toggleTopMost':
-                      widget.item.isTopMost = !widget.item.isTopMost;
-                      widget.controller.updateNote(widget.item.id!, widget.item);
-                      break;
-                    case 'toggleArchive':
-                      if (widget.isArchive) {
-                        widget.controller.unarchiveNote(widget.item.id!);
-                      } else {
-                        widget.controller.archiveNote(widget.item.id!);
-                      }
-                      break;
-                    case 'copy':
-                      Clipboard.setData(
-                          ClipboardData(text: widget.item.content ?? ""));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Copied'),backgroundColor: Colors.green,),
-                      );
-                      break;
-                    case 'delete':
-                      widget.controller.deleteNote(widget.item.id!);
-                      break;
-                    case 'up':
-                      var list = widget.controller.filteredUnarchivedNotes;
-                      int index = list.indexWhere((obj) => obj.id == widget.item.id);
-                      // 如果找到了且该元素不是第一个元素
-                      if (index > 0) {
-                        // 交换当前元素和它前面的一个元素的位置
-                        var temp = list[index - 1];
-                        list[index - 1] = list[index];
-                        list[index] = temp;
-                      }
-
-                      widget.controller.updateIndex(list);
-
-                      break;
-                    case 'down':
-                      var list = widget.controller.filteredUnarchivedNotes;
-                      int index = list.indexWhere((obj) => obj.id == widget.item.id);
-
-                      if(index==list.length-1)break;
-
-                      // 如果找到了且该元素不是第一个元素
-                      if (index > -1) {
-                        // 交换当前元素和它前面的一个元素的位置
-                        var temp = list[index + 1];
-                        list[index + 1] = list[index];
-                        list[index] = temp;
-                      }
-                      widget.controller.updateIndex(list);
-                      break;
+            onLongPress: () async {
+              var res = await _showOptionsDialog(widget.item);
+              switch (res) {
+                case 'toggleTopMost':
+                  widget.item.isTopMost = !widget.item.isTopMost;
+                  widget.controller.updateNote(widget.item.id!, widget.item);
+                  break;
+                case 'toggleArchive':
+                  if (widget.isArchive) {
+                    widget.controller.unarchiveNote(widget.item.id!);
+                  } else {
+                    widget.controller.archiveNote(widget.item.id!);
                   }
-              },
+                  break;
+                case 'copy':
+                  Clipboard.setData(
+                      ClipboardData(text: widget.item.content ?? ""));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Copied'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  break;
+                case 'delete':
+                  widget.controller.deleteNote(widget.item.id!);
+                  break;
+                case 'up':
+                  var list = widget.controller.filteredUnarchivedNotes;
+                  int index =
+                      list.indexWhere((obj) => obj.id == widget.item.id);
+                  // 如果找到了且该元素不是第一个元素
+                  if (index > 0) {
+                    // 交换当前元素和它前面的一个元素的位置
+                    var temp = list[index - 1];
+                    list[index - 1] = list[index];
+                    list[index] = temp;
+                  }
+
+                  widget.controller.updateIndex(list);
+
+                  break;
+                case 'down':
+                  var list = widget.controller.filteredUnarchivedNotes;
+                  int index =
+                      list.indexWhere((obj) => obj.id == widget.item.id);
+
+                  if (index == list.length - 1) break;
+
+                  // 如果找到了且该元素不是第一个元素
+                  if (index > -1) {
+                    // 交换当前元素和它前面的一个元素的位置
+                    var temp = list[index + 1];
+                    list[index + 1] = list[index];
+                    list[index] = temp;
+                  }
+                  widget.controller.updateIndex(list);
+                  break;
+              }
+            },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
@@ -352,7 +350,8 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   child: LayoutBuilder(
-                    builder: (BuildContext context, BoxConstraints constraints) {
+                    builder:
+                        (BuildContext context, BoxConstraints constraints) {
                       return _buildContent(constraints);
                     },
                   ),
@@ -366,8 +365,7 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
   }
 
   Widget _buildContent(BoxConstraints constraints) {
-
-    var content= SingleChildScrollView(
+    var content = SingleChildScrollView(
       controller: _scrollController,
       physics: const NeverScrollableScrollPhysics(),
       child: ConstrainedBox(
@@ -384,26 +382,38 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
     return LayoutBuilder(
       builder: (context, constraints) {
         return Container(
-          constraints: const BoxConstraints(maxHeight: 500),
+          constraints:widget.item.isTopMost?
+          const BoxConstraints(maxHeight: 400):
+           const BoxConstraints(maxHeight: 230,minHeight:230),
           child: Stack(
             children: [
-              if(widget.item.isTopMost)
-                const Positioned(right: 0, top: 0, child: Icon(Icons.vertical_align_top,size: 20,color: Colors.orange, )),
-
-              _isOverflow?
-              ShaderMask(
-                shaderCallback: (Rect bounds) {
-                return const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.black, Colors.black,Colors.transparent],
-                stops: [0.0, 0.6,1],
-                ).createShader(bounds);
-                },
-                blendMode: BlendMode.dstIn,
-                child: content,
-              ):content,
-
+              if (widget.item.isTopMost)
+                const Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Icon(
+                      Icons.vertical_align_top,
+                      size: 20,
+                      color: Colors.orange,
+                    )),
+              _isOverflow
+                  ? ShaderMask(
+                      shaderCallback: (Rect bounds) {
+                        return const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black,
+                            Colors.black,
+                            Colors.transparent
+                          ],
+                          stops: [0.0, 0.6, 1],
+                        ).createShader(bounds);
+                      },
+                      blendMode: BlendMode.dstIn,
+                      child: content,
+                    )
+                  : content,
               if (_isOverflow)
                 Positioned(
                   bottom: -5,
@@ -425,7 +435,9 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
   Widget _buildHeader(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: _isHovered?darkenColor(widget.item.color.toFullARGB(), 0.1):darkenColor(widget.item.color.toFullARGB(), 0.04),
+        color: _isHovered
+            ? darkenColor(widget.item.color.toFullARGB(), 0.1)
+            : darkenColor(widget.item.color.toFullARGB(), 0.04),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Row(
@@ -447,7 +459,6 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
               fontWeight: FontWeight.w700,
             ),
           ),
-
           const Spacer(),
         ],
       ),
@@ -476,7 +487,9 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
               //   style: TextStyle(color: Colors.grey[600], fontSize: 10),
               // ),
 
-              const SizedBox(height: 10,),
+              const SizedBox(
+                height: 10,
+              ),
 
               ListTile(
                 leading: Icon(
@@ -490,11 +503,9 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
                 onTap: () => Navigator.of(context).pop('toggleTopMost'),
               ),
 
-              if(!widget.isArchive)
+              if (!widget.isArchive)
                 ListTile(
-                  leading: const Icon(
-                    Icons.arrow_upward
-                  ),
+                  leading: const Icon(Icons.arrow_upward),
                   title: const Text(
                     "Move Up",
                     style: TextStyle(fontSize: 16),
@@ -502,11 +513,9 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
                   onTap: () => Navigator.of(context).pop('up'),
                 ),
 
-              if(!widget.isArchive)
+              if (!widget.isArchive)
                 ListTile(
-                  leading: const Icon(
-                      Icons.arrow_downward
-                  ),
+                  leading: const Icon(Icons.arrow_downward),
                   title: const Text(
                     "Move Down",
                     style: TextStyle(fontSize: 16),
@@ -555,7 +564,6 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
       },
     );
   }
-
 
   List<PopupMenuEntry<String>> _buildPopupMenuItems(
       NoteItem item, bool isArchive) {
