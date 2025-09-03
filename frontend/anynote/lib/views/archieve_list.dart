@@ -1,19 +1,13 @@
 import 'dart:async';
 import 'dart:ui';
-import 'package:anynote/views/markdown_render/markdown_render.dart';
 import 'package:anynote/widgets/NoteList.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import 'package:anynote/MainController.dart';
-import 'package:anynote/note_api_service.dart';
-import 'package:anynote/views/EditNote.dart';
-import 'package:anynote/Extension.dart';
-import 'package:intl/intl.dart' as intl;
 
 class ArchiveList extends StatefulWidget {
-  const ArchiveList({Key? key, this.isArchive = false}) : super(key: key);
+  const ArchiveList({super.key, this.isArchive = false});
 
   final bool isArchive;
 
@@ -44,7 +38,7 @@ class _ArchiveListState extends State<ArchiveList> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        if (widget.isArchive) _buildSearchBar(),
+        if(widget.isArchive)_buildSearchBar(),
         Expanded(
           child: Obx(() {
             var archivedNotes = widget.isArchive
@@ -92,7 +86,7 @@ class _ArchiveListState extends State<ArchiveList> {
           border: InputBorder.none,
           focusedBorder: OutlineInputBorder(
             borderSide: const BorderSide(width: 1, color: Colors.black54),
-            borderRadius: BorderRadius.circular(0),
+            borderRadius: BorderRadius.circular(15),
           ),
           enabledBorder: OutlineInputBorder(
             borderSide: const BorderSide(width: 1, color: Colors.black12),

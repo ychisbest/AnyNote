@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:anynote/GlobalConfig.dart';
 import 'package:anynote/MainController.dart';
@@ -9,7 +8,7 @@ import 'package:get/get.dart';
 extension ColorExtension on int? {
   // 扩展方法，自动添加透明通道
   Color toFullARGB() {
-    if (this == null) return Color(0xFFFFFFFF);
+    if (this == null) return const Color(0xFFFFFFFF);
     return Color(this! | 0xFF000000);
   }
 }
@@ -403,7 +402,7 @@ class MarkdownEditingController extends TextEditingController {
 class CustomMarkdownDisplay extends StatelessWidget {
   final String text;
   final double lineheight;
-  CustomMarkdownDisplay({required this.text, this.lineheight = 1.5});
+  const CustomMarkdownDisplay({super.key, required this.text, this.lineheight = 1.5});
 
   final String zeroWidthChar = '';
 
@@ -471,7 +470,6 @@ class CustomMarkdownDisplay extends StatelessWidget {
                 .add(TextSpan(text: line.substring(lastMatchEnd, match.start)));
           }
 
-          final altText = match.group(1) ?? '';
           final imageUrl = match.group(2) ?? '';
 
           children.add(
@@ -572,11 +570,11 @@ class CustomMarkdownDisplay extends StatelessWidget {
         if (match.start > lastMatchEnd) {
           children.add(TextSpan(
               text: line.substring(lastMatchEnd, match.start),
-              style: TextStyle()));
+              style: const TextStyle()));
         }
 
         String matchText = match.group(0)!;
-        TextStyle matchStyle = TextStyle();
+        TextStyle matchStyle = const TextStyle();
 
         if (matchText.trimLeft().startsWith("-") &&
             !(matchText.trimLeft().startsWith("- [")) &&
@@ -663,7 +661,7 @@ class CustomMarkdownDisplay extends StatelessWidget {
 
       if (lastMatchEnd < line.length) {
         children.add(
-            TextSpan(text: line.substring(lastMatchEnd), style: TextStyle()));
+            TextSpan(text: line.substring(lastMatchEnd), style: const TextStyle()));
       }
 
       children.add(const TextSpan(text: '\n', style: TextStyle()));
@@ -711,7 +709,7 @@ void IndentText(TextEditingController controller, FocusNode controllerfn) {
   for (int i = startLine; i <= endLine; i++) {
     if (i >= 0 && i < lines.length) {
       final line = lines[i];
-      final newLine = '  ' + line;
+      final newLine = '  $line';
       lines[i] = newLine;
     }
   }
@@ -762,10 +760,10 @@ void UnindentText(TextEditingController controller, FocusNode controllerfn) {
   });
 }
 
-void TextChangeEx(TextEditingController _controller, String _lastchange) {
-  final text = _controller.text;
-  final selection = _controller.selection;
-  if (text.length > _lastchange.length &&
+void TextChangeEx(TextEditingController controller, String lastchange) {
+  final text = controller.text;
+  final selection = controller.selection;
+  if (text.length > lastchange.length &&
       selection.baseOffset > 3 &&
       text.length >= selection.baseOffset) {
     if (text[selection.baseOffset - 1] == '\n' && text.length > 3) {
@@ -777,7 +775,7 @@ void TextChangeEx(TextEditingController _controller, String _lastchange) {
       if (currentLine.trim() == "-") {
         final newText =
             text.replaceRange(lineStart - 1, selection.baseOffset, '\n');
-        _controller.value = TextEditingValue(
+        controller.value = TextEditingValue(
           text: newText,
           selection:
               TextSelection.fromPosition(TextPosition(offset: lineStart)),
@@ -788,7 +786,7 @@ void TextChangeEx(TextEditingController _controller, String _lastchange) {
       if (currentLine.trim() == "- [ ]") {
         final newText =
             text.replaceRange(lineStart - 1, selection.baseOffset, '\n');
-        _controller.value = TextEditingValue(
+        controller.value = TextEditingValue(
           text: newText,
           selection:
               TextSelection.fromPosition(TextPosition(offset: lineStart)),
@@ -805,7 +803,7 @@ void TextChangeEx(TextEditingController _controller, String _lastchange) {
         final indentation = currentLine.split(splitstr)[0];
         final newText = text.replaceRange(
             selection.baseOffset, selection.baseOffset, '$indentation- [ ] ');
-        _controller.value = TextEditingValue(
+        controller.value = TextEditingValue(
           text: newText,
           selection: TextSelection.fromPosition(TextPosition(
               offset: selection.baseOffset + indentation.length + 6)),
@@ -813,8 +811,8 @@ void TextChangeEx(TextEditingController _controller, String _lastchange) {
       } else if (match != null) {
         final indentation = match.group(1);
         final newText = text.replaceRange(
-            selection.baseOffset, selection.baseOffset, '${indentation}- ');
-        _controller.value = TextEditingValue(
+            selection.baseOffset, selection.baseOffset, '$indentation- ');
+        controller.value = TextEditingValue(
           text: newText,
           selection: TextSelection.fromPosition(TextPosition(
               offset: selection.baseOffset + indentation!.length + 2)),

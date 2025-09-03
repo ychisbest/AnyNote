@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../MainController.dart';
-import 'HeatMap.dart';
 
 class SettingView extends StatefulWidget {
   const SettingView({super.key});
@@ -101,7 +100,7 @@ class _SettingViewState extends State<SettingView> {
                   GlobalConfig.clear();
                   var c = Get.find<MainController>();
                   c.logout();
-                  Get.offAll(() => LoginPage());
+                  Get.offAll(() => const LoginPage());
                 },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),

@@ -1,7 +1,6 @@
 // markdown_parser.dart
 import 'package:anynote/GlobalConfig.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 class MarkdownNode {
   final String type;
@@ -202,7 +201,7 @@ class MarkdownRenderer extends StatelessWidget {
   int fontsize;
   late BuildContext _context;
 
-  MarkdownRenderer({required this.data, this.fontsize = 12});
+  MarkdownRenderer({super.key, required this.data, this.fontsize = 12});
 
 
   @override
@@ -289,7 +288,7 @@ class MarkdownRenderer extends StatelessWidget {
           child: Image.network(
             src,
             errorBuilder: (context, error, stackTrace) {
-              return Text('![${alt}](${src})');
+              return Text('![$alt]($src)');
             },
           ),
         );

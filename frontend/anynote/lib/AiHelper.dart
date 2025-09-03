@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:anynote/GlobalConfig.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
@@ -195,9 +194,6 @@ $content
           if (data == '[DONE]') break;
           final jsonData = jsonDecode(data);
           final text = jsonData['choices'][0]['delta']['content'];
-          if(controller==null){
-            return;
-          }
           if (text != null) {
             controller.text += text;
           }

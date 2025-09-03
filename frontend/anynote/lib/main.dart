@@ -1,12 +1,10 @@
 import 'dart:io';
 import 'dart:async';
-import 'dart:math';
 import 'dart:ui';
 
 import 'package:anynote/GlobalConfig.dart';
 import 'package:anynote/views/EditNote.dart';
 import 'package:anynote/views/HeatMap.dart';
-import 'package:anynote/views/WideView/wideHome.dart';
 import 'package:anynote/views/aiMemo.dart';
 import 'package:anynote/views/archieve_list.dart';
 import 'package:anynote/views/archiveView.dart';
@@ -20,10 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/adapters.dart';
-import 'package:intl/intl.dart';
-import 'package:window_manager/window_manager.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'Extension.dart';
 import 'MainController.dart';
 import 'note_api_service.dart';
 import 'views/WideView/windowManger.dart';
@@ -49,11 +44,11 @@ void main() async {
 
   Get.put(MainController());
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({super.key});
+  const MyApp({super.key});
 
   // This widget is the root of your application.
   @override
@@ -65,7 +60,7 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           fontFamily: kIsWeb ? "" : "MyCustomfont",
         ),
-        home: GlobalConfig.isLoggedIn ? const HomePage() : LoginPage());
+        home: GlobalConfig.isLoggedIn ? const HomePage() : const LoginPage());
   }
 }
 
@@ -98,7 +93,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
       if (!GlobalConfig.isLoggedIn) {
-        return LoginPage();
+        return const LoginPage();
       }
       // if (Get.width > 600) {
       //   resizeableHome ??= WideHome();
@@ -180,23 +175,30 @@ class NerrowHome extends StatelessWidget {
         drawer: const BuildDrawer(),
         body: SafeArea(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Obx(() {
-                  return Wrap(
-                    children: [
-                      ...List.generate(c.tags.length, (index) {
-                        return TextButton(
-                          child: Text(c.tags[index]),
-                          onPressed: () async {
-                            Get.to(() => NoteTagListView(tag: c.tags[index]));
-                          },
-                        );
-                      }),
-                    ],
+                  return Container(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    color: Colors.white,
+                    child: Center(
+                      child: Wrap(
+                        children: [
+                          ...List.generate(c.tags.length, (index) {
+                            return TextButton(
+                              child: Text(c.tags[index]),
+                              onPressed: () async {
+                                Get.to(() => NoteTagListView(tag: c.tags[index]));
+                              },
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
                   );
                 }
               ),
-              Expanded(
+              const Expanded(
                 child: ArchiveList(),
               ),
             ],
@@ -249,7 +251,7 @@ class SafeScrollAnimation {
 }
 
 class BuildDrawer extends StatefulWidget {
-  const BuildDrawer({Key? key}) : super(key: key);
+  const BuildDrawer({super.key});
 
   @override
   _BuildDrawerState createState() => _BuildDrawerState();

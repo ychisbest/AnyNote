@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../Extension.dart';
 import '../MainController.dart';
 
 class RandomView extends StatelessWidget {

@@ -1,15 +1,12 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:anynote/Extension.dart';
 import 'package:anynote/GlobalConfig.dart';
 import 'package:anynote/MainController.dart';
 import 'package:anynote/note_api_service.dart';
 import 'package:anynote/views/MarkdwonShortcutBar.dart';
-import 'package:anynote/views/markdown_render/markdown_render.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
 
@@ -19,7 +16,7 @@ enum SyncStatus { waiting, syncing, completed, error }
 
 class EditNotePage extends StatefulWidget {
   final NoteItem? item;
-  const EditNotePage({Key? key, this.item}) : super(key: key);
+  const EditNotePage({super.key, this.item});
 
   @override
   State<EditNotePage> createState() => _EditNotePageState();

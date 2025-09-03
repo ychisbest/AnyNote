@@ -353,15 +353,15 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
 
 Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
     {ScrollController? sc}) {
-  Widget buildHeader(String title, {double topPadding = 10.0}) {
+  Widget buildHeader(String title) {
     return Padding(
-      padding: EdgeInsets.only(left: 8, right: 8, top: topPadding, bottom: 0),
+      padding: const EdgeInsets.only(left: 8, right: 8, top: 20, bottom: 10),
       child: Row(
         children: [
           Text(
             title,
             style: const TextStyle(
-                fontSize: 18,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87),
           ),
@@ -414,8 +414,7 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
       ),
       if (normalItems.isNotEmpty)
         SliverToBoxAdapter(
-          child: buildHeader("🗒️ Notes",
-              topPadding: topmostItems.isNotEmpty ? 30.0 : 10.0),
+          child: buildHeader("🗒️ Notes"),
         ),
       SliverGrid(
         delegate: SliverChildBuilderDelegate(

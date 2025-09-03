@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class WideHome extends StatelessWidget {
-  WideHome({Key? key}) : super(key: key);
+  WideHome({super.key});
 
   final RxInt currentPageIndex = 0.obs;
   final MainController c = Get.put(MainController());
@@ -18,7 +18,7 @@ class WideHome extends StatelessWidget {
       backgroundColor: Colors.white,
       floatingActionButton: FloatingActionButton(
         onPressed: (){
-          Get.to(()=>EditNotePage());
+          Get.to(()=>const EditNotePage());
         },
         child: const Icon(Icons.add),
       ),
@@ -118,7 +118,7 @@ class WideHome extends StatelessWidget {
         return Center(
           child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 800),
-              child: ArchiveList()),
+              child: const ArchiveList()),
         );
       case 'Archived':
         return Padding(
@@ -126,7 +126,7 @@ class WideHome extends StatelessWidget {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 800),
-              child: ArchiveList(isArchive: true),
+              child: const ArchiveList(isArchive: true),
             ),
           ),
         );

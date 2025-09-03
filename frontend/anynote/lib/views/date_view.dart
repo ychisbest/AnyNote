@@ -1,8 +1,4 @@
-import 'package:anynote/Extension.dart';
 import 'package:anynote/MainController.dart';
-import 'package:anynote/note_api_service.dart';
-import 'package:anynote/views/EditNote.dart';
-import 'package:anynote/views/archieve_list.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -20,7 +16,6 @@ class Browser extends StatefulWidget {
 }
 
 class _BrowserState extends State<Browser> {
-  final ScrollController _scrollController = ScrollController();
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.week;
@@ -45,10 +40,10 @@ class _BrowserState extends State<Browser> {
             icon: const Icon(Icons.arrow_back_ios),
             onPressed: () {
               setState(() {
-                _selectedDay = DateTime(_selectedDay!.year, _selectedDay!.month,
-                    _selectedDay!.day - 1);
-                _focusedDay = DateTime(_selectedDay!.year, _selectedDay!.month,
-                    _selectedDay!.day - 1);
+                _selectedDay = DateTime(_selectedDay.year, _selectedDay.month,
+                    _selectedDay.day - 1);
+                _focusedDay = DateTime(_selectedDay.year, _selectedDay.month,
+                    _selectedDay.day - 1);
               });
             },
           ),
@@ -56,10 +51,10 @@ class _BrowserState extends State<Browser> {
             icon: const Icon(Icons.arrow_forward_ios),
             onPressed: () {
               setState(() {
-                _selectedDay = DateTime(_selectedDay!.year, _selectedDay!.month,
-                    _selectedDay!.day + 1);
-                _focusedDay = DateTime(_selectedDay!.year, _selectedDay!.month,
-                    _selectedDay!.day + 1);
+                _selectedDay = DateTime(_selectedDay.year, _selectedDay.month,
+                    _selectedDay.day + 1);
+                _focusedDay = DateTime(_selectedDay.year, _selectedDay.month,
+                    _selectedDay.day + 1);
               });
             },
           ),

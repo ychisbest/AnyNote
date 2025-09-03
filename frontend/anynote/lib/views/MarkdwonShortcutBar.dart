@@ -1,7 +1,6 @@
 import 'package:anynote/views/markdown_render/markdown_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart';
 
 class MarkdownShortcutBar extends StatefulWidget {
   final TextEditingController controller;
@@ -9,11 +8,11 @@ class MarkdownShortcutBar extends StatefulWidget {
   final Function? onAiTap;
 
   const MarkdownShortcutBar({
-    Key? key,
+    super.key,
     required this.controller,
     required this.focusNode,
     this.onAiTap,
-  }) : super(key: key);
+  });
 
   @override
   _MarkdownShortcutBarState createState() => _MarkdownShortcutBarState();
@@ -77,46 +76,7 @@ class _MarkdownShortcutBarState extends State<MarkdownShortcutBar> {
     }
   }
 
-  void _toggleMarkdown(String opening, String closing) {
-    final text = widget.controller.text;
-    final selection = widget.controller.selection;
-    final selectedText = selection.textInside(text);
 
-    String newText;
-    int newSelectionStart = selection.start;
-    int newSelectionEnd = selection.end;
-
-    if (selectedText.isEmpty) {
-      newText = '$opening$closing';
-      newSelectionStart += opening.length;
-      newSelectionEnd = newSelectionStart;
-    } else if (selectedText.startsWith(opening) &&
-        selectedText.endsWith(closing)) {
-      newText = selectedText.substring(
-          opening.length, selectedText.length - closing.length);
-      newSelectionEnd = newSelectionStart + newText.length;
-    } else {
-      newText = '$opening$selectedText$closing';
-      newSelectionEnd = newSelectionStart + newText.length;
-    }
-
-    _replaceTextWithNewSelection(
-        newText, selection, newSelectionStart, newSelectionEnd);
-  }
-
-  void _replaceTextWithNewSelection(String newText, TextSelection selection,
-      int newSelectionStart, int newSelectionEnd) {
-    final text = widget.controller.text;
-    final newValue = TextEditingValue(
-      text: text.replaceRange(selection.start, selection.end, newText),
-      selection: TextSelection(
-        baseOffset: newSelectionStart,
-        extentOffset: newSelectionEnd,
-      ),
-    );
-    widget.controller.value = newValue;
-    widget.focusNode.requestFocus();
-  }
 
   void _replaceText(String newText, TextSelection selection) {
     final text = widget.controller.text;

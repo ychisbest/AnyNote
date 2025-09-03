@@ -1,11 +1,8 @@
-import 'dart:convert';
 
 import 'package:anynote/Extension.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/adapters.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:signalr_netcore/signalr_client.dart';
 import 'GlobalConfig.dart';
 import 'note_api_service.dart';
 
@@ -18,7 +15,6 @@ class MainController extends GetxController {
   final RxList<NoteItem> notes = <NoteItem>[].obs;
   final RxBool isLoading = false.obs;
   final RxString filterText = ''.obs;
-  HubConnection? hubConnection;
   UpdateEditTextCallback? updateEditTextCallback;
 
   final RxInt fontSize = GlobalConfig.fontSize.obs;
@@ -33,78 +29,14 @@ class MainController extends GetxController {
   void initData() async {
     print("调用了initdata");
     await fetchNotes(readLocalFirst: true);
-    initSignalR();
   }
 
   void updateBaseUrl(String url, String newSecret) {
     baseUrl = url;
     secret = newSecret;
     _api.updateBaseUrl(url, secret);
-    //initSignalR();
   }
 
-  Future<void> initSignalR() async {
-    //await hubConnection?.stop();
-    hubConnection = HubConnectionBuilder()
-        .withUrl('$baseUrl/notehub')
-        .withAutomaticReconnect()
-        .build();
-
-    hubConnection?.on("ReceiveNoteUpdate", (arguments) {
-      if (arguments != null && arguments.isNotEmpty) {
-        final updatedNote =
-            NoteItem.fromJson(arguments[0] as Map<String, dynamic>);
-        updateEditTextCallback?.call(
-            updatedNote.id.toString(), updatedNote.content ?? "");
-        updateNoteLocally(updatedNote);
-      }
-    });
-
-    hubConnection?.on("ReceiveNoteArchive", (arguments) {
-      if (arguments != null && arguments.isNotEmpty) {
-        final noteId = arguments[0] as int;
-        archiveNoteLocally(noteId);
-      }
-    });
-
-    hubConnection?.on("ReceiveNoteUnarchive", (arguments) {
-      if (arguments != null && arguments.isNotEmpty) {
-        final noteId = arguments[0] as int;
-        unarchiveNoteLocally(noteId);
-      }
-    });
-
-    hubConnection?.on("ReceiveNoteDelete", (arguments) {
-      if (arguments != null && arguments.isNotEmpty) {
-        final noteId = arguments[0] as int;
-        deleteNoteLocally(noteId);
-        updateEditTextCallback?.call(noteId.toString(), "_%_delete_%_");
-      }
-    });
-
-    hubConnection?.on("ReceiveNewNote", (arguments) {
-      if (arguments != null && arguments.isNotEmpty) {
-        final newNote = NoteItem.fromJson(arguments[0] as Map<String, dynamic>);
-        addNoteLocally(newNote);
-      }
-    });
-
-    hubConnection?.on("ReceiveNoteIndicesUpdate", (arguments) {
-      if (arguments != null && arguments.length == 2) {
-        final ids = (arguments[0] as List<dynamic>).cast<int>();
-        final indices = (arguments[1] as List<dynamic>).cast<int>();
-        updateIndicesLocally(ids, indices);
-      }
-    });
-
-    try {
-      await hubConnection?.start();
-      _api.signalrID = hubConnection?.connectionId;
-      print("SignalR Connected! id=${hubConnection?.connectionId}");
-    } catch (e) {
-      print("Error connecting to SignalR: $e");
-    }
-  }
 
   void updateNoteLocally(NoteItem updatedNote, {int? id}) {
     final noteId = id ?? updatedNote.id;
@@ -211,8 +143,6 @@ class MainController extends GetxController {
   }
 
   void logout() {
-    hubConnection?.stop();
-    hubConnection = null;
     notes.clear();
     saveNotesToLocal();
     GlobalConfig.clear();
@@ -368,8 +298,7 @@ class MainController extends GetxController {
   }
 
   List<NoteItem> get filteredUnarchivedNotes {
-    var res = notes.where((note) => !note.isArchived).toList();
-    sortNotes(res, true);
+    var res = filteredNotes.where((note) => !note.isArchived).toList();
     return res;
   }
 
@@ -413,11 +342,6 @@ class MainController extends GetxController {
     }).toList();
   }
 
-  @override
-  void onClose() {
-    hubConnection?.stop();
-    super.onClose();
-  }
 
   List<MapEntry<DateTime, List<NoteItem>>> groupMemosByDate(
       List<NoteItem> memos) {

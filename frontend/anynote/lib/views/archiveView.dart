@@ -15,7 +15,7 @@ class Archiveview extends StatelessWidget {
         appBar: AppBar(
           title: const Text("Archived"),
         ),
-        body: ArchiveList(
+        body: const ArchiveList(
           isArchive: true,
         ));
   }

@@ -1,12 +1,12 @@
 import 'package:anynote/GlobalConfig.dart';
 import 'package:anynote/main.dart';
-import 'package:anynote/views/WideView/wideHome.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart';
 import '../MainController.dart';
 
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
   @override
   _LoginPageState createState() => _LoginPageState();
 }
@@ -46,7 +46,7 @@ class _LoginPageState extends State<LoginPage> {
         GlobalConfig.secretStr = _secret;
         GlobalConfig.isLoggedIn = true;
         Get.snackbar("success", "Login Success");
-        Get.off(() => HomePage());
+        Get.off(() => const HomePage());
       } else {
         Get.snackbar('error', loginResult['errorContent']);
       }
@@ -101,7 +101,7 @@ class _LoginPageState extends State<LoginPage> {
                           Expanded(
                             flex: 1,
                             child: DropdownButtonFormField<String>(
-                              value: _protocol,
+                              initialValue: _protocol,
                               decoration: InputDecoration(
                                 contentPadding:
                                     const EdgeInsets.symmetric(horizontal: 12),
