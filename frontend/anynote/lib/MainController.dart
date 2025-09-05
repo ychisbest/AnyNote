@@ -298,8 +298,8 @@ class MainController extends GetxController {
   }
 
   List<NoteItem> get filteredUnarchivedNotes {
-    var res = filteredNotes.where((note) => !note.isArchived).toList();
-    return res;
+    var res = notes.where((note) => !note.isArchived).toList();
+    return sortNotes(res, true);
   }
 
   Map<String, List<NoteItem>> get extractTagsWithNotes {
