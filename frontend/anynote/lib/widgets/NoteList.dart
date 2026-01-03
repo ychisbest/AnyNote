@@ -353,6 +353,55 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
 
 Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
     {ScrollController? sc}) {
+  List<NoteItem> sortNotesByDateDesc(List<NoteItem> items) {
+    final sorted = List<NoteItem>.from(items);
+    sorted.sort((a, b) => b.createTime.compareTo(a.createTime));
+    return sorted;
+  }
+
+  DateTime normalizeDate(DateTime dateTime) {
+    return DateTime(dateTime.year, dateTime.month, dateTime.day);
+  }
+
+  List<_NoteListEntry> buildGroupedEntries(List<NoteItem> items) {
+    final entries = <_NoteListEntry>[];
+    if (items.isEmpty) {
+      return entries;
+    }
+
+    DateTime? currentDate;
+    final buffer = <NoteItem>[];
+
+    void flushGroup(DateTime dateKey, List<NoteItem> notes) {
+      entries.add(_NoteListEntry.header(intl.DateFormat('yyyy-MM-dd').format(dateKey)));
+      for (var i = 0; i < notes.length; i += 2) {
+        final rowItems = <NoteItem>[notes[i]];
+        if (i + 1 < notes.length) {
+          rowItems.add(notes[i + 1]);
+        }
+        entries.add(_NoteListEntry.row(rowItems));
+      }
+    }
+
+    for (final note in items) {
+      final dateKey = normalizeDate(note.createTime);
+      if (currentDate == null || currentDate != dateKey) {
+        if (currentDate != null && buffer.isNotEmpty) {
+          flushGroup(currentDate, List<NoteItem>.from(buffer));
+          buffer.clear();
+        }
+        currentDate = dateKey;
+      }
+      buffer.add(note);
+    }
+
+    if (currentDate != null && buffer.isNotEmpty) {
+      flushGroup(currentDate, List<NoteItem>.from(buffer));
+    }
+
+    return entries;
+  }
+
   Widget buildHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(left: 8, right: 8, top: 20, bottom: 10),
@@ -385,11 +434,7 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
 
   final topmostItems = archivedNotes.where((item) => item.isTopMost).toList();
   final normalItems = archivedNotes.where((item) => !item.isTopMost).toList();
-  final groupedEntries = Get.find<MainController>().groupMemosByDate(normalItems);
-  final gridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
-    crossAxisCount: 2,
-    mainAxisExtent: maxNoteItemHeight, // Use the maximum height defined
-  );
+  final groupedEntries = buildGroupedEntries(sortNotesByDateDesc(normalItems));
 
   final dateFormatter = intl.DateFormat('yyyy-MM-dd');
 
@@ -409,22 +454,63 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
         SliverToBoxAdapter(
           child: buildHeader("🗒️ Notes"),
         ),
-      for (final entry in groupedEntries) ...[
-        SliverToBoxAdapter(
-          child: buildHeader(dateFormatter.format(entry.key)),
+      SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final entry = groupedEntries[index];
+            if (entry.isHeader) {
+              return buildHeader(entry.title ?? "");
+            }
+            final rowItems = entry.items ?? [];
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: maxNoteItemHeight,
+                      child: rowItems.isNotEmpty
+                          ? buildItem(rowItems[0])
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: maxNoteItemHeight,
+                      child: rowItems.length > 1
+                          ? buildItem(rowItems[1])
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          childCount: groupedEntries.length,
         ),
-        SliverGrid(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) => buildItem(entry.value[index]),
-            childCount: entry.value.length,
-          ),
-          gridDelegate: gridDelegate,
-        ),
-      ],
+      ),
       const SliverToBoxAdapter(
           child: SizedBox(
         height: 50,
       ))
     ],
   );
+}
+
+class _NoteListEntry {
+  final bool isHeader;
+  final String? title;
+  final List<NoteItem>? items;
+
+  const _NoteListEntry._({required this.isHeader, this.title, this.items});
+
+  factory _NoteListEntry.header(String title) {
+    return _NoteListEntry._(isHeader: true, title: title);
+  }
+
+  factory _NoteListEntry.row(List<NoteItem> items) {
+    return _NoteListEntry._(isHeader: false, items: items);
+  }
 }
