@@ -197,12 +197,8 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Container(
-          constraints: widget.item.isTopMost
-              ? BoxConstraints(maxHeight: maxNoteItemHeight)
-              : BoxConstraints(
-                  maxHeight: maxNoteItemHeight - 50,
-                  minHeight: maxNoteItemHeight - 50),
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxNoteItemHeight),
           child: Stack(
             children: [
               if (widget.item.isTopMost)
@@ -427,14 +423,11 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
     final MainController controller = Get.find<MainController>();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: maxNoteItemHeight),
-        child: NoteItemWidget(
-          key: ValueKey(item.id),
-          controller: controller,
-          item: item,
-          isArchive: isArchive,
-        ),
+      child: NoteItemWidget(
+        key: ValueKey(item.id),
+        controller: controller,
+        item: item,
+        isArchive: isArchive,
       ),
     );
   }
