@@ -436,6 +436,8 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
   final normalItems = archivedNotes.where((item) => !item.isTopMost).toList();
   final groupedEntries = buildGroupedEntries(sortNotesByDateDesc(normalItems));
 
+  final dateFormatter = intl.DateFormat('yyyy-MM-dd');
+
   return CustomScrollView(
     controller: sc,
     physics: const BouncingScrollPhysics(),
