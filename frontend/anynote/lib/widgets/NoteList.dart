@@ -374,31 +374,24 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
     final MainController controller = Get.find<MainController>();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            timeAgo(item.createTime),
-            style: const TextStyle(fontSize: 10, color: Colors.black38),
-          ),
-          const SizedBox(height: 3),
-          NoteItemWidget(
-            key: ValueKey(item.id),
-            controller: controller,
-            item: item,
-            isArchive: isArchive,
-          ),
-        ],
+      child: NoteItemWidget(
+        key: ValueKey(item.id),
+        controller: controller,
+        item: item,
+        isArchive: isArchive,
       ),
     );
   }
 
   final topmostItems = archivedNotes.where((item) => item.isTopMost).toList();
   final normalItems = archivedNotes.where((item) => !item.isTopMost).toList();
+  final groupedEntries = Get.find<MainController>().groupMemosByDate(normalItems);
   final gridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
     crossAxisCount: 2,
     mainAxisExtent: maxNoteItemHeight, // Use the maximum height defined
   );
+
+  final dateFormatter = intl.DateFormat('yyyy-MM-dd');
 
   return CustomScrollView(
     controller: sc,
@@ -416,33 +409,22 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
         SliverToBoxAdapter(
           child: buildHeader("🗒️ Notes"),
         ),
-      SliverGrid(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) => buildItem(normalItems[index]),
-          childCount: normalItems.length,
+      for (final entry in groupedEntries) ...[
+        SliverToBoxAdapter(
+          child: buildHeader(dateFormatter.format(entry.key)),
         ),
-        gridDelegate: gridDelegate,
-      ),
+        SliverGrid(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => buildItem(entry.value[index]),
+            childCount: entry.value.length,
+          ),
+          gridDelegate: gridDelegate,
+        ),
+      ],
       const SliverToBoxAdapter(
           child: SizedBox(
         height: 50,
       ))
     ],
   );
-}
-
-String timeAgo(DateTime dateTime) {
-  final Duration difference = DateTime.now().difference(dateTime);
-
-  if (difference.inSeconds < 60) {
-    return '${difference.inSeconds} seconds ago';
-  } else if (difference.inMinutes < 60) {
-    return '${difference.inMinutes} minutes ago';
-  } else if (difference.inHours < 24) {
-    return '${difference.inHours} hours ago';
-  } else if (difference.inDays < 7) {
-    return '${difference.inDays} days ago';
-  } else {
-    return intl.DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
-  }
 }
