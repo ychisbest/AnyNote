@@ -373,13 +373,10 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
     final buffer = <NoteItem>[];
 
     void flushGroup(DateTime dateKey, List<NoteItem> notes) {
-      entries.add(_NoteListEntry.header(intl.DateFormat('yyyy-MM-dd').format(dateKey)));
-      for (var i = 0; i < notes.length; i += 2) {
-        final rowItems = <NoteItem>[notes[i]];
-        if (i + 1 < notes.length) {
-          rowItems.add(notes[i + 1]);
-        }
-        entries.add(_NoteListEntry.row(rowItems));
+      entries.add(_NoteListEntry.header(
+          intl.DateFormat('yyyy-MM-dd').format(dateKey)));
+      for (final note in notes) {
+        entries.add(_NoteListEntry.item(note));
       }
     }
 
@@ -404,17 +401,24 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
 
   Widget buildHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 8, right: 8, top: 20, bottom: 10),
-      child: Row(
-        children: [
-          Text(
+      padding: const EdgeInsets.only(left: 8, right: 8, top: 16, bottom: 6),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.black12.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
             title,
             style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black54,
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -423,11 +427,14 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
     final MainController controller = Get.find<MainController>();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      child: NoteItemWidget(
-        key: ValueKey(item.id),
-        controller: controller,
-        item: item,
-        isArchive: isArchive,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxNoteItemHeight),
+        child: NoteItemWidget(
+          key: ValueKey(item.id),
+          controller: controller,
+          item: item,
+          isArchive: isArchive,
+        ),
       ),
     );
   }
@@ -435,8 +442,6 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
   final topmostItems = archivedNotes.where((item) => item.isTopMost).toList();
   final normalItems = archivedNotes.where((item) => !item.isTopMost).toList();
   final groupedEntries = buildGroupedEntries(sortNotesByDateDesc(normalItems));
-
-  final dateFormatter = intl.DateFormat('yyyy-MM-dd');
 
   return CustomScrollView(
     controller: sc,
@@ -450,10 +455,6 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
           return buildItem(topmostItems[index]);
         },
       ),
-      if (normalItems.isNotEmpty)
-        SliverToBoxAdapter(
-          child: buildHeader("🗒️ Notes"),
-        ),
       SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
@@ -461,32 +462,7 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
             if (entry.isHeader) {
               return buildHeader(entry.title ?? "");
             }
-            final rowItems = entry.items ?? [];
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: maxNoteItemHeight,
-                      child: rowItems.isNotEmpty
-                          ? buildItem(rowItems[0])
-                          : const SizedBox.shrink(),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SizedBox(
-                      height: maxNoteItemHeight,
-                      child: rowItems.length > 1
-                          ? buildItem(rowItems[1])
-                          : const SizedBox.shrink(),
-                    ),
-                  ),
-                ],
-              ),
-            );
+            return buildItem(entry.item!);
           },
           childCount: groupedEntries.length,
         ),
@@ -502,15 +478,15 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
 class _NoteListEntry {
   final bool isHeader;
   final String? title;
-  final List<NoteItem>? items;
+  final NoteItem? item;
 
-  const _NoteListEntry._({required this.isHeader, this.title, this.items});
+  const _NoteListEntry._({required this.isHeader, this.title, this.item});
 
   factory _NoteListEntry.header(String title) {
     return _NoteListEntry._(isHeader: true, title: title);
   }
 
-  factory _NoteListEntry.row(List<NoteItem> items) {
-    return _NoteListEntry._(isHeader: false, items: items);
+  factory _NoteListEntry.item(NoteItem item) {
+    return _NoteListEntry._(isHeader: false, item: item);
   }
 }
