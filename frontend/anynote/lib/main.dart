@@ -177,27 +177,6 @@ class NerrowHome extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Obx(() {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
-                    color: Colors.white,
-                    child: Center(
-                      child: Wrap(
-                        children: [
-                          ...List.generate(c.tags.length, (index) {
-                            return TextButton(
-                              child: Text(c.tags[index]),
-                              onPressed: () async {
-                                Get.to(() => NoteTagListView(tag: c.tags[index]));
-                              },
-                            );
-                          }),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-              ),
               const Expanded(
                 child: ArchiveList(),
               ),
@@ -351,6 +330,28 @@ class _BuildDrawerState extends State<BuildDrawer> {
               Get.to(() => TagList());
             },
           ),
+          Obx(() {
+            if (c.tags.isEmpty) return const SizedBox.shrink();
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: List.generate(c.tags.length, (index) {
+                  return ActionChip(
+                    label: Text(c.tags[index], style: const TextStyle(fontSize: 12)),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    pressElevation: 0,
+                    onPressed: () async {
+                      Get.back();
+                      Get.to(() => NoteTagListView(tag: c.tags[index]));
+                    },
+                  );
+                }),
+              ),
+            );
+          }),
           ListTile(
             leading: const Icon(Icons.camera),
             title: const Text('Help you recall'),

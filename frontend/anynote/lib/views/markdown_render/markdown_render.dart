@@ -196,32 +196,37 @@ class MarkdownParser {
   }
 }
 
+// 解析结果缓存
+final Map<String, List<MarkdownNode>> _parseCache = {};
+
+List<MarkdownNode> _getParsedNodes(String data) {
+  return _parseCache.putIfAbsent(data, () => MarkdownParser(data).parse());
+}
+
 class MarkdownRenderer extends StatelessWidget {
   final String data;
   int fontsize;
-  late BuildContext _context;
-
+  
   MarkdownRenderer({super.key, required this.data, this.fontsize = 12});
-
 
   @override
   Widget build(BuildContext context) {
-    fontsize=GlobalConfig.fontSize;
-    _context = context;
-    MarkdownParser parser = MarkdownParser(data);
-    List<MarkdownNode> nodes = parser.parse();
+    fontsize = GlobalConfig.fontSize;
+    final nodes = _getParsedNodes(data);
 
-    return ListView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      shrinkWrap: true,
-      itemCount: nodes.length,
-      itemBuilder: (context, index) {
-        return _renderNode(nodes[index], level: 0);
-      },
+    return RepaintBoundary(
+      child: ListView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        shrinkWrap: true,
+        itemCount: nodes.length,
+        itemBuilder: (context, index) {
+          return _renderNode(nodes[index], context: context);
+        },
+      ),
     );
   }
 
-  Widget _renderNode(MarkdownNode node, {int level = 0}) {
+  Widget _renderNode(MarkdownNode node, {required BuildContext context, int level = 0}) {
     switch (node.type) {
       case 'header':
         int levelHeader = node.content['level'];
@@ -245,8 +250,8 @@ class MarkdownRenderer extends StatelessWidget {
         }
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: _renderStyledText(text,
-              style: DefaultTextStyle.of(_context)
+          child: _renderStyledText(text, context: context,
+              style: DefaultTextStyle.of(context)
                   .style
                   .copyWith(
                   fontSize: GlobalConfig.fontSize.toDouble(),
@@ -257,7 +262,7 @@ class MarkdownRenderer extends StatelessWidget {
         String text = node.content;
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 0.0),
-          child: _renderInlineText(text),
+          child: _renderInlineText(text, context: context),
         );
       case 'code':
         String code = node.content['code'];
@@ -316,11 +321,11 @@ class MarkdownRenderer extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _renderInlineText(item.content['text']),
+                        _renderInlineText(item.content['text'], context: context),
                         if (item.content['children'] != null)
                           ...item.content['children']!
                               .map((child) =>
-                                  _renderNode(child, level: level + 1))
+                                  _renderNode(child, context: context, level: level + 1))
                               .toList(),
                       ],
                     ),
@@ -337,30 +342,29 @@ class MarkdownRenderer extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: items.map<Widget>((item) {
-              String number = item.content['number'] ?? '1'; // 使用存储的序号
+              String number = item.content['number'] ?? '1';
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Padding(
-                    padding:
-                        const EdgeInsets.only(right: 5),
+                    padding: const EdgeInsets.only(right: 5),
                     child: Text(
                       '$number. ',
-                      style: DefaultTextStyle.of(_context)
+                      style: DefaultTextStyle.of(context)
                           .style
                           .copyWith(fontSize: fontsize.toDouble()),
                     ),
-                  ), // 显示序号
+                  ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _renderInlineText(item.content['text']),
+                        _renderInlineText(item.content['text'], context: context),
                         if (item.content['children'] != null)
                           ...item.content['children']!
                               .map((child) =>
-                                  _renderNode(child, level: level + 1))
+                                  _renderNode(child, context: context, level: level + 1))
                               .toList(),
                       ],
                     ),
@@ -382,7 +386,7 @@ class MarkdownRenderer extends StatelessWidget {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Baseline(
-                    baseline: fontsize.toDouble()+2,
+                    baseline: fontsize.toDouble() + 2,
                     baselineType: TextBaseline.alphabetic,
                     child: Icon(
                       size: fontsize.toDouble(),
@@ -400,11 +404,11 @@ class MarkdownRenderer extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _renderInlineText(item.content['text']),
+                          _renderInlineText(item.content['text'], context: context),
                           if (item.content['children'] != null)
                             ...item.content['children']!
                                 .map((child) =>
-                                _renderNode(child, level: level + 1))
+                                    _renderNode(child, context: context, level: level + 1))
                                 .toList(),
                         ],
                       ),
@@ -417,11 +421,8 @@ class MarkdownRenderer extends StatelessWidget {
         );
 
       case 'todo_item':
-        // 待办事项项在 'todo' 类型中已经处理，无需单独渲染
-        return const SizedBox.shrink();
       case 'ul_item':
       case 'ol_item':
-        // 列表项在 'ul' 和 'ol' 类型中已经处理，无需单独渲染
         return const SizedBox.shrink();
       case 'hr':
         return Divider(
@@ -434,35 +435,33 @@ class MarkdownRenderer extends StatelessWidget {
     }
   }
 
-  // 更新行内文本渲染，支持加粗、斜体、删除线和行内代码
-  Widget _renderInlineText(String text) {
+  Widget _renderInlineText(String text, {required BuildContext context}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: RichText(
         text: TextSpan(
-          style: DefaultTextStyle.of(_context)
+          style: DefaultTextStyle.of(context)
               .style
               .copyWith(color: Colors.grey[800], fontSize: fontsize.toDouble()),
-          children: _getInlineSpans(text),
+          children: _getInlineSpans(text, context: context),
         ),
       ),
     );
   }
 
-  // 处理标题中的行内样式
-  Widget _renderStyledText(String text, {TextStyle? style}) {
+  Widget _renderStyledText(String text, {required BuildContext context, TextStyle? style}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 0),
       child: RichText(
         text: TextSpan(
           style: style,
-          children: _getInlineSpans(text),
+          children: _getInlineSpans(text, context: context),
         ),
       ),
     );
   }
 
-  List<TextSpan> _getInlineSpans(String text) {
+  List<TextSpan> _getInlineSpans(String text, {required BuildContext context}) {
     List<TextSpan> spans = [];
     RegExp exp = RegExp(
         r'(\*\*\*)(.*?)\1|(___)(.*?)\3|(\*\*|__)(.*?)\5|(\*|_)(.*?)\7|(~~)(.*?)\9|(`)(.*?)\11|(#)([\u4e00-\u9fa5a-zA-Z0-9]+)');
@@ -475,69 +474,63 @@ class MarkdownRenderer extends StatelessWidget {
       }
 
       if (match.group(1) != null) {
-        // ***加粗斜体***
         spans.add(TextSpan(
           text: match.group(2),
-          style: DefaultTextStyle.of(_context)
+          style: DefaultTextStyle.of(context)
               .style
               .copyWith(
             fontWeight: FontWeight.bold,
             fontStyle: FontStyle.italic,
-              fontSize: fontsize.toDouble()
+            fontSize: fontsize.toDouble()
           ),
         ));
       } else if (match.group(3) != null) {
-        // ___加粗___
         spans.add(TextSpan(
           text: match.group(4),
-          style: DefaultTextStyle.of(_context)
+          style: DefaultTextStyle.of(context)
               .style
               .copyWith(
             fontWeight: FontWeight.bold,
-              fontSize: fontsize.toDouble()
+            fontSize: fontsize.toDouble()
           ),
         ));
       } else if (match.group(5) != null) {
-        // **加粗** 或 __加粗__
         spans.add(TextSpan(
           text: match.group(6),
-          style: DefaultTextStyle.of(_context)
+          style: DefaultTextStyle.of(context)
               .style
               .copyWith(
             fontWeight: FontWeight.bold,
-              fontSize: fontsize.toDouble()
+            fontSize: fontsize.toDouble()
           ),
         ));
       } else if (match.group(7) != null) {
-        // *斜体* 或 _斜体_
         spans.add(TextSpan(
           text: match.group(8),
-          style: DefaultTextStyle.of(_context)
+          style: DefaultTextStyle.of(context)
               .style
               .copyWith(
             fontStyle: FontStyle.italic,
-              fontSize: fontsize.toDouble()
+            fontSize: fontsize.toDouble()
           ),
         ));
       } else if (match.group(9) != null) {
-        // ~~删除线~~
         spans.add(TextSpan(
           text: match.group(10),
-          style: DefaultTextStyle.of(_context)
+          style: DefaultTextStyle.of(context)
               .style
               .copyWith(
             decoration: TextDecoration.lineThrough,
-              fontSize: fontsize.toDouble()
+            fontSize: fontsize.toDouble()
           ),
         ));
       } else if (match.group(11) != null) {
-        // `行内代码`
         spans.add(TextSpan(
           text: match.group(12),
           style: TextStyle(
             fontFamily: 'monospace',
             backgroundColor: Colors.grey[200],
-              fontSize: fontsize.toDouble()
+            fontSize: fontsize.toDouble()
           ),
         ));
       } else if (match.group(13) != null) {
@@ -558,7 +551,7 @@ class MarkdownRenderer extends StatelessWidget {
                 ),
                 Text(
                   match.group(14) ?? "",
-                  style: DefaultTextStyle.of(_context)
+                  style: DefaultTextStyle.of(context)
                       .style
                       .copyWith(color: Colors.white, fontSize: 10),
                 )
