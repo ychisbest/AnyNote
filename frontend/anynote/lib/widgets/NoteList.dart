@@ -353,19 +353,72 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
 
 Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
     {ScrollController? sc}) {
+  List<NoteItem> sortNotesByDateDesc(List<NoteItem> items) {
+    final sorted = List<NoteItem>.from(items);
+    sorted.sort((a, b) => b.createTime.compareTo(a.createTime));
+    return sorted;
+  }
+
+  DateTime normalizeDate(DateTime dateTime) {
+    return DateTime(dateTime.year, dateTime.month, dateTime.day);
+  }
+
+  List<_NoteListEntry> buildGroupedEntries(List<NoteItem> items) {
+    final entries = <_NoteListEntry>[];
+    if (items.isEmpty) {
+      return entries;
+    }
+
+    DateTime? currentDate;
+    final buffer = <NoteItem>[];
+
+    void flushGroup(DateTime dateKey, List<NoteItem> notes) {
+      entries.add(_NoteListEntry.header(
+          intl.DateFormat('yyyy-MM-dd').format(dateKey)));
+      for (final note in notes) {
+        entries.add(_NoteListEntry.item(note));
+      }
+    }
+
+    for (final note in items) {
+      final dateKey = normalizeDate(note.createTime);
+      if (currentDate == null || currentDate != dateKey) {
+        if (currentDate != null && buffer.isNotEmpty) {
+          flushGroup(currentDate, List<NoteItem>.from(buffer));
+          buffer.clear();
+        }
+        currentDate = dateKey;
+      }
+      buffer.add(note);
+    }
+
+    if (currentDate != null && buffer.isNotEmpty) {
+      flushGroup(currentDate, List<NoteItem>.from(buffer));
+    }
+
+    return entries;
+  }
+
   Widget buildHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 8, right: 8, top: 20, bottom: 10),
-      child: Row(
-        children: [
-          Text(
+      padding: const EdgeInsets.only(left: 8, right: 8, top: 16, bottom: 6),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.black12.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
             title,
             style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black54,
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -374,31 +427,21 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
     final MainController controller = Get.find<MainController>();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            timeAgo(item.createTime),
-            style: const TextStyle(fontSize: 10, color: Colors.black38),
-          ),
-          const SizedBox(height: 3),
-          NoteItemWidget(
-            key: ValueKey(item.id),
-            controller: controller,
-            item: item,
-            isArchive: isArchive,
-          ),
-        ],
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxNoteItemHeight),
+        child: NoteItemWidget(
+          key: ValueKey(item.id),
+          controller: controller,
+          item: item,
+          isArchive: isArchive,
+        ),
       ),
     );
   }
 
   final topmostItems = archivedNotes.where((item) => item.isTopMost).toList();
   final normalItems = archivedNotes.where((item) => !item.isTopMost).toList();
-  final gridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
-    crossAxisCount: 2,
-    mainAxisExtent: maxNoteItemHeight, // Use the maximum height defined
-  );
+  final groupedEntries = buildGroupedEntries(sortNotesByDateDesc(normalItems));
 
   return CustomScrollView(
     controller: sc,
@@ -412,16 +455,17 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
           return buildItem(topmostItems[index]);
         },
       ),
-      if (normalItems.isNotEmpty)
-        SliverToBoxAdapter(
-          child: buildHeader("🗒️ Notes"),
-        ),
-      SliverGrid(
+      SliverList(
         delegate: SliverChildBuilderDelegate(
-          (context, index) => buildItem(normalItems[index]),
-          childCount: normalItems.length,
+          (context, index) {
+            final entry = groupedEntries[index];
+            if (entry.isHeader) {
+              return buildHeader(entry.title ?? "");
+            }
+            return buildItem(entry.item!);
+          },
+          childCount: groupedEntries.length,
         ),
-        gridDelegate: gridDelegate,
       ),
       const SliverToBoxAdapter(
           child: SizedBox(
@@ -431,18 +475,18 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
   );
 }
 
-String timeAgo(DateTime dateTime) {
-  final Duration difference = DateTime.now().difference(dateTime);
+class _NoteListEntry {
+  final bool isHeader;
+  final String? title;
+  final NoteItem? item;
 
-  if (difference.inSeconds < 60) {
-    return '${difference.inSeconds} seconds ago';
-  } else if (difference.inMinutes < 60) {
-    return '${difference.inMinutes} minutes ago';
-  } else if (difference.inHours < 24) {
-    return '${difference.inHours} hours ago';
-  } else if (difference.inDays < 7) {
-    return '${difference.inDays} days ago';
-  } else {
-    return intl.DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
+  const _NoteListEntry._({required this.isHeader, this.title, this.item});
+
+  factory _NoteListEntry.header(String title) {
+    return _NoteListEntry._(isHeader: true, title: title);
+  }
+
+  factory _NoteListEntry.item(NoteItem item) {
+    return _NoteListEntry._(isHeader: false, item: item);
   }
 }
