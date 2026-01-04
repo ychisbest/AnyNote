@@ -124,9 +124,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 class NerrowHome extends StatelessWidget {
   NerrowHome({super.key});
   final MainController c = Get.put(MainController());
+
   @override
   Widget build(BuildContext context) {
-    Color scaffoldBackgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    const scaffoldBackgroundColor = Color(0xFFF6F3EE);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: scaffoldBackgroundColor,
@@ -135,7 +136,12 @@ class NerrowHome extends StatelessWidget {
         statusBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
+        backgroundColor: scaffoldBackgroundColor,
+        extendBodyBehindAppBar: true,
         appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
           title: Obx(() {
             if (c.isLoading.value) {
               return const Row(
@@ -151,7 +157,10 @@ class NerrowHome extends StatelessWidget {
             } else {
               return const Text(
                 "AnyNote",
-                style: TextStyle(),
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.4,
+                ),
               );
             }
           }),
@@ -168,30 +177,92 @@ class NerrowHome extends StatelessWidget {
               onPressed: () {
                 Get.to(() => Archiveview());
               },
-              child: const Icon(Icons.archive_outlined),
+              child: const Icon(
+                Icons.archive_outlined,
+                color: Colors.black87,
+              ),
             ),
           ],
         ),
         drawer: const BuildDrawer(),
         body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Expanded(
-                child: ArchiveList(),
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFF8F4ED),
+                  Color(0xFFEFF4F6),
+                ],
               ),
-            ],
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  top: -80,
+                  right: -60,
+                  child: Container(
+                    width: 200,
+                    height: 200,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0x14D7C6B2),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: -100,
+                  left: -40,
+                  child: Container(
+                    width: 220,
+                    height: 220,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0x1A98B7A8),
+                    ),
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: Container(
+                        margin: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.88),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: Colors.white70),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0F000000),
+                              blurRadius: 24,
+                              offset: Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: const ArchiveList(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
         floatingActionButton: Builder(builder: (context) {
-          return FloatingActionButton(
-            backgroundColor: Colors.blue,
+          return FloatingActionButton.extended(
+            backgroundColor: const Color(0xFF1F6E5D),
             foregroundColor: Colors.white,
             onPressed: () async {
               await Navigator.push(context,
                   MaterialPageRoute(builder: (c) => const EditNotePage()));
             },
-            child: const Icon(Icons.add),
+            icon: const Icon(Icons.add),
+            label: const Text("New Note"),
           );
         }),
       ),

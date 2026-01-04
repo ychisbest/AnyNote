@@ -74,23 +74,27 @@ class _ArchiveListState extends State<ArchiveList> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
       child: TextField(
-        style: const TextStyle(fontSize: 12),
+        style: const TextStyle(fontSize: 13),
         onChanged: _onSearchChanged,
         decoration: InputDecoration(
-          fillColor: Colors.white.withOpacity(0.6),
+          fillColor: Colors.white.withOpacity(0.85),
           filled: true,
           hintText: "Search...",
           prefixIcon: const Icon(Icons.search),
-          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          border: OutlineInputBorder(
+            borderSide: const BorderSide(width: 1, color: Colors.black12),
+            borderRadius: BorderRadius.circular(18),
+          ),
           focusedBorder: OutlineInputBorder(
-            borderSide: const BorderSide(width: 1, color: Colors.black54),
-            borderRadius: BorderRadius.circular(15),
+            borderSide: const BorderSide(width: 1, color: Colors.black38),
+            borderRadius: BorderRadius.circular(18),
           ),
           enabledBorder: OutlineInputBorder(
             borderSide: const BorderSide(width: 1, color: Colors.black12),
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(18),
           ),
         ),
       ),

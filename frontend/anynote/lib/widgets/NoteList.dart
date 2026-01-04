@@ -26,83 +26,135 @@ class NoteItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isHovered = false.obs;
+    final theme = Theme.of(context);
+    final accentBase = darkenColor(item.color.toFullARGB(), 0.06);
+    final accentStrong = darkenColor(item.color.toFullARGB(), 0.2);
+    final outlineColor = theme.colorScheme.outlineVariant.withOpacity(0.6);
     
     return Listener(
       onPointerDown: (_) => isHovered.value = true,
       onPointerUp: (_) => isHovered.value = false,
       onPointerCancel: (_) => isHovered.value = false,
-      child: Obx(() => Container(
-        key: ValueKey(item.id),
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: darkenColor(item.color.toFullARGB()),
-              blurRadius: 2
-            )
-          ],
-          border: Border.all(
-            color: isHovered.value
-                ? darkenColor(item.color.toFullARGB(), 0.3)
-                : darkenColor(item.color.toFullARGB(), 0.1),
-            width: 1,
-          ),
-          borderRadius: const BorderRadius.all(Radius.circular(5))
+      child: Obx(() => Material(
+        color: theme.colorScheme.surface,
+        elevation: 2,
+        shadowColor: const Color(0x14000000),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: outlineColor, width: 1),
         ),
-        child: Material(
-          color: item.color.toFullARGB(),
-          borderRadius: const BorderRadius.all(Radius.circular(5)),
-          child: InkWell(
-            borderRadius: const BorderRadius.all(Radius.circular(5)),
-            onTap: () async {
-              await Get.to(() => EditNotePage(item: item));
-            },
-            onLongPress: () async {
-              var res = await _showOptionsDialog(context, item, controller, isArchive);
-              if (res != null) _handleOption(res, item, controller, isArchive);
-            },
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          intl.DateFormat('HH:mm').format(item.createTime),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.black38,
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: isHovered.value ? 6 : 4,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      accentStrong,
+                      accentBase,
+                    ],
+                  ),
+                  borderRadius: const BorderRadius.horizontal(
+                    left: Radius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+            InkWell(
+              borderRadius: const BorderRadius.all(Radius.circular(14)),
+              onTap: () async {
+                await Get.to(() => EditNotePage(item: item));
+              },
+              onLongPress: () async {
+                var res = await _showOptionsDialog(context, item, controller, isArchive);
+                if (res != null) _handleOption(res, item, controller, isArchive);
+              },
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 12, 12),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceVariant
+                                  .withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              intl.DateFormat('HH:mm').format(item.createTime),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.black54,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        LimitedBox(
+                          maxHeight: maxNoteItemHeight,
+                          child: Obx(() => MarkdownRenderer(
+                            fontsize: controller.fontSize.value,
+                            data: item.content?.trimRight() ?? "",
+                          )),
+                        ),
+                      ],
+                    ),
+                    if (item.isTopMost && !isArchive)
+                      PositionedDirectional(
+                        end: 0,
+                        top: -6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color: Colors.orange.withOpacity(0.3),
+                                width: 1),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(
+                                Icons.push_pin,
+                                size: 12,
+                                color: Colors.orange,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'Pinned',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      LimitedBox(
-                        maxHeight: maxNoteItemHeight,
-                        child: Obx(() => MarkdownRenderer(
-                          fontsize: controller.fontSize.value,
-                          data: item.content?.trimRight() ?? "",
-                        )),
-                      ),
-                    ],
-                  ),
-                  if (item.isTopMost && !isArchive)
-                    PositionedDirectional(
-                      start: 0,
-                      top: 0,
-                      child: Icon(
-                        Icons.vertical_align_top,
-                        size: 16,
-                        color: Colors.orange,
-                      ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       )),
     );
@@ -269,22 +321,37 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
 
   Widget buildHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 8, right: 8, top: 16, bottom: 6),
+      padding: const EdgeInsets.only(left: 12, right: 12, top: 18, bottom: 8),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.black12.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
+            color: Colors.white.withOpacity(0.85),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.black12),
           ),
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.black54,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black45,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -294,7 +361,7 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
   Widget buildItem(NoteItem item) {
     final MainController controller = Get.find<MainController>();
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: NoteItemWidget(
         key: ValueKey(item.id),
         controller: controller,
@@ -312,8 +379,8 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
     controller: sc,
     physics: const BouncingScrollPhysics(),
     slivers: [
-      if (topmostItems.isNotEmpty)
-        SliverToBoxAdapter(child: buildHeader("📌 Topmost")),
+  if (topmostItems.isNotEmpty)
+        SliverToBoxAdapter(child: buildHeader("Pinned")),
       SliverList.builder(
         addAutomaticKeepAlives: false,
         itemCount: topmostItems.length,
