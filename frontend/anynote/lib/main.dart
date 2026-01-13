@@ -175,6 +175,7 @@ class NerrowHome extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () {
+                c.exitSelectionMode();
                 Get.to(() => Archiveview());
               },
               child: const Icon(

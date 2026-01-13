@@ -440,10 +440,17 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
 
   final MainController controller = Get.find<MainController>();
 
-  Future<void> handleBatchCopy() async {
-    final selectedNotes = controller.notes
-        .where((note) => controller.selectedNoteIds.contains(note.id))
+  List<NoteItem> getSelectedNotes() {
+    // Touch length so GetX tracks changes on selection updates.
+    controller.selectedNoteIds.length;
+    return archivedNotes
+        .where((note) =>
+            note.id != null && controller.selectedNoteIds.contains(note.id))
         .toList();
+  }
+
+  Future<void> handleBatchCopy() async {
+    final selectedNotes = getSelectedNotes();
     final text = buildBatchCopyText(selectedNotes);
     if (text.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: text));
@@ -451,9 +458,7 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
   }
 
   Future<void> handleBatchArchive(BuildContext context) async {
-    final selectedNotes = controller.notes
-        .where((note) => controller.selectedNoteIds.contains(note.id))
-        .toList();
+    final selectedNotes = getSelectedNotes();
     if (selectedNotes.isEmpty) return;
     for (final note in selectedNotes) {
       if (note.id == null) continue;
@@ -467,9 +472,7 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
   }
 
   Future<void> handleBatchDelete(BuildContext context) async {
-    final selectedNotes = controller.notes
-        .where((note) => controller.selectedNoteIds.contains(note.id))
-        .toList();
+    final selectedNotes = getSelectedNotes();
     if (selectedNotes.isEmpty) return;
 
     final confirm = await showDialog<bool>(
@@ -503,48 +506,50 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
 
   Widget buildSelectionBar(BuildContext context) {
     final theme = Theme.of(context);
-    final selectedCount = controller.selectedNoteIds.length;
     final actionLabel = isArchive ? 'Unarchive' : 'Archive';
     final actionIcon = isArchive ? Icons.unarchive : Icons.archive;
 
-    return Material(
-      elevation: 6,
-      color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(18),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          children: [
-            IconButton(
-              onPressed: controller.exitSelectionMode,
-              icon: const Icon(Icons.close),
-              tooltip: 'Cancel',
-            ),
-            Text(
-              '$selectedCount selected',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const Spacer(),
-            IconButton(
-              onPressed: handleBatchCopy,
-              tooltip: 'Copy',
-              icon: const Icon(Icons.copy),
-            ),
-            IconButton(
-              onPressed: () => handleBatchArchive(context),
-              tooltip: actionLabel,
-              icon: Icon(actionIcon),
-            ),
-            IconButton(
-              onPressed: () => handleBatchDelete(context),
-              tooltip: 'Delete',
-              icon: const Icon(Icons.delete_outline),
-              color: Colors.red,
-            ),
-          ],
+    return Obx(() {
+      final selectedCount = getSelectedNotes().length;
+      return Material(
+        elevation: 6,
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              IconButton(
+                onPressed: controller.exitSelectionMode,
+                icon: const Icon(Icons.close),
+                tooltip: 'Cancel',
+              ),
+              Text(
+                '$selectedCount selected',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: handleBatchCopy,
+                tooltip: 'Copy',
+                icon: const Icon(Icons.copy),
+              ),
+              IconButton(
+                onPressed: () => handleBatchArchive(context),
+                tooltip: actionLabel,
+                icon: Icon(actionIcon),
+              ),
+              IconButton(
+                onPressed: () => handleBatchDelete(context),
+                tooltip: 'Delete',
+                icon: const Icon(Icons.delete_outline),
+                color: Colors.red,
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   return Obx(() {
