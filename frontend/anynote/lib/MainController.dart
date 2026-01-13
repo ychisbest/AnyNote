@@ -15,6 +15,8 @@ class MainController extends GetxController {
   final RxList<NoteItem> notes = <NoteItem>[].obs;
   final RxBool isLoading = false.obs;
   final RxString filterText = ''.obs;
+  final RxBool isSelectionMode = false.obs;
+  final RxSet<int> selectedNoteIds = <int>{}.obs;
   UpdateEditTextCallback? updateEditTextCallback;
 
   final RxInt fontSize = GlobalConfig.fontSize.obs;
@@ -144,6 +146,7 @@ class MainController extends GetxController {
 
   void logout() {
     notes.clear();
+    exitSelectionMode();
     saveNotesToLocal();
     GlobalConfig.clear();
   }
@@ -255,6 +258,30 @@ class MainController extends GetxController {
     if (filterText.value != trimmedValue) {
       filterText.value = trimmedValue;
     }
+  }
+
+  void enterSelectionMode({int? initialId}) {
+    selectedNoteIds.clear();
+    if (initialId != null) {
+      selectedNoteIds.add(initialId);
+    }
+    isSelectionMode.value = true;
+  }
+
+  void toggleSelection(int id) {
+    if (selectedNoteIds.contains(id)) {
+      selectedNoteIds.remove(id);
+    } else {
+      selectedNoteIds.add(id);
+    }
+    if (selectedNoteIds.isEmpty) {
+      isSelectionMode.value = false;
+    }
+  }
+
+  void exitSelectionMode() {
+    isSelectionMode.value = false;
+    selectedNoteIds.clear();
   }
 
   // 优化后的 filteredNotes 方法

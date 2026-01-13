@@ -35,17 +35,28 @@ class NoteItemWidget extends StatelessWidget {
       onPointerDown: (_) => isHovered.value = true,
       onPointerUp: (_) => isHovered.value = false,
       onPointerCancel: (_) => isHovered.value = false,
-      child: Obx(() => Material(
-        color: theme.colorScheme.surface,
-        elevation: 2,
-        shadowColor: const Color(0x14000000),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(color: outlineColor, width: 1),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: [
+      child: Obx(() {
+        final isSelectionMode = controller.isSelectionMode.value;
+        final isSelected =
+            item.id != null && controller.selectedNoteIds.contains(item.id);
+        final cardColor = isSelected
+            ? theme.colorScheme.primary.withOpacity(0.08)
+            : theme.colorScheme.surface;
+        final borderColor = isSelected
+            ? theme.colorScheme.primary.withOpacity(0.6)
+            : outlineColor;
+
+        return Material(
+          color: cardColor,
+          elevation: 2,
+          shadowColor: const Color(0x14000000),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: borderColor, width: 1),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
             Positioned(
               left: 0,
               top: 0,
@@ -71,9 +82,21 @@ class NoteItemWidget extends StatelessWidget {
             InkWell(
               borderRadius: const BorderRadius.all(Radius.circular(14)),
               onTap: () async {
+                if (controller.isSelectionMode.value) {
+                  if (item.id != null) {
+                    controller.toggleSelection(item.id!);
+                  }
+                  return;
+                }
                 await Get.to(() => EditNotePage(item: item));
               },
               onLongPress: () async {
+                if (controller.isSelectionMode.value) {
+                  if (item.id != null) {
+                    controller.toggleSelection(item.id!);
+                  }
+                  return;
+                }
                 var res = await _showOptionsDialog(context, item, controller, isArchive);
                 if (res != null) _handleOption(res, item, controller, isArchive);
               },
@@ -154,9 +177,38 @@ class NoteItemWidget extends StatelessWidget {
                 ),
               ),
             ),
-          ],
-        ),
-      )),
+            if (isSelectionMode)
+              PositionedDirectional(
+                end: 10,
+                top: 10,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : Colors.white.withOpacity(0.9),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.outlineVariant,
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(
+                    isSelected ? Icons.check : Icons.circle_outlined,
+                    size: 14,
+                    color: isSelected
+                        ? Colors.white
+                        : theme.colorScheme.outlineVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 
@@ -177,6 +229,14 @@ class NoteItemWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 10),
+              ListTile(
+                leading: const Icon(Icons.checklist),
+                title: const Text(
+                  'Multi-select',
+                  style: TextStyle(fontSize: 16),
+                ),
+                onTap: () => Navigator.of(context).pop('multiSelect'),
+              ),
               ListTile(
                 leading: Icon(
                   item.isTopMost ? Icons.star : Icons.star_border,
@@ -240,6 +300,9 @@ class NoteItemWidget extends StatelessWidget {
         } else {
           controller.archiveNote(item.id!);
         }
+        break;
+      case 'multiSelect':
+        controller.enterSelectionMode(initialId: item.id);
         break;
       case 'copy':
         Clipboard.setData(ClipboardData(text: item.content ?? ""));
@@ -375,36 +438,169 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
   final normalItems = archivedNotes.where((item) => !item.isTopMost).toList();
   final groupedEntries = buildGroupedEntries(sortNotesByDateDesc(normalItems));
 
-  return CustomScrollView(
-    controller: sc,
-    physics: const BouncingScrollPhysics(),
-    slivers: [
-  if (topmostItems.isNotEmpty)
-        SliverToBoxAdapter(child: buildHeader("Pinned")),
-      SliverList.builder(
-        addAutomaticKeepAlives: false,
-        itemCount: topmostItems.length,
-        itemBuilder: (context, index) {
-          return buildItem(topmostItems[index]);
-        },
+  final MainController controller = Get.find<MainController>();
+
+  Future<void> handleBatchCopy() async {
+    final selectedNotes = controller.notes
+        .where((note) => controller.selectedNoteIds.contains(note.id))
+        .toList();
+    final text = buildBatchCopyText(selectedNotes);
+    if (text.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: text));
+    controller.exitSelectionMode();
+  }
+
+  Future<void> handleBatchArchive(BuildContext context) async {
+    final selectedNotes = controller.notes
+        .where((note) => controller.selectedNoteIds.contains(note.id))
+        .toList();
+    if (selectedNotes.isEmpty) return;
+    for (final note in selectedNotes) {
+      if (note.id == null) continue;
+      if (isArchive) {
+        await controller.unarchiveNote(note.id!);
+      } else {
+        await controller.archiveNote(note.id!);
+      }
+    }
+    controller.exitSelectionMode();
+  }
+
+  Future<void> handleBatchDelete(BuildContext context) async {
+    final selectedNotes = controller.notes
+        .where((note) => controller.selectedNoteIds.contains(note.id))
+        .toList();
+    if (selectedNotes.isEmpty) return;
+
+    final confirm = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Confirm Delete'),
+              content: Text('Delete ${selectedNotes.length} notes?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Delete'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    if (!confirm) return;
+    for (final note in selectedNotes) {
+      if (note.id == null) continue;
+      await controller.deleteNoteWithoutPrompt(note.id!);
+    }
+    controller.exitSelectionMode();
+  }
+
+  Widget buildSelectionBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final selectedCount = controller.selectedNoteIds.length;
+    final actionLabel = isArchive ? 'Unarchive' : 'Archive';
+    final actionIcon = isArchive ? Icons.unarchive : Icons.archive;
+
+    return Material(
+      elevation: 6,
+      color: theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(18),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            IconButton(
+              onPressed: controller.exitSelectionMode,
+              icon: const Icon(Icons.close),
+              tooltip: 'Cancel',
+            ),
+            Text(
+              '$selectedCount selected',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const Spacer(),
+            IconButton(
+              onPressed: handleBatchCopy,
+              tooltip: 'Copy',
+              icon: const Icon(Icons.copy),
+            ),
+            IconButton(
+              onPressed: () => handleBatchArchive(context),
+              tooltip: actionLabel,
+              icon: Icon(actionIcon),
+            ),
+            IconButton(
+              onPressed: () => handleBatchDelete(context),
+              tooltip: 'Delete',
+              icon: const Icon(Icons.delete_outline),
+              color: Colors.red,
+            ),
+          ],
+        ),
       ),
-      SliverList.builder(
-        addAutomaticKeepAlives: false,
-        itemCount: groupedEntries.length,
-        itemBuilder: (context, index) {
-          final entry = groupedEntries[index];
-          if (entry.isHeader) {
-            return buildHeader(entry.title ?? "");
-          }
-          return buildItem(entry.item!);
-        },
-      ),
-      const SliverToBoxAdapter(
-          child: SizedBox(
-        height: 50,
-      ))
-    ],
-  );
+    );
+  }
+
+  return Obx(() {
+    final isSelectionMode = controller.isSelectionMode.value;
+    final bottomSpacer = isSelectionMode ? 120.0 : 50.0;
+
+    return Builder(
+      builder: (context) {
+        return Stack(
+          children: [
+            CustomScrollView(
+              controller: sc,
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                if (topmostItems.isNotEmpty)
+                  SliverToBoxAdapter(child: buildHeader("Pinned")),
+                SliverList.builder(
+                  addAutomaticKeepAlives: false,
+                  itemCount: topmostItems.length,
+                  itemBuilder: (context, index) {
+                    return buildItem(topmostItems[index]);
+                  },
+                ),
+                SliverList.builder(
+                  addAutomaticKeepAlives: false,
+                  itemCount: groupedEntries.length,
+                  itemBuilder: (context, index) {
+                    final entry = groupedEntries[index];
+                    if (entry.isHeader) {
+                      return buildHeader(entry.title ?? "");
+                    }
+                    return buildItem(entry.item!);
+                  },
+                ),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: bottomSpacer,
+                  ),
+                ),
+              ],
+            ),
+            if (isSelectionMode)
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 12,
+                child: SafeArea(
+                  top: false,
+                  child: buildSelectionBar(context),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  });
 }
 
 class _NoteListEntry {
@@ -421,4 +617,28 @@ class _NoteListEntry {
   factory _NoteListEntry.item(NoteItem item) {
     return _NoteListEntry._(isHeader: false, item: item);
   }
+}
+
+String buildBatchCopyText(List<NoteItem> notes) {
+  if (notes.isEmpty) return '';
+  final sorted = List<NoteItem>.from(notes)
+    ..sort((a, b) => b.createTime.compareTo(a.createTime));
+  final formatter = intl.DateFormat('yyyy-MM-dd');
+  final buffer = StringBuffer();
+  DateTime? currentDate;
+
+  for (final note in sorted) {
+    final dateKey =
+        DateTime(note.createTime.year, note.createTime.month, note.createTime.day);
+    if (currentDate == null || currentDate != dateKey) {
+      if (buffer.isNotEmpty) {
+        buffer.writeln();
+      }
+      buffer.writeln(formatter.format(dateKey));
+      currentDate = dateKey;
+    }
+    buffer.writeln((note.content ?? '').trimRight());
+  }
+
+  return buffer.toString().trimRight();
 }

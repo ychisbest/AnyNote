@@ -253,17 +253,22 @@ class NerrowHome extends StatelessWidget {
             ),
           ),
         ),
-        floatingActionButton: Builder(builder: (context) {
-          return FloatingActionButton.extended(
-            backgroundColor: const Color(0xFF1F6E5D),
-            foregroundColor: Colors.white,
-            onPressed: () async {
-              await Navigator.push(context,
-                  MaterialPageRoute(builder: (c) => const EditNotePage()));
-            },
-            icon: const Icon(Icons.add),
-            label: const Text("New Note"),
-          );
+        floatingActionButton: Obx(() {
+          if (c.isSelectionMode.value) {
+            return const SizedBox.shrink();
+          }
+          return Builder(builder: (context) {
+            return FloatingActionButton.extended(
+              backgroundColor: const Color(0xFF1F6E5D),
+              foregroundColor: Colors.white,
+              onPressed: () async {
+                await Navigator.push(context,
+                    MaterialPageRoute(builder: (c) => const EditNotePage()));
+              },
+              icon: const Icon(Icons.add),
+              label: const Text("New Note"),
+            );
+          });
         }),
       ),
     );
