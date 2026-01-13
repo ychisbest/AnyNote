@@ -330,125 +330,277 @@ class _BuildDrawerState extends State<BuildDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    const drawerBackground = Color(0xFFF9F6F1);
+    const cardColor = Colors.white;
+    const accentColor = Color(0xFF2D6B6A);
+    const textColor = Color(0xFF3E3A34);
+    const mutedTextColor = Color(0xFF8B8378);
+
     return Drawer(
-      child: Column(
-        children: <Widget>[
-          const DrawerHeader(
-            decoration: BoxDecoration(
-              color: Colors.white,
-            ),
-            child: Center(
-                child: Text(
-              'AnyNote',
-              style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
-            )),
-          ),
-          Scrollbar(
-            controller: _scrollController,
-            child: ScrollConfiguration(
-              behavior: const ScrollBehavior().copyWith(
-                scrollbars: false,
-                dragDevices: {
-                  PointerDeviceKind.touch,
-                  PointerDeviceKind.mouse,
-                },
+      backgroundColor: drawerBackground,
+      child: SafeArea(
+        child: Column(
+          children: <Widget>[
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x1A000000),
+                    blurRadius: 12,
+                    offset: Offset(0, 6),
+                  ),
+                ],
               ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                controller: _scrollController,
-                child: Container(
-                  height: 100,
-                  width: 550,
-                  padding: const EdgeInsets.all(10),
-                  child: const RepaintBoundary(
-                      child: GithubHeatmap(
-                    cellSize: 10,
-                  )),
-                ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE9E3DA),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(Icons.edit_note_rounded, color: accentColor),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'AnyNote',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: textColor,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'A calm space for your notes',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: mutedTextColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.search_rounded),
-            title: const Text('Archived & Search'),
-            onTap: () async {
-              Get.back();
-              Get.to(() => Archiveview());
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.date_range),
-            title: const Text('Browse by date'),
-            onTap: () async {
-              Get.back();
-              Get.to(() => const Browser());
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.casino),
-            title: const Text('Random'),
-            onTap: () async {
-              Get.back();
-              Get.to(() => RandomView());
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.tag_sharp),
-            title: const Text('Tags'),
-            onTap: () async {
-              Get.back();
-              Get.to(() => TagList());
-            },
-          ),
-          Obx(() {
-            if (c.tags.isEmpty) return const SizedBox.shrink();
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: List.generate(c.tags.length, (index) {
-                  return ActionChip(
-                    label: Text(c.tags[index], style: const TextStyle(fontSize: 12)),
-                    padding: EdgeInsets.zero,
-                    visualDensity: VisualDensity.compact,
-                    pressElevation: 0,
-                    onPressed: () async {
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFEAE3D8)),
+                    ),
+                    child: Scrollbar(
+                      controller: _scrollController,
+                      child: ScrollConfiguration(
+                        behavior: const ScrollBehavior().copyWith(
+                          scrollbars: false,
+                          dragDevices: {
+                            PointerDeviceKind.touch,
+                            PointerDeviceKind.mouse,
+                          },
+                        ),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          controller: _scrollController,
+                          child: Container(
+                            height: 88,
+                            width: 550,
+                            padding: const EdgeInsets.all(6),
+                            child: const RepaintBoundary(
+                              child: GithubHeatmap(
+                                cellSize: 10,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _buildSectionLabel('Library'),
+                  _buildDrawerItem(
+                    icon: Icons.search_rounded,
+                    title: 'Archived & Search',
+                    onTap: () async {
                       Get.back();
-                      Get.to(() => NoteTagListView(tag: c.tags[index]));
+                      Get.to(() => Archiveview());
                     },
-                  );
-                }),
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.date_range,
+                    title: 'Browse by date',
+                    onTap: () async {
+                      Get.back();
+                      Get.to(() => const Browser());
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.casino,
+                    title: 'Random',
+                    onTap: () async {
+                      Get.back();
+                      Get.to(() => RandomView());
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.tag_sharp,
+                    title: 'Tags',
+                    onTap: () async {
+                      Get.back();
+                      Get.to(() => TagList());
+                    },
+                  ),
+                  Obx(() {
+                    if (c.tags.isEmpty) return const SizedBox.shrink();
+                    return Container(
+                      margin: const EdgeInsets.only(top: 6, bottom: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF4F1EC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE7E0D6)),
+                      ),
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: List.generate(c.tags.length, (index) {
+                          return ActionChip(
+                            label: Text(
+                              c.tags[index],
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: textColor,
+                              ),
+                            ),
+                            backgroundColor: Colors.white,
+                            padding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                            pressElevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: const BorderSide(color: Color(0xFFE0D8CC)),
+                            ),
+                            onPressed: () async {
+                              Get.back();
+                              Get.to(() => NoteTagListView(tag: c.tags[index]));
+                            },
+                          );
+                        }),
+                      ),
+                    );
+                  }),
+                  _buildSectionLabel('Tools'),
+                  _buildDrawerItem(
+                    icon: Icons.camera,
+                    title: 'Help you recall',
+                    onTap: () async {
+                      Get.back();
+                      Get.to(() => const Aimemo());
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.bookmark_added_outlined,
+                    title: 'Tagging notes',
+                    onTap: () async {
+                      Get.back();
+                      Get.to(() => const AddTagListView());
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _buildSectionLabel('Settings'),
+                  _buildDrawerItem(
+                    icon: Icons.settings,
+                    title: 'Setting',
+                    onTap: () async {
+                      Get.back();
+                      Get.to(() => const SettingView());
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                ],
               ),
-            );
-          }),
-          ListTile(
-            leading: const Icon(Icons.camera),
-            title: const Text('Help you recall'),
-            onTap: () async {
-              Get.back();
-              Get.to(() => const Aimemo());
-            },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 6, top: 4),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 11,
+          letterSpacing: 1.2,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF9A9083),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF2EEE7),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 18, color: const Color(0xFF2D6B6A)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF3E3A34),
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: Color(0xFFB0A79C),
+                ),
+              ],
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.bookmark_added_outlined),
-            title: const Text('Tagging notes'),
-            onTap: () async {
-              Get.back();
-              Get.to(() => const AddTagListView());
-            },
-          ),
-          const Spacer(),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Setting'),
-            onTap: () async {
-              Get.back();
-              Get.to(() => const SettingView());
-            },
-          ),
-        ],
+        ),
       ),
     );
   }
