@@ -16,12 +16,14 @@ class GlobalConfig {
   static const String _aiApiKeyKey = 'aiApiKey';
   static const String _aiUrlKey = 'aiUrl';
   static const String _aiModelKey = 'aiModel';
+  static const String _quickNoteDraftKey = 'quickNoteDraft';
 
   static const String _defaultAiApiKey = 'sk-15632193f7784e5eadcf9e7199b301ea';
   static const String _defaultAiUrl =
       'https://api.deepseek.com/chat/completions';
   static const String _defaultAiModel = 'deepseek-coder';
   static const String _updateFailedNotesKey = 'updateFailedNotes';
+  static const String _defaultQuickNoteDraft = '';
 
   static String get aiApiKey =>
       _prefs.getString(_aiApiKeyKey) ?? _defaultAiApiKey;
@@ -32,6 +34,11 @@ class GlobalConfig {
 
   static String get aiModel => _prefs.getString(_aiModelKey) ?? _defaultAiModel;
   static set aiModel(String value) => _prefs.setString(_aiModelKey, value);
+
+  static String get quickNoteDraft =>
+      _prefs.getString(_quickNoteDraftKey) ?? _defaultQuickNoteDraft;
+  static set quickNoteDraft(String value) =>
+      _prefs.setString(_quickNoteDraftKey, value);
 
   static Future<void> setAiApiKey(String value) async {
     await _prefs.setString(_aiApiKeyKey, value);
@@ -59,6 +66,7 @@ class GlobalConfig {
     await _prefs.remove(_aiUrlKey);
     await _prefs.remove(_aiModelKey);
     await _prefs.remove(_updateFailedNotesKey);
+    await _prefs.remove(_quickNoteDraftKey);
   }
 
   static String get baseUrl => _prefs.getString(_baseUrlKey) ?? _defaultBaseUrl;

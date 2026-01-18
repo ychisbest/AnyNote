@@ -5,6 +5,7 @@ import 'package:anynote/GlobalConfig.dart';
 import 'package:anynote/MainController.dart';
 import 'package:anynote/note_api_service.dart';
 import 'package:anynote/views/MarkdwonShortcutBar.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
@@ -59,7 +60,21 @@ class _EditNotePageState extends State<EditNotePage> {
     super.initState();
 
     if (widget.item == null) {
-      textFocusNode.requestFocus();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        FocusScope.of(context).requestFocus(textFocusNode);
+        if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+          Future.delayed(const Duration(milliseconds: 80), () {
+            if (!mounted) {
+              return;
+            }
+            FocusScope.of(context).requestFocus(textFocusNode);
+            SystemChannels.textInput.invokeMethod('TextInput.show');
+          });
+        }
+      });
     } else {
       item = widget.item!;
     }

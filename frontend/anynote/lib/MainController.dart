@@ -173,6 +173,26 @@ class MainController extends GetxController {
       //final localId = newNote.id;
       final addedNote = await _api.addNoteItem(newNote.content ?? "");
       addNoteLocally(addedNote);
+
+      final now = DateTime.now();
+      if (addedNote.id != null) {
+        final patchedNote = NoteItem(
+          id: addedNote.id,
+          isTopMost: addedNote.isTopMost,
+          content: addedNote.content,
+          createTime: now,
+          lastUpdateTime: addedNote.lastUpdateTime ?? now,
+          archiveTime: addedNote.archiveTime,
+          isArchived: addedNote.isArchived,
+          color: addedNote.color,
+          index: addedNote.index,
+        );
+        final updatedNote = await _api.putNoteItem(addedNote.id!, patchedNote);
+        updateNoteLocally(updatedNote);
+        await saveNotesToLocal();
+        return updatedNote;
+      }
+
       //updateNoteLocally(addedNote, id: localId);
       return addedNote;
     } catch (e) {

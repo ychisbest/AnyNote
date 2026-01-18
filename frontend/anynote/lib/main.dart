@@ -13,6 +13,7 @@ import 'package:anynote/views/login.dart';
 import 'package:anynote/views/random_view.dart';
 import 'package:anynote/views/setting_view.dart';
 import 'package:anynote/views/tag_list.dart';
+import 'package:anynote/widgets/QuickNoteInput.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,6 +22,7 @@ import 'package:hive_flutter/adapters.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'MainController.dart';
 import 'note_api_service.dart';
+import 'route_observer.dart';
 import 'views/WideView/windowManger.dart';
 
 void main() async {
@@ -60,6 +62,7 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           fontFamily: kIsWeb ? "" : "MyCustomfont",
         ),
+        navigatorObservers: [routeObserver],
         home: GlobalConfig.isLoggedIn ? const HomePage() : const LoginPage());
   }
 }
@@ -227,6 +230,7 @@ class NerrowHome extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    const QuickNoteInput(),
                     Expanded(
                       child: Container(
                         margin: const EdgeInsets.fromLTRB(16, 12, 16, 16),
