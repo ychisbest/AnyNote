@@ -9,7 +9,9 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 class QuickNoteInput extends StatefulWidget {
-  const QuickNoteInput({super.key});
+  const QuickNoteInput({super.key, this.expand = false});
+
+  final bool expand;
 
   @override
   State<QuickNoteInput> createState() => _QuickNoteInputState();
@@ -224,38 +226,61 @@ class _QuickNoteInputState extends State<QuickNoteInput>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Shortcuts(
-            shortcuts: shortcuts,
-            child: Actions(
-              actions: <Type, Action<Intent>>{
-                ActivateIntent: CallbackAction<ActivateIntent>(
-                  onInvoke: (intent) {
-                    _send();
-                    return null;
-                  },
-                ),
-              },
-              child: TextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                minLines: 3,
-                maxLines: 8,
-                style: TextStyle(
-                  color: Colors.grey[700],
-                  fontSize: GlobalConfig.fontSize.toDouble(),
-                  height: 1.8,
-                ),
-                textAlignVertical: TextAlignVertical.top,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 10,
+          Builder(builder: (context) {
+            final inputField = Shortcuts(
+              shortcuts: shortcuts,
+              child: Actions(
+                actions: <Type, Action<Intent>>{
+                  ActivateIntent: CallbackAction<ActivateIntent>(
+                    onInvoke: (intent) {
+                      _send();
+                      return null;
+                    },
                   ),
-                ),
+                },
+                child: widget.expand
+                    ? TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        expands: true,
+                        maxLines: null,
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          fontSize: GlobalConfig.fontSize.toDouble(),
+                          height: 1.8,
+                        ),
+                        textAlignVertical: TextAlignVertical.top,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 10,
+                          ),
+                        ),
+                      )
+                    : TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        minLines: 3,
+                        maxLines: 8,
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          fontSize: GlobalConfig.fontSize.toDouble(),
+                          height: 1.8,
+                        ),
+                        textAlignVertical: TextAlignVertical.top,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 10,
+                          ),
+                        ),
+                      ),
               ),
-            ),
-          ),
+            );
+            return widget.expand ? Expanded(child: inputField) : inputField;
+          }),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,

@@ -24,6 +24,7 @@ import 'MainController.dart';
 import 'note_api_service.dart';
 import 'route_observer.dart';
 import 'views/WideView/windowManger.dart';
+import 'views/WideView/windows_home.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -98,10 +99,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       if (!GlobalConfig.isLoggedIn) {
         return const LoginPage();
       }
-      // if (Get.width > 600) {
-      //   resizeableHome ??= WideHome();
-      //   return resizeableHome!;
-      // }
+      final bool isWindowsWide =
+          !kIsWeb && Platform.isWindows && constraints.maxWidth >= 1000;
+      if (isWindowsWide) {
+        resizeableHome ??= WindowsWideHome();
+        return resizeableHome!;
+      }
 
       return NerrowHome();
     });
