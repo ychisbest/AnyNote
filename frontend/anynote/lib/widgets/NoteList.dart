@@ -10,9 +10,9 @@ import 'package:intl/intl.dart' as intl;
 import '../views/markdown_render/markdown_render.dart';
 
 double maxNoteItemHeight = 180; // Maximum height for note items
-const double _noteFadeHeight = 28;
+const double _noteFadeHeight = 44;
 
-class NoteItemWidget extends StatelessWidget {
+class NoteItemWidget extends StatefulWidget {
   final MainController controller;
   final NoteItem item;
   final bool isArchive;
@@ -25,17 +25,29 @@ class NoteItemWidget extends StatelessWidget {
   });
 
   @override
+  State<NoteItemWidget> createState() => _NoteItemWidgetState();
+}
+
+class _NoteItemWidgetState extends State<NoteItemWidget> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dividerColor = darkenColor(item.color.toFullARGB(), 0.18);
+    final dividerColor = darkenColor(widget.item.color.toFullARGB(), 0.18);
 
     return Obx(() {
+      final controller = widget.controller;
+      final item = widget.item;
+      final isArchive = widget.isArchive;
       final isSelectionMode = controller.isSelectionMode.value;
       final isSelected =
           item.id != null && controller.selectedNoteIds.contains(item.id);
-      final rowColor = isSelected
+      final baseRowColor = isSelected
           ? darkenColor(item.color.toFullARGB(),0.05)
           : item.color.toFullARGB();
+      final rowColor =
+          _isHovered ? darkenColor(baseRowColor, 0.03) : baseRowColor;
       const horizontalPadding = 12.0;
 
       final content = Padding(
@@ -132,6 +144,18 @@ class NoteItemWidget extends StatelessWidget {
           color: rowColor,
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
+            hoverColor: Colors.transparent,
+            highlightColor: darkenColor(rowColor, 0.06).withOpacity(0.12),
+            splashColor: darkenColor(rowColor, 0.1).withOpacity(0.25),
+            splashFactory: InkRipple.splashFactory,
+            enableFeedback: true,
+            onHover: (hovering) {
+              if (_isHovered != hovering) {
+                setState(() {
+                  _isHovered = hovering;
+                });
+              }
+            },
             onTap: () async {
               if (controller.isSelectionMode.value) {
                 if (item.id != null) {
@@ -371,6 +395,7 @@ class _NoteContentPreviewState extends State<NoteContentPreview> {
                     end: Alignment.bottomCenter,
                     colors: [
                       widget.fadeColor.withOpacity(0),
+                      widget.fadeColor.withOpacity(0.65),
                       widget.fadeColor,
                     ],
                   ),
