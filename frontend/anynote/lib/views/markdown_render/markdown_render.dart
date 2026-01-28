@@ -536,28 +536,22 @@ class MarkdownRenderer extends StatelessWidget {
       } else if (match.group(13) != null) {
         spans.add(TextSpan(children: [
           WidgetSpan(
-              child: Container(
-            decoration: const BoxDecoration(
-                color: Colors.green,
-                borderRadius: (BorderRadius.all(Radius.circular(5)))),
-            padding: const EdgeInsets.all(5),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.bookmark_outline_outlined,
-                  size: 15,
-                  color: Colors.white,
-                ),
-                Text(
-                  match.group(14) ?? "",
-                  style: DefaultTextStyle.of(context)
-                      .style
-                      .copyWith(color: Colors.white, fontSize: 10),
-                )
-              ],
-            ),
-          )),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.bookmark_outline_outlined,
+                    size: 15,
+                    color: Colors.green,
+                  ),
+                  Text(
+                    match.group(14) ?? "",
+                    style: DefaultTextStyle.of(context)
+                        .style
+                        .copyWith(color: Colors.green, fontSize: 10),
+                  )
+                ],
+              )),
         ]));
       }
 

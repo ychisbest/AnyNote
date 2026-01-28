@@ -19,6 +19,7 @@ class ArchiveList extends StatefulWidget {
 class _ArchiveListState extends State<ArchiveList> {
   final MainController controller = Get.find<MainController>();
   final ScrollController sc = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
 
   @override
@@ -31,6 +32,7 @@ class _ArchiveListState extends State<ArchiveList> {
   void dispose() {
     //controller.updateFilter('');
     sc.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -38,7 +40,8 @@ class _ArchiveListState extends State<ArchiveList> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        if(widget.isArchive)_buildSearchBar(),
+        if (widget.isArchive) _buildSearchBar(),
+        if (widget.isArchive) _buildTagFilters(),
         Expanded(
           child: Obx(() {
             var archivedNotes = widget.isArchive
@@ -76,6 +79,7 @@ class _ArchiveListState extends State<ArchiveList> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
       child: TextField(
+        controller: _searchController,
         style: const TextStyle(fontSize: 13),
         onChanged: _onSearchChanged,
         decoration: InputDecoration(
@@ -101,10 +105,84 @@ class _ArchiveListState extends State<ArchiveList> {
     );
   }
 
+  Widget _buildTagFilters() {
+    return Obx(() {
+      final tags = controller.tags;
+      if (tags.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      final query = _searchController.text;
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+        child: Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            for (final tag in tags)
+              FilterChip(
+                label: Text(
+                  '#$tag',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                selected: _queryHasTag(query, tag),
+                onSelected: (_) => _toggleTag(tag),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                labelPadding:
+                    const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
+                visualDensity:
+                    const VisualDensity(horizontal: -1, vertical: -2),
+                materialTapTargetSize: MaterialTapTargetSize.padded,
+                selectedColor: Colors.blue.withOpacity(0.15),
+                checkmarkColor: Colors.blue,
+              ),
+          ],
+        ),
+      );
+    });
+  }
+
   void _onSearchChanged(String query) {
+    setState(() {});
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 200), () {
       controller.updateFilter(query);
     });
+  }
+
+  void _toggleTag(String tag) {
+    final query = _searchController.text;
+    final nextQuery = _queryHasTag(query, tag)
+        ? _removeTagFromQuery(query, tag)
+        : _addTagToQuery(query, tag);
+    _setSearchQuery(nextQuery);
+  }
+
+  bool _queryHasTag(String query, String tag) {
+    final reg = RegExp(r'(^|\s)#' + RegExp.escape(tag) + r'(?=\s|$)');
+    return reg.hasMatch(query);
+  }
+
+  String _addTagToQuery(String query, String tag) {
+    final normalized = query.trim();
+    if (normalized.isEmpty) {
+      return '#$tag ';
+    }
+    return '$normalized #$tag ';
+  }
+
+  String _removeTagFromQuery(String query, String tag) {
+    final reg = RegExp(r'(^|\s)#' + RegExp.escape(tag) + r'(?=\s|$)');
+    final cleaned = query.replaceAll(reg, ' ');
+    final normalized = cleaned.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return normalized.isEmpty ? '' : '$normalized ';
+  }
+
+  void _setSearchQuery(String query) {
+    _searchController.value = TextEditingValue(
+      text: query,
+      selection: TextSelection.collapsed(offset: query.length),
+    );
+    _onSearchChanged(query);
   }
 }
