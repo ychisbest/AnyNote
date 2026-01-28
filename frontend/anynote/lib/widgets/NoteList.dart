@@ -9,7 +9,7 @@ import 'package:intl/intl.dart' as intl;
 
 import '../views/markdown_render/markdown_render.dart';
 
-double maxNoteItemHeight = 300; // Maximum height for note items
+double maxNoteItemHeight = 180; // Maximum height for note items
 
 class NoteItemWidget extends StatelessWidget {
   final MainController controller;
@@ -25,191 +25,127 @@ class NoteItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isHovered = false.obs;
     final theme = Theme.of(context);
-    final accentBase = darkenColor(item.color.toFullARGB(), 0.06);
-    final accentStrong = darkenColor(item.color.toFullARGB(), 0.2);
-    final outlineColor = theme.colorScheme.outlineVariant.withOpacity(0.6);
+    final dividerColor = darkenColor(item.color.toFullARGB(), 0.18);
     
-    return Listener(
-      onPointerDown: (_) => isHovered.value = true,
-      onPointerUp: (_) => isHovered.value = false,
-      onPointerCancel: (_) => isHovered.value = false,
-      child: Obx(() {
-        final isSelectionMode = controller.isSelectionMode.value;
-        final isSelected =
-            item.id != null && controller.selectedNoteIds.contains(item.id);
-        final cardColor = isSelected
-            ? theme.colorScheme.primary.withOpacity(0.08)
-            : theme.colorScheme.surface;
-        final borderColor = isSelected
-            ? theme.colorScheme.primary.withOpacity(0.6)
-            : outlineColor;
+    return Obx(() {
+      final isSelectionMode = controller.isSelectionMode.value;
+      final isSelected =
+          item.id != null && controller.selectedNoteIds.contains(item.id);
+      final rowColor = isSelected
+          ? theme.colorScheme.primary.withOpacity(0.08)
+          : Colors.transparent;
+      final horizontalPadding = isSelectionMode ? 32.0 : 12.0;
 
-        return Material(
-          color: cardColor,
-          elevation: 2,
-          shadowColor: const Color(0x14000000),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: BorderSide(color: borderColor, width: 1),
-          ),
-          clipBehavior: Clip.antiAlias,
+      return Material(
+        color: rowColor,
+        child: InkWell(
+          onTap: () async {
+            if (controller.isSelectionMode.value) {
+              if (item.id != null) {
+                controller.toggleSelection(item.id!);
+              }
+              return;
+            }
+            await Get.to(() => EditNotePage(item: item));
+          },
+          onLongPress: () async {
+            if (controller.isSelectionMode.value) {
+              if (item.id != null) {
+                controller.toggleSelection(item.id!);
+              }
+              return;
+            }
+            var res = await _showOptionsDialog(context, item, controller, isArchive);
+            if (res != null) _handleOption(res, item, controller, isArchive);
+          },
           child: Stack(
             children: [
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: isHovered.value ? 6 : 4,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      accentStrong,
-                      accentBase,
-                    ],
-                  ),
-                  borderRadius: const BorderRadius.horizontal(
-                    left: Radius.circular(14),
-                  ),
-                ),
-              ),
-            ),
-            InkWell(
-              borderRadius: const BorderRadius.all(Radius.circular(14)),
-              onTap: () async {
-                if (controller.isSelectionMode.value) {
-                  if (item.id != null) {
-                    controller.toggleSelection(item.id!);
-                  }
-                  return;
-                }
-                await Get.to(() => EditNotePage(item: item));
-              },
-              onLongPress: () async {
-                if (controller.isSelectionMode.value) {
-                  if (item.id != null) {
-                    controller.toggleSelection(item.id!);
-                  }
-                  return;
-                }
-                var res = await _showOptionsDialog(context, item, controller, isArchive);
-                if (res != null) _handleOption(res, item, controller, isArchive);
-              },
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 12, 12),
+              Container(
+                padding: EdgeInsets.fromLTRB(horizontalPadding, 6, 12, 6),
+                decoration: const BoxDecoration(),
                 child: Stack(
-                  clipBehavior: Clip.none,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceVariant
-                                  .withOpacity(0.8),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              intl.DateFormat('HH:mm').format(item.createTime),
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.black54,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        LimitedBox(
-                          maxHeight: maxNoteItemHeight,
-                          child: Obx(() => MarkdownRenderer(
-                            fontsize: controller.fontSize.value,
-                            data: item.content?.trimRight() ?? "",
-                          )),
-                        ),
-                      ],
-                    ),
-                    if (item.isTopMost && !isArchive)
-                      PositionedDirectional(
-                        end: 0,
-                        top: -6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                                color: Colors.orange.withOpacity(0.3),
-                                width: 1),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.push_pin,
-                                size: 12,
-                                color: Colors.orange,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'Pinned',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.orange,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 72),
+                      child: LimitedBox(
+                        maxHeight: maxNoteItemHeight,
+                        child: Obx(() => MarkdownRenderer(
+                          fontsize: controller.fontSize.value,
+                          data: item.content?.trimRight() ?? "",
+                        )),
                       ),
+                    ),
+                    Positioned.fill(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Container(
+                            width: 64,
+                            decoration: BoxDecoration(
+                              border: Border(
+                                right: BorderSide(color: dividerColor, width: 2),
+                              ),
+                            ),
+                            child: Stack(
+                              children: [
+                                Align(
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    intl.DateFormat('HH:mm')
+                                        .format(item.createTime),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onSurfaceVariant
+                                      .withOpacity(0.3),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
-            if (isSelectionMode)
-              PositionedDirectional(
-                end: 10,
-                top: 10,
-                child: Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? theme.colorScheme.primary
-                        : Colors.white.withOpacity(0.9),
-                    shape: BoxShape.circle,
-                    border: Border.all(
+              if (isSelectionMode)
+                PositionedDirectional(
+                  end: 8,
+                  top: 8,
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
                       color: isSelected
                           ? theme.colorScheme.primary
+                          : theme.colorScheme.surface,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.outlineVariant,
+                        width: 1,
+                      ),
+                    ),
+                    child: Icon(
+                      isSelected ? Icons.check : Icons.circle_outlined,
+                      size: 12,
+                      color: isSelected
+                          ? Colors.white
                           : theme.colorScheme.outlineVariant,
-                      width: 1,
                     ),
                   ),
-                  child: Icon(
-                    isSelected ? Icons.check : Icons.circle_outlined,
-                    size: 14,
-                    color: isSelected
-                        ? Colors.white
-                        : theme.colorScheme.outlineVariant,
-                  ),
                 ),
-              ),
             ],
           ),
-        );
-      }),
-    );
+        ),
+      );
+    });
   }
 
   Future<String?> _showOptionsDialog(BuildContext context, NoteItem item, MainController controller, bool isArchive) {
@@ -382,41 +318,40 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
     return entries;
   }
 
-  Widget buildHeader(String title) {
+  Widget buildHeader(BuildContext context, String title) {
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(left: 12, right: 12, top: 18, bottom: 8),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
       child: Align(
         alignment: Alignment.centerLeft,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.85),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.black12),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.black45,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
+        child: title == "Pinned"
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.push_pin,
+                    size: 14,
+                    color: Colors.orange,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+                    ),
+                  ),
+                ],
+              )
+            : Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
                 ),
               ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -424,7 +359,7 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
   Widget buildItem(NoteItem item) {
     final MainController controller = Get.find<MainController>();
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       child: NoteItemWidget(
         key: ValueKey(item.id),
         controller: controller,
@@ -565,7 +500,7 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
               physics: const BouncingScrollPhysics(),
               slivers: [
                 if (topmostItems.isNotEmpty)
-                  SliverToBoxAdapter(child: buildHeader("Pinned")),
+                  SliverToBoxAdapter(child: buildHeader(context, "Pinned")),
                 SliverList.builder(
                   addAutomaticKeepAlives: false,
                   itemCount: topmostItems.length,
@@ -579,7 +514,7 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
                   itemBuilder: (context, index) {
                     final entry = groupedEntries[index];
                     if (entry.isHeader) {
-                      return buildHeader(entry.title ?? "");
+                      return buildHeader(context, entry.title ?? "");
                     }
                     return buildItem(entry.item!);
                   },
