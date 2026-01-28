@@ -10,6 +10,7 @@ import 'package:intl/intl.dart' as intl;
 import '../views/markdown_render/markdown_render.dart';
 
 double maxNoteItemHeight = 180; // Maximum height for note items
+const double _noteFadeHeight = 28;
 
 class NoteItemWidget extends StatelessWidget {
   final MainController controller;
@@ -72,13 +73,15 @@ class NoteItemWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                LimitedBox(
-                  maxHeight: maxNoteItemHeight,
-                  child: Obx(
-                    () => MarkdownRenderer(
-                      fontsize: controller.fontSize.value,
-                      data: item.content?.trimRight() ?? "",
-                    ),
+                Obx(
+                  () => NoteContentPreview(
+                    content: item.content?.trimRight() ?? "",
+                    fontSize: controller.fontSize.value.toDouble(),
+                    maxHeight: maxNoteItemHeight,
+                    fadeHeight: _noteFadeHeight,
+                    fadeColor: rowColor,
+                    iconColor:
+                        theme.colorScheme.onSurfaceVariant.withOpacity(0.65),
                   ),
                 ),
               ],
@@ -294,6 +297,144 @@ class NoteItemWidget extends StatelessWidget {
     }
   }
 }
+
+class NoteContentPreview extends StatefulWidget {
+  final String content;
+  final double fontSize;
+  final double maxHeight;
+  final double fadeHeight;
+  final Color fadeColor;
+  final Color iconColor;
+
+  const NoteContentPreview({
+    super.key,
+    required this.content,
+    required this.fontSize,
+    required this.maxHeight,
+    required this.fadeHeight,
+    required this.fadeColor,
+    required this.iconColor,
+  });
+
+  @override
+  State<NoteContentPreview> createState() => _NoteContentPreviewState();
+}
+
+class _NoteContentPreviewState extends State<NoteContentPreview> {
+  double _contentHeight = 0;
+
+  void _handleSizeChanged(Size size) {
+    if (!mounted) return;
+    if (size.height != _contentHeight) {
+      setState(() {
+        _contentHeight = size.height;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Widget buildContent() {
+      return MarkdownRenderer(
+        fontsize: widget.fontSize.toInt(),
+        data: widget.content,
+      );
+    }
+
+    final isOverflowing = _contentHeight > widget.maxHeight + 0.5;
+
+    return Stack(
+      children: [
+        if (isOverflowing)
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: widget.maxHeight),
+            child: ClipRect(
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: buildContent(),
+              ),
+            ),
+          )
+        else
+          buildContent(),
+        if (isOverflowing)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: IgnorePointer(
+              child: Container(
+                height: widget.fadeHeight,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      widget.fadeColor.withOpacity(0),
+                      widget.fadeColor,
+                    ],
+                  ),
+                ),
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Icon(
+                    Icons.more_horiz,
+                    size: 18,
+                    color: widget.iconColor,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        Offstage(
+          offstage: true,
+          child: MeasureSize(
+            onChange: _handleSizeChanged,
+            child: buildContent(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class MeasureSize extends StatefulWidget {
+  final Widget child;
+  final ValueChanged<Size> onChange;
+
+  const MeasureSize({
+    super.key,
+    required this.child,
+    required this.onChange,
+  });
+
+  @override
+  State<MeasureSize> createState() => _MeasureSizeState();
+}
+
+class _MeasureSizeState extends State<MeasureSize> {
+  Size? _oldSize;
+
+  @override
+  Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final renderObject = context.findRenderObject();
+      if (renderObject is RenderBox &&
+          renderObject.attached &&
+          renderObject.hasSize) {
+        final size = renderObject.size;
+        if (size != _oldSize) {
+          _oldSize = size;
+          widget.onChange(size);
+        }
+      }
+    });
+    return widget.child;
+  }
+}
+
 
 Widget BuildNoteList(
   List<NoteItem> archivedNotes,
