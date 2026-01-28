@@ -4,6 +4,7 @@ import 'package:anynote/MainController.dart';
 import 'package:anynote/views/EditNote.dart';
 import 'package:anynote/views/HeatMap.dart';
 import 'package:anynote/views/archieve_list.dart';
+import 'package:anynote/views/date_view.dart';
 import 'package:anynote/views/setting_view.dart';
 import 'package:anynote/views/tag_list.dart';
 import 'package:anynote/widgets/QuickNoteInput.dart';
@@ -50,6 +51,7 @@ class WindowsWideHome extends StatelessWidget {
                   index: currentPageIndex.value,
                   children: [
                     _buildNotesWide(),
+                    _buildMainContent(const Browser()),
                     _buildMainContent(const ArchiveList(isArchive: true)),
                     _buildMainContent(TagList()),
                     _buildMainContent(const SettingView()),
@@ -91,9 +93,10 @@ class WindowsWideHome extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 10),
               children: [
                 _buildMenuItem(Icons.note_outlined, "Notes", 0),
-                _buildMenuItem(Icons.archive_outlined, "Archived", 1),
-                _buildMenuItem(Icons.local_offer_outlined, "Tags", 2),
-                _buildMenuItem(Icons.settings_outlined, "Settings", 3),
+                _buildMenuItem(Icons.calendar_today_outlined, "Dates", 1),
+                _buildMenuItem(Icons.archive_outlined, "Archived", 2),
+                _buildMenuItem(Icons.local_offer_outlined, "Tags", 3),
+                _buildMenuItem(Icons.settings_outlined, "Settings", 4),
               ],
             ),
           ),

@@ -33,7 +33,11 @@ class _BrowserState extends State<Browser> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         title: const Text("Dates"),
         actions: [
           IconButton(
