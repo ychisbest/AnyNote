@@ -209,7 +209,7 @@ class _QuickNoteInputState extends State<QuickNoteInput>
           }
         : const <LogicalKeySet, Intent>{};
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      margin: widget.expand?null:EdgeInsets.fromLTRB(16, 12, 16, 8),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.95),

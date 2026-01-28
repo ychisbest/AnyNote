@@ -27,128 +27,145 @@ class NoteItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dividerColor = darkenColor(item.color.toFullARGB(), 0.18);
-    
+
     return Obx(() {
       final isSelectionMode = controller.isSelectionMode.value;
       final isSelected =
           item.id != null && controller.selectedNoteIds.contains(item.id);
       final rowColor = isSelected
-          ? theme.colorScheme.primary.withOpacity(0.08)
-          : Colors.transparent;
-      final horizontalPadding = isSelectionMode ? 32.0 : 12.0;
+          ? darkenColor(item.color.toFullARGB(),0.05)
+          : item.color.toFullARGB();
+      const horizontalPadding = 12.0;
 
-      return Material(
-        color: rowColor,
-        child: InkWell(
-          onTap: () async {
-            if (controller.isSelectionMode.value) {
-              if (item.id != null) {
-                controller.toggleSelection(item.id!);
-              }
-              return;
-            }
-            await Get.to(() => EditNotePage(item: item));
-          },
-          onLongPress: () async {
-            if (controller.isSelectionMode.value) {
-              if (item.id != null) {
-                controller.toggleSelection(item.id!);
-              }
-              return;
-            }
-            var res = await _showOptionsDialog(context, item, controller, isArchive);
-            if (res != null) _handleOption(res, item, controller, isArchive);
-          },
-          child: Stack(
-            children: [
-              Container(
-                padding: EdgeInsets.fromLTRB(horizontalPadding, 6, 12, 6),
-                decoration: const BoxDecoration(),
-                child: Stack(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 72),
-                      child: LimitedBox(
-                        maxHeight: maxNoteItemHeight,
-                        child: Obx(() => MarkdownRenderer(
-                          fontsize: controller.fontSize.value,
-                          data: item.content?.trimRight() ?? "",
-                        )),
-                      ),
-                    ),
-                    Positioned.fill(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Container(
-                            width: 64,
-                            decoration: BoxDecoration(
-                              border: Border(
-                                right: BorderSide(color: dividerColor, width: 2),
-                              ),
-                            ),
-                            child: Stack(
-                              children: [
-                                Align(
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    intl.DateFormat('HH:mm')
-                                        .format(item.createTime),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                  color: theme.colorScheme.onSurfaceVariant
-                                      .withOpacity(0.3),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelectionMode)
-                PositionedDirectional(
-                  end: 8,
-                  top: 8,
+      final content = Padding(
+        padding: EdgeInsets.symmetric(vertical: 6),
+        child: Table(
+          columnWidths: const {0: IntrinsicColumnWidth(), 1: FlexColumnWidth()},
+          children: [
+            TableRow(
+              children: [
+                TableCell(
+                  verticalAlignment: TableCellVerticalAlignment.fill,
                   child: Container(
-                    width: 20,
-                    height: 20,
                     decoration: BoxDecoration(
-                      color: isSelected
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.surface,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.outlineVariant,
-                        width: 1,
+                      border: Border(
+                        right: BorderSide(color: dividerColor, width: 2),
                       ),
                     ),
-                    child: Icon(
-                      isSelected ? Icons.check : Icons.circle_outlined,
-                      size: 12,
-                      color: isSelected
-                          ? Colors.white
-                          : theme.colorScheme.outlineVariant,
+                    margin: const EdgeInsets.only(right:horizontalPadding),
+                    alignment: Alignment.center,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: horizontalPadding,
+                      ),
+                      child: Text(
+                        intl.DateFormat('HH:mm').format(item.createTime),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: (controller.fontSize.value / 16) * 12,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurfaceVariant.withOpacity(
+                            0.3,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-            ],
+                LimitedBox(
+                  maxHeight: maxNoteItemHeight,
+                  child: Obx(
+                    () => MarkdownRenderer(
+                      fontsize: controller.fontSize.value,
+                      data: item.content?.trimRight() ?? "",
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      final selectionIndicator = Container(
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? theme.colorScheme.primary
+              : theme.colorScheme.surface,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isSelected
+                ? theme.colorScheme.primary
+                : theme.colorScheme.outlineVariant,
+            width: 1,
+          ),
+        ),
+        child: Icon(
+          isSelected ? Icons.check : Icons.circle_outlined,
+          size: 12,
+          color: isSelected ? Colors.white : theme.colorScheme.outlineVariant,
+        ),
+      );
+
+      final contentWithIndicator = isSelectionMode
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(child: content),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: selectionIndicator,
+                ),
+              ],
+            )
+          : content;
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3.0),
+        child: Material(
+          borderRadius: BorderRadius.circular(12),
+          color: rowColor,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () async {
+              if (controller.isSelectionMode.value) {
+                if (item.id != null) {
+                  controller.toggleSelection(item.id!);
+                }
+                return;
+              }
+              await Get.to(() => EditNotePage(item: item));
+            },
+            onLongPress: () async {
+              if (controller.isSelectionMode.value) {
+                if (item.id != null) {
+                  controller.toggleSelection(item.id!);
+                }
+                return;
+              }
+              var res = await _showOptionsDialog(
+                context,
+                item,
+                controller,
+                isArchive,
+              );
+              if (res != null) _handleOption(res, item, controller, isArchive);
+            },
+            child: contentWithIndicator,
           ),
         ),
       );
     });
   }
 
-  Future<String?> _showOptionsDialog(BuildContext context, NoteItem item, MainController controller, bool isArchive) {
+  Future<String?> _showOptionsDialog(
+    BuildContext context,
+    NoteItem item,
+    MainController controller,
+    bool isArchive,
+  ) {
     return showDialog<String>(
       context: context,
       builder: (BuildContext context) {
@@ -193,7 +210,10 @@ class NoteItemWidget extends StatelessWidget {
               if (!isArchive)
                 ListTile(
                   leading: const Icon(Icons.arrow_downward),
-                  title: const Text("Move Down", style: TextStyle(fontSize: 16)),
+                  title: const Text(
+                    "Move Down",
+                    style: TextStyle(fontSize: 16),
+                  ),
                   onTap: () => Navigator.of(context).pop('down'),
                 ),
               ListTile(
@@ -224,7 +244,12 @@ class NoteItemWidget extends StatelessWidget {
     );
   }
 
-  void _handleOption(String action, NoteItem item, MainController controller, bool isArchive) {
+  void _handleOption(
+    String action,
+    NoteItem item,
+    MainController controller,
+    bool isArchive,
+  ) {
     switch (action) {
       case 'toggleTopMost':
         item.isTopMost = !item.isTopMost;
@@ -270,8 +295,11 @@ class NoteItemWidget extends StatelessWidget {
   }
 }
 
-Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
-    {ScrollController? sc}) {
+Widget BuildNoteList(
+  List<NoteItem> archivedNotes,
+  bool isArchive, {
+  ScrollController? sc,
+}) {
   List<NoteItem> sortNotesByDateDesc(List<NoteItem> items) {
     final sorted = List<NoteItem>.from(items);
     sorted.sort((a, b) => b.createTime.compareTo(a.createTime));
@@ -292,8 +320,9 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
     final buffer = <NoteItem>[];
 
     void flushGroup(DateTime dateKey, List<NoteItem> notes) {
-      entries.add(_NoteListEntry.header(
-          intl.DateFormat('yyyy-MM-dd').format(dateKey)));
+      entries.add(
+        _NoteListEntry.header(intl.DateFormat('yyyy-MM-dd').format(dateKey)),
+      );
       for (final note in notes) {
         entries.add(_NoteListEntry.item(note));
       }
@@ -328,18 +357,16 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
             ? Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.push_pin,
-                    size: 14,
-                    color: Colors.orange,
-                  ),
+                  Icon(Icons.push_pin, size: 14, color: Colors.orange),
                   const SizedBox(width: 6),
                   Text(
                     title,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+                      color: theme.colorScheme.onSurfaceVariant.withOpacity(
+                        0.7,
+                      ),
                     ),
                   ),
                 ],
@@ -379,8 +406,10 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
     // Touch length so GetX tracks changes on selection updates.
     controller.selectedNoteIds.length;
     return archivedNotes
-        .where((note) =>
-            note.id != null && controller.selectedNoteIds.contains(note.id))
+        .where(
+          (note) =>
+              note.id != null && controller.selectedNoteIds.contains(note.id),
+        )
         .toList();
   }
 
@@ -410,7 +439,8 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
     final selectedNotes = getSelectedNotes();
     if (selectedNotes.isEmpty) return;
 
-    final confirm = await showDialog<bool>(
+    final confirm =
+        await showDialog<bool>(
           context: context,
           builder: (context) {
             return AlertDialog(
@@ -489,53 +519,48 @@ Widget BuildNoteList(List<NoteItem> archivedNotes, bool isArchive,
 
   return Obx(() {
     final isSelectionMode = controller.isSelectionMode.value;
-    final bottomSpacer = isSelectionMode ? 120.0 : 50.0;
+    final bottomSpacer = isSelectionMode ? 0.0 : 50.0;
 
     return Builder(
       builder: (context) {
-        return Stack(
-          children: [
-            CustomScrollView(
-              controller: sc,
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                if (topmostItems.isNotEmpty)
-                  SliverToBoxAdapter(child: buildHeader(context, "Pinned")),
-                SliverList.builder(
-                  addAutomaticKeepAlives: false,
-                  itemCount: topmostItems.length,
-                  itemBuilder: (context, index) {
-                    return buildItem(topmostItems[index]);
-                  },
-                ),
-                SliverList.builder(
-                  addAutomaticKeepAlives: false,
-                  itemCount: groupedEntries.length,
-                  itemBuilder: (context, index) {
-                    final entry = groupedEntries[index];
-                    if (entry.isHeader) {
-                      return buildHeader(context, entry.title ?? "");
-                    }
-                    return buildItem(entry.item!);
-                  },
-                ),
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: bottomSpacer,
-                  ),
-                ),
-              ],
+        final listView = CustomScrollView(
+          controller: sc,
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            if (topmostItems.isNotEmpty)
+              SliverToBoxAdapter(child: buildHeader(context, "Pinned")),
+            SliverList.builder(
+              addAutomaticKeepAlives: false,
+              itemCount: topmostItems.length,
+              itemBuilder: (context, index) {
+                return buildItem(topmostItems[index]);
+              },
             ),
-            if (isSelectionMode)
-              Positioned(
-                left: 12,
-                right: 12,
-                bottom: 12,
-                child: SafeArea(
-                  top: false,
-                  child: buildSelectionBar(context),
-                ),
-              ),
+            SliverList.builder(
+              addAutomaticKeepAlives: false,
+              itemCount: groupedEntries.length,
+              itemBuilder: (context, index) {
+                final entry = groupedEntries[index];
+                if (entry.isHeader) {
+                  return buildHeader(context, entry.title ?? "");
+                }
+                return buildItem(entry.item!);
+              },
+            ),
+            SliverToBoxAdapter(child: SizedBox(height: bottomSpacer)),
+          ],
+        );
+
+        final selectionBar = SafeArea(
+          top: false,
+          minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          child: buildSelectionBar(context),
+        );
+
+        return Column(
+          children: [
+            Expanded(child: listView),
+            if (isSelectionMode) selectionBar,
           ],
         );
       },
@@ -568,8 +593,11 @@ String buildBatchCopyText(List<NoteItem> notes) {
   DateTime? currentDate;
 
   for (final note in sorted) {
-    final dateKey =
-        DateTime(note.createTime.year, note.createTime.month, note.createTime.day);
+    final dateKey = DateTime(
+      note.createTime.year,
+      note.createTime.month,
+      note.createTime.day,
+    );
     if (currentDate == null || currentDate != dateKey) {
       if (buffer.isNotEmpty) {
         buffer.writeln();

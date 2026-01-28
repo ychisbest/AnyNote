@@ -57,14 +57,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-        title: 'AnyNote',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          useMaterial3: true,
-          fontFamily: kIsWeb ? "" : "MyCustomfont",
-        ),
-        navigatorObservers: [routeObserver],
-        home: GlobalConfig.isLoggedIn ? const HomePage() : const LoginPage());
+      title: 'AnyNote',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
+        fontFamily: kIsWeb ? "" : "MyCustomfont",
+      ),
+      navigatorObservers: [routeObserver],
+      home: GlobalConfig.isLoggedIn ? const HomePage() : const LoginPage(),
+    );
   }
 }
 
@@ -95,19 +96,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      if (!GlobalConfig.isLoggedIn) {
-        return const LoginPage();
-      }
-      final bool isWindowsWide =
-          !kIsWeb && Platform.isWindows && constraints.maxWidth >= 1000;
-      if (isWindowsWide) {
-        resizeableHome ??= WindowsWideHome();
-        return resizeableHome!;
-      }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (!GlobalConfig.isLoggedIn) {
+          return const LoginPage();
+        }
+        final bool isWindowsWide =
+            !kIsWeb && Platform.isWindows && constraints.maxWidth >= 1000;
+        if (isWindowsWide) {
+          resizeableHome ??= WindowsWideHome();
+          return resizeableHome!;
+        }
 
-      return NerrowHome();
-    });
+        return NerrowHome();
+      },
+    );
   }
 
   @override
@@ -153,11 +156,12 @@ class NerrowHome extends StatelessWidget {
               return const Row(
                 children: [
                   Text("AnyNote"),
+                  SizedBox(width: 10),
                   SizedBox(
-                    width: 10,
+                    height: 15,
+                    width: 15,
+                    child: CircularProgressIndicator(),
                   ),
-                  SizedBox(
-                      height: 15, width: 15, child: CircularProgressIndicator())
                 ],
               );
             } else {
@@ -170,24 +174,23 @@ class NerrowHome extends StatelessWidget {
               );
             }
           }),
-          leading: Builder(builder: (context) {
-            return IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            );
-          }),
+          leading: Builder(
+            builder: (context) {
+              return IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+              );
+            },
+          ),
           actions: [
             TextButton(
               onPressed: () {
                 c.exitSelectionMode();
                 Get.to(() => Archiveview());
               },
-              child: const Icon(
-                Icons.archive_outlined,
-                color: Colors.black87,
-              ),
+              child: const Icon(Icons.archive_outlined, color: Colors.black87),
             ),
           ],
         ),
@@ -198,65 +201,14 @@ class NerrowHome extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFF8F4ED),
-                  Color(0xFFEFF4F6),
-                ],
+                colors: [Color(0xFFF8F4ED), Color(0xFFEFF4F6)],
               ),
             ),
-            child: Stack(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Positioned(
-                  top: -80,
-                  right: -60,
-                  child: Container(
-                    width: 200,
-                    height: 200,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color(0x14D7C6B2),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: -100,
-                  left: -40,
-                  child: Container(
-                    width: 220,
-                    height: 220,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color(0x1A98B7A8),
-                    ),
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const QuickNoteInput(),
-                    Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.88),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: Colors.white70),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x0F000000),
-                              blurRadius: 24,
-                              offset: Offset(0, 12),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
-                          child: const ArchiveList(),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                const QuickNoteInput(),
+                Expanded(child: const ArchiveList()),
               ],
             ),
           ),
@@ -265,18 +217,22 @@ class NerrowHome extends StatelessWidget {
           if (c.isSelectionMode.value) {
             return const SizedBox.shrink();
           }
-          return Builder(builder: (context) {
-            return FloatingActionButton.extended(
-              backgroundColor: const Color(0xFF1F6E5D),
-              foregroundColor: Colors.white,
-              onPressed: () async {
-                await Navigator.push(context,
-                    MaterialPageRoute(builder: (c) => const EditNotePage()));
-              },
-              icon: const Icon(Icons.add),
-              label: const Text("New Note"),
-            );
-          });
+          return Builder(
+            builder: (context) {
+              return FloatingActionButton.extended(
+                backgroundColor: const Color(0xFF1F6E5D),
+                foregroundColor: Colors.white,
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (c) => const EditNotePage()),
+                  );
+                },
+                icon: const Icon(Icons.add),
+                label: const Text("New Note"),
+              );
+            },
+          );
         }),
       ),
     );
@@ -300,10 +256,20 @@ class SafeScrollAnimation {
       final targetPosition = scrollController.position.maxScrollExtent;
 
       _animateTo(0 - 30, const Duration(milliseconds: 500), Curves.easeInOut)
-          .then((_) => _animateTo(targetPosition + 30,
-              const Duration(milliseconds: 1000), Curves.easeInOut))
-          .then((_) => _animateTo(targetPosition,
-              const Duration(milliseconds: 500), Curves.easeOutBack));
+          .then(
+            (_) => _animateTo(
+              targetPosition + 30,
+              const Duration(milliseconds: 1000),
+              Curves.easeInOut,
+            ),
+          )
+          .then(
+            (_) => _animateTo(
+              targetPosition,
+              const Duration(milliseconds: 500),
+              Curves.easeOutBack,
+            ),
+          );
     });
   }
 
@@ -377,7 +343,10 @@ class _BuildDrawerState extends State<BuildDrawer> {
                       color: const Color(0xFFE9E3DA),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(Icons.edit_note_rounded, color: accentColor),
+                    child: const Icon(
+                      Icons.edit_note_rounded,
+                      color: accentColor,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Column(
@@ -394,10 +363,7 @@ class _BuildDrawerState extends State<BuildDrawer> {
                       SizedBox(height: 4),
                       Text(
                         'A calm space for your notes',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: mutedTextColor,
-                        ),
+                        style: TextStyle(fontSize: 12, color: mutedTextColor),
                       ),
                     ],
                   ),
@@ -434,9 +400,7 @@ class _BuildDrawerState extends State<BuildDrawer> {
                             width: 550,
                             padding: const EdgeInsets.all(6),
                             child: const RepaintBoundary(
-                              child: GithubHeatmap(
-                                cellSize: 10,
-                              ),
+                              child: GithubHeatmap(cellSize: 10),
                             ),
                           ),
                         ),
@@ -481,7 +445,10 @@ class _BuildDrawerState extends State<BuildDrawer> {
                     if (c.tags.isEmpty) return const SizedBox.shrink();
                     return Container(
                       margin: const EdgeInsets.only(top: 6, bottom: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF4F1EC),
                         borderRadius: BorderRadius.circular(14),

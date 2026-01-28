@@ -52,7 +52,7 @@ class WindowsWideHome extends StatelessWidget {
                   children: [
                     _buildNotesWide(),
                     _buildMainContent(const Browser()),
-                    _buildMainContent(const ArchiveList(isArchive: true)),
+                     ArchiveList(isArchive: true),
                     _buildMainContent(TagList()),
                     _buildMainContent(const SettingView()),
                   ],
@@ -141,11 +141,7 @@ class WindowsWideHome extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: _buildPanelCard(
               child: const ArchiveList(),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              expandChild: true,
-            ),
           ),
           const SizedBox(width: 18),
           SizedBox(
@@ -153,12 +149,10 @@ class WindowsWideHome extends StatelessWidget {
             child: Column(
               children: [
                 Expanded(
-                  child: _buildPanelCard(
-                    title: "Quick Note",
-                    expandChild: true,
+
                     child: const QuickNoteInput(expand: true),
-                    padding: const EdgeInsets.all(8),
-                  ),
+
+                
                 ),
                 const SizedBox(height: 16),
                 _buildPanelCard(
