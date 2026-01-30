@@ -235,4 +235,29 @@ class NotesApi {
       }
     }
   }
+
+  Future<Map<String, dynamic>> getSettings() async {
+    try {
+      final response = await _dio.get('/api/Settings');
+      return Map<String, dynamic>.from(response.data as Map);
+    } catch (e) {
+      throw Exception('Failed to load settings: $e');
+    }
+  }
+
+  Future<void> saveSettings(Map<String, String> settings) async {
+    try {
+      await _dio.put('/api/Settings', data: settings);
+    } catch (e) {
+      throw Exception('Failed to save settings: $e');
+    }
+  }
+
+  Future<void> saveSetting(String key, String? value) async {
+    try {
+      await _dio.put('/api/Settings/$key', data: {'value': value});
+    } catch (e) {
+      throw Exception('Failed to save setting: $e');
+    }
+  }
 }

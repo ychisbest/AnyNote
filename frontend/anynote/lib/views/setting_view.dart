@@ -66,6 +66,7 @@ class _SettingViewState extends State<SettingView> {
                     fontSize = value.round();
                     GlobalConfig.fontSize = fontSize;
                     Get.find<MainController>().fontSize.value = fontSize;
+                    Get.find<MainController>().scheduleSettingsSync();
                   });
                 },
               ),
@@ -144,6 +145,7 @@ class _SettingViewState extends State<SettingView> {
             GlobalConfig.aiModel = value;
             break;
         }
+        Get.find<MainController>().scheduleSettingsSync();
       },
     );
   }

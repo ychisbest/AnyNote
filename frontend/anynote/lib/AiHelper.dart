@@ -51,7 +51,6 @@ Future<void> continueTheText(TextEditingController controller) async {
 
     final client = http.Client();
 
-
     final request = http.Request('POST', Uri.parse(GlobalConfig.aiUrl))
       ..headers['Content-Type'] = 'application/json'
       ..headers['Authorization'] = 'Bearer $apiKey'
@@ -65,35 +64,38 @@ You are an AI assistant embedded in my note-taking software. I will send you the
 - Determine the language of your response based on the language of my question and the attachment.
 - Provide detailed technical answers; I enjoy deep thinking.
         """,
-            "role": "system"
+            "role": "system",
           },
           {
             "role": "user",
-            "content": """
+            "content":
+                """
           attachment:
           ```
           $fullText
           ```
           here is my question,reply me in my question's language：
           $todo
-          """
-          }
+          """,
+          },
         ],
-        "stream": true
+        "stream": true,
       });
 
-
-    final streamedResponse = await client.send(request).timeout(
-      const Duration(seconds: 5),
-      onTimeout: () {
-        throw TimeoutException('The request timed out');
-      },
-    );
+    final streamedResponse = await client
+        .send(request)
+        .timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {
+            throw TimeoutException('The request timed out');
+          },
+        );
 
     if (streamedResponse.statusCode == 200) {
       final stream = streamedResponse.stream;
-      final lines =
-          stream.transform(utf8.decoder).transform(const LineSplitter());
+      final lines = stream
+          .transform(utf8.decoder)
+          .transform(const LineSplitter());
 
       await for (var line in lines) {
         if (line.startsWith('data: ')) {
@@ -102,13 +104,15 @@ You are an AI assistant embedded in my note-taking software. I will send you the
           final jsonData = jsonDecode(data);
           final text = jsonData['choices'][0]['delta']['content'];
           if (text != null) {
-            newText = controller.text.substring(0, insertPosition) +
+            newText =
+                controller.text.substring(0, insertPosition) +
                 text +
                 controller.text.substring(insertPosition);
             controller.text = newText;
             insertPosition += text.toString().length;
-            controller.selection =
-                TextSelection.collapsed(offset: insertPosition);
+            controller.selection = TextSelection.collapsed(
+              offset: insertPosition,
+            );
           }
         }
       }
@@ -121,10 +125,11 @@ You are an AI assistant embedded in my note-taking software. I will send you the
   }
 }
 
-
-Future<void> ChatWithAI(TextEditingController controller,String content) async {
+Future<void> ChatWithAI(
+  TextEditingController controller,
+  String content,
+) async {
   try {
-
     print(content);
 
     String apiKey = GlobalConfig.aiApiKey;
@@ -138,7 +143,8 @@ Future<void> ChatWithAI(TextEditingController controller,String content) async {
         "model": GlobalConfig.aiModel,
         "messages": [
           {
-            "content": """
+            "content":
+                """
 > **角色设定：**
 >
 > 你是一位贴心的回忆助手，擅长通过有限的信息帮助我回想起过去的日记内容。你的目标是引导我重新体验当时的情绪、思考和细节。
@@ -160,33 +166,36 @@ Future<void> ChatWithAI(TextEditingController controller,String content) async {
 > - 尊重我的隐私，不涉及可能引起不适的主题。
 
         """,
-            "role": "system"
+            "role": "system",
           },
           {
             "role": "user",
-            "content": """
+            "content":
+                """
 attachment
 ---
 $content
 ---
-          """
-          }
+          """,
+          },
         ],
-        "stream": true
+        "stream": true,
       });
 
-
-    final streamedResponse = await client.send(request).timeout(
-      const Duration(seconds: 5),
-      onTimeout: () {
-        throw TimeoutException('The request timed out');
-      },
-    );
+    final streamedResponse = await client
+        .send(request)
+        .timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {
+            throw TimeoutException('The request timed out');
+          },
+        );
 
     if (streamedResponse.statusCode == 200) {
       final stream = streamedResponse.stream;
-      final lines =
-      stream.transform(utf8.decoder).transform(const LineSplitter());
+      final lines = stream
+          .transform(utf8.decoder)
+          .transform(const LineSplitter());
 
       await for (var line in lines) {
         if (line.startsWith('data: ')) {
@@ -200,7 +209,8 @@ $content
         }
       }
     } else {
-      // 处理请求失败的情况
+      final errorBody = await streamedResponse.stream.bytesToString();
+      Get.snackbar('Error', errorBody);
     }
   } catch (e) {
     Get.snackbar('Error', e.toString());

@@ -1,4 +1,4 @@
-
+import 'dart:async';
 import 'package:anynote/Extension.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -20,12 +20,19 @@ class MainController extends GetxController {
   UpdateEditTextCallback? updateEditTextCallback;
 
   final RxInt fontSize = GlobalConfig.fontSize.obs;
+  Timer? _settingsSaveDebounce;
 
   @override
   void onInit() {
     super.onInit();
     _api = NotesApi(baseUrl, secret);
     //initData();
+  }
+
+  @override
+  void onClose() {
+    _settingsSaveDebounce?.cancel();
+    super.onClose();
   }
 
   void initData() async {
@@ -114,6 +121,12 @@ class MainController extends GetxController {
       final fetchedNotes = await _api.getNotes();
       notes.assignAll(fetchedNotes);
 
+      try {
+        await syncSettingsFromServer();
+      } catch (e) {
+        print('Error fetching settings: $e');
+      }
+
       isLoading.value = false;
 
       await saveNotesToLocal();
@@ -127,6 +140,27 @@ class MainController extends GetxController {
       print('Error fetching notes: $e');
       return false;
     }
+  }
+
+  Future<void> syncSettingsFromServer() async {
+    final settings = await _api.getSettings();
+    GlobalConfig.applyServerSettings(settings);
+    fontSize.value = GlobalConfig.fontSize;
+  }
+
+  Future<void> saveSettingsToServer() async {
+    await _api.saveSettings(GlobalConfig.toServerSettings());
+  }
+
+  void scheduleSettingsSync({Duration delay = const Duration(milliseconds: 400)}) {
+    _settingsSaveDebounce?.cancel();
+    _settingsSaveDebounce = Timer(delay, () async {
+      try {
+        await saveSettingsToServer();
+      } catch (e) {
+        print('Error saving settings: $e');
+      }
+    });
   }
 
   Future<Map<String, dynamic>> login() async {
