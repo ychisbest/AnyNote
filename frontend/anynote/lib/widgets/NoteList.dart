@@ -322,7 +322,7 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
   }
 }
 
-class NoteContentPreview extends StatefulWidget {
+class NoteContentPreview extends StatelessWidget {
   final String content;
   final double fontSize;
   final double maxHeight;
@@ -341,37 +341,21 @@ class NoteContentPreview extends StatefulWidget {
   });
 
   @override
-  State<NoteContentPreview> createState() => _NoteContentPreviewState();
-}
-
-class _NoteContentPreviewState extends State<NoteContentPreview> {
-  double _contentHeight = 0;
-
-  void _handleSizeChanged(Size size) {
-    if (!mounted) return;
-    if (size.height != _contentHeight) {
-      setState(() {
-        _contentHeight = size.height;
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final showFade = content.trim().length > 120;
+
     Widget buildContent() {
       return MarkdownRenderer(
-        fontsize: widget.fontSize.toInt(),
-        data: widget.content,
+        fontsize: fontSize.toInt(),
+        data: content,
       );
     }
 
-    final isOverflowing = _contentHeight > widget.maxHeight + 0.5;
-
     return Stack(
       children: [
-        if (isOverflowing)
+        if (showFade)
           ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: widget.maxHeight),
+            constraints: BoxConstraints(maxHeight: maxHeight),
             child: ClipRect(
               child: Align(
                 alignment: Alignment.topLeft,
@@ -381,22 +365,22 @@ class _NoteContentPreviewState extends State<NoteContentPreview> {
           )
         else
           buildContent(),
-        if (isOverflowing)
+        if (showFade)
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
             child: IgnorePointer(
               child: Container(
-                height: widget.fadeHeight,
+                height: fadeHeight,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      widget.fadeColor.withOpacity(0),
-                      widget.fadeColor.withOpacity(0.65),
-                      widget.fadeColor,
+                      fadeColor.withOpacity(0),
+                      fadeColor.withOpacity(0.65),
+                      fadeColor,
                     ],
                   ),
                 ),
@@ -406,57 +390,14 @@ class _NoteContentPreviewState extends State<NoteContentPreview> {
                   child: Icon(
                     Icons.more_horiz,
                     size: 18,
-                    color: widget.iconColor,
+                    color: iconColor,
                   ),
                 ),
               ),
             ),
           ),
-        Offstage(
-          offstage: true,
-          child: MeasureSize(
-            onChange: _handleSizeChanged,
-            child: buildContent(),
-          ),
-        ),
       ],
     );
-  }
-}
-
-class MeasureSize extends StatefulWidget {
-  final Widget child;
-  final ValueChanged<Size> onChange;
-
-  const MeasureSize({
-    super.key,
-    required this.child,
-    required this.onChange,
-  });
-
-  @override
-  State<MeasureSize> createState() => _MeasureSizeState();
-}
-
-class _MeasureSizeState extends State<MeasureSize> {
-  Size? _oldSize;
-
-  @override
-  Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final renderObject = context.findRenderObject();
-      if (renderObject is RenderBox &&
-          renderObject.attached &&
-          renderObject.hasSize) {
-        final size = renderObject.size;
-        if (size != _oldSize) {
-          _oldSize = size;
-          widget.onChange(size);
-        }
-      }
-    });
-    return widget.child;
   }
 }
 

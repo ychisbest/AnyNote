@@ -38,6 +38,7 @@ class _EditNotePageState extends State<EditNotePage> {
       id: IDGenerator.generateOfflineId(),
       content: "");
   SyncStatus _syncStatus = SyncStatus.completed;
+  List<String> _cachedTags = [];
 
   final List<Color> _colors = [
     Colors.white,
@@ -54,6 +55,179 @@ class _EditNotePageState extends State<EditNotePage> {
     Colors.deepPurple[50]!,
     Colors.grey[100]!,
   ];
+
+  bool _firstLineHasTag(String text, String tag) {
+    final lines = text.split('\n');
+    final firstLine = lines.isNotEmpty ? lines.first : '';
+    final pattern = RegExp(r'(^|\s)#' + RegExp.escape(tag) + r'(\s|$)');
+    return pattern.hasMatch(firstLine);
+  }
+
+  String _removeTagFromLine(String line, String tag) {
+    final pattern = RegExp(r'(^|\s)#' + RegExp.escape(tag) + r'(\s|$)');
+    final cleaned = line.replaceAll(pattern, ' ');
+    return cleaned.replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  String _insertTagIntoLine(String line, String tag) {
+    final trimmed = line.trimLeft();
+    if (trimmed.isEmpty) {
+      return '#$tag';
+    }
+    return '#$tag $trimmed';
+  }
+
+  void _toggleTag(String tag) {
+    final oldText = textController.text;
+    final lines = oldText.split('\n');
+    final firstLine = lines.isNotEmpty ? lines.first : '';
+    final hasTag = _firstLineHasTag(oldText, tag);
+
+    final newFirstLine = hasTag
+        ? _removeTagFromLine(firstLine, tag)
+        : _insertTagIntoLine(firstLine, tag);
+
+    if (lines.isEmpty) {
+      lines.add(newFirstLine);
+    } else {
+      lines[0] = newFirstLine;
+    }
+
+    final newText = lines.join('\n');
+    final selection = textController.selection;
+    final oldOffset = selection.baseOffset;
+    final oldPrefixLen = firstLine.length;
+    final newPrefixLen = newFirstLine.length;
+    final diff = newPrefixLen - oldPrefixLen;
+    int newOffset;
+    if (oldOffset < 0) {
+      newOffset = newText.length;
+    } else {
+      newOffset = (oldOffset + diff).clamp(0, newText.length);
+    }
+
+    textController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newOffset),
+    );
+    textFocusNode.requestFocus();
+  }
+
+  Widget _buildTagColumn() {
+    final tags = _cachedTags;
+    if (tags.isEmpty) {
+      return Center(
+        child: Text(
+          'No tags',
+          style: TextStyle(color: Colors.grey[500], fontSize: 12),
+        ),
+      );
+    }
+
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: textController,
+      builder: (context, value, _) {
+        final currentText = value.text;
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+          itemCount: tags.length,
+          itemBuilder: (context, index) {
+            final tag = tags[index];
+            final isActive = _firstLineHasTag(currentText, tag);
+            final bgColor = isActive
+                ? darkenColor(item.color.toFullARGB(), 0.06)
+                : item.color.toFullARGB().withOpacity(0.4);
+            final borderColor = isActive
+                ? darkenColor(item.color.toFullARGB(), 0.2)
+                : Colors.black12;
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => _toggleTag(tag),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderColor, width: 1),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '#$tag',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.grey[800],
+                            fontSize: 12,
+                            fontWeight:
+                                isActive ? FontWeight.w600 : FontWeight.w400,
+                          ),
+                        ),
+                      ),
+                      if (isActive)
+                        const Padding(
+                          padding: EdgeInsets.only(left: 6),
+                          child: Icon(Icons.check, size: 14),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _openTagMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: item.color.toFullARGB(),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          padding: const EdgeInsets.only(top: 8),
+          child: SafeArea(
+            top: false,
+            child: SizedBox(
+              height: 320,
+              child: Column(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black12,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      'Tags',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(child: _buildTagColumn()),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   void initState() {
@@ -82,6 +256,7 @@ class _EditNotePageState extends State<EditNotePage> {
     textController = MarkdownEditingController();
     textController.text = item.content ?? "";
     _lastChange = textController.text;
+    _cachedTags = List<String>.from(controller.tags);
 
     textController.addListener(_textUpdate);
     controller.updateEditTextCallback = _updatingEditText;
@@ -286,6 +461,11 @@ class _EditNotePageState extends State<EditNotePage> {
             actions: [
               Row(
                 children: [
+                  IconButton(
+                    tooltip: 'Tags',
+                    onPressed: _openTagMenu,
+                    icon: const Icon(Icons.tag),
+                  ),
                   Text(countCharacters(item.content ?? "").toString()),
                   IconButton(
                     onPressed: () {},
@@ -351,76 +531,87 @@ class _EditNotePageState extends State<EditNotePage> {
           ),
         ),
         Expanded(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: RawKeyboardListener(
-              focusNode: focusNode,
-              onKey: (event) async {
-                if (event is RawKeyDownEvent) {
-                  if (event.isControlPressed &&
-                      event.logicalKey == LogicalKeyboardKey.keyJ) {
-                    await _callAI();
-                  }
-
-                  if (event.isControlPressed &&
-                      event.logicalKey == LogicalKeyboardKey.keyL) {
-                    final text = textController.text;
-                    final selection = textController.selection;
-                    final lineStart =
-                    text.isEmpty ? 0 : text.lastIndexOf('\n', selection.start - 1) + 1;
-                    final lineEnd = text.indexOf('\n', selection.end);
-                    final line = text.substring(lineStart, lineEnd == -1 ? null : lineEnd);
-
-                    String newLine;
-                    if (line.trimLeft().startsWith('- [ ] ')) {
-                      newLine = line.replaceFirst('- [ ] ', '- [x] ');
-                    } else if (line.trimLeft().startsWith('- [x] ')) {
-                      newLine = line.replaceFirst('- [x] ', '- [ ] ');
-                    } else if (line.trimLeft().startsWith('- ')) {
-                      newLine = line.replaceFirst('- ', '- [ ] ');
-                    } else {
-                      newLine = '- [ ] $line';
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: RawKeyboardListener(
+                focusNode: focusNode,
+                onKey: (event) async {
+                  if (event is RawKeyDownEvent) {
+                    if (event.isControlPressed &&
+                        event.logicalKey == LogicalKeyboardKey.keyJ) {
+                      await _callAI();
                     }
 
-                    var newselection =  TextSelection(
-                            baseOffset: lineStart,
-                            extentOffset: lineEnd == -1 ? text.length : lineEnd);
+                    if (event.isControlPressed &&
+                        event.logicalKey == LogicalKeyboardKey.keyL) {
+                      final text = textController.text;
+                      final selection = textController.selection;
+                      final lineStart = text.isEmpty
+                          ? 0
+                          : text.lastIndexOf('\n', selection.start - 1) + 1;
+                      final lineEnd = text.indexOf('\n', selection.end);
+                      final line = text.substring(
+                        lineStart,
+                        lineEnd == -1 ? null : lineEnd,
+                      );
 
-                    final newValue = TextEditingValue(
-                      text: text.replaceRange(newselection.start, newselection.end, newLine),
-                      selection:
-                      TextSelection.collapsed(offset: newselection.start + newLine.length),
-                    );
-                    textController.value = newValue;
+                      String newLine;
+                      if (line.trimLeft().startsWith('- [ ] ')) {
+                        newLine = line.replaceFirst('- [ ] ', '- [x] ');
+                      } else if (line.trimLeft().startsWith('- [x] ')) {
+                        newLine = line.replaceFirst('- [x] ', '- [ ] ');
+                      } else if (line.trimLeft().startsWith('- ')) {
+                        newLine = line.replaceFirst('- ', '- [ ] ');
+                      } else {
+                        newLine = '- [ ] $line';
+                      }
 
+                      var newselection = TextSelection(
+                        baseOffset: lineStart,
+                        extentOffset: lineEnd == -1 ? text.length : lineEnd,
+                      );
+
+                      final newValue = TextEditingValue(
+                        text: text.replaceRange(
+                          newselection.start,
+                          newselection.end,
+                          newLine,
+                        ),
+                        selection: TextSelection.collapsed(
+                          offset: newselection.start + newLine.length,
+                        ),
+                      );
+                      textController.value = newValue;
+                    }
+
+                    if (event.isShiftPressed &&
+                        event.logicalKey == LogicalKeyboardKey.tab) {
+                      UnindentText(textController, textFocusNode);
+                    } else if (event.logicalKey == LogicalKeyboardKey.tab) {
+                      IndentText(textController, textFocusNode);
+                    }
                   }
-
-
-                  if (event.isShiftPressed &&
-                      event.logicalKey == LogicalKeyboardKey.tab) {
-                    UnindentText(textController, textFocusNode);
-                  } else if (event.logicalKey == LogicalKeyboardKey.tab) {
-                    IndentText(textController, textFocusNode);
-                  }
-                }
-              },
-              child: TextField(
-                controller: textController,
-                focusNode: textFocusNode,
-                minLines: null,
-                maxLines: null,
-                expands: true,
-                style: TextStyle(
-                  color: Colors.grey[700],
-                  fontSize: GlobalConfig.fontSize.toDouble(),
-                  //letterSpacing: 1.2,
-                  height: 1.8,
-                ),
-                textAlignVertical: TextAlignVertical.top,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                },
+                child: TextField(
+                  controller: textController,
+                  focusNode: textFocusNode,
+                  minLines: null,
+                  maxLines: null,
+                  expands: true,
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontSize: GlobalConfig.fontSize.toDouble(),
+                    //letterSpacing: 1.2,
+                    height: 1.8,
+                  ),
+                  textAlignVertical: TextAlignVertical.top,
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  ),
                 ),
               ),
             ),
