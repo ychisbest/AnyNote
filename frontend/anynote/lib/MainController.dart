@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:anynote/Extension.dart';
+import 'package:anynote/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/adapters.dart';
@@ -135,7 +136,7 @@ class MainController extends GetxController {
     } catch (e) {
       isLoading.value = false;
       if (!readLocalFirst) {
-        Get.snackbar('Network Error', 'Offline mode');
+        showAppSnackbar('Network Error', 'Offline mode');
       }
       print('Error fetching notes: $e');
       return false;

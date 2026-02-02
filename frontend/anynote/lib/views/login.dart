@@ -1,4 +1,5 @@
 import 'package:anynote/GlobalConfig.dart';
+import 'package:anynote/app_snackbar.dart';
 import 'package:anynote/main.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -45,10 +46,10 @@ class _LoginPageState extends State<LoginPage> {
         GlobalConfig.baseUrl = fullUrl;
         GlobalConfig.secretStr = _secret;
         GlobalConfig.isLoggedIn = true;
-        Get.snackbar("success", "Login Success");
+        showAppSnackbar('Success', 'Login Success');
         Get.off(() => const HomePage());
       } else {
-        Get.snackbar('error', loginResult['errorContent']);
+        showAppSnackbar('Error', loginResult['errorContent']);
       }
     }
   }

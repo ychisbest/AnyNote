@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:anynote/GlobalConfig.dart';
+import 'package:anynote/app_snackbar.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
 Future<void> continueTheText(TextEditingController controller) async {
@@ -120,7 +120,7 @@ You are an AI assistant embedded in my note-taking software. I will send you the
       // 处理请求失败的情况
     }
   } catch (e) {
-    Get.snackbar('Error', e.toString());
+    showAppSnackbar('Error', e.toString());
     return;
   }
 }
@@ -210,10 +210,10 @@ $content
       }
     } else {
       final errorBody = await streamedResponse.stream.bytesToString();
-      Get.snackbar('Error', errorBody);
+      showAppSnackbar('Error', errorBody);
     }
   } catch (e) {
-    Get.snackbar('Error', e.toString());
+    showAppSnackbar('Error', e.toString());
     return;
   }
 }

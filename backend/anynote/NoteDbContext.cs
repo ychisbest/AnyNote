@@ -6,6 +6,7 @@ namespace anynote
     public class NoteDbContext : DbContext
     {
         public DbSet<NoteItem> Notes { get; set; }
+        public DbSet<SettingItem> Settings { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<NoteItem>().HasKey(t => t.Id);
@@ -13,6 +14,8 @@ namespace anynote
             modelBuilder.Entity<NoteItem>().HasIndex(t => t.LastUpdateTime);
             //modelBuilder.Entity<NoteItem>().HasIndex(t => t.Content);
             modelBuilder.Entity<NoteItem>().HasIndex(t => t.IsArchived);
+
+            modelBuilder.Entity<SettingItem>().HasKey(t => t.Key);
 
         }
 

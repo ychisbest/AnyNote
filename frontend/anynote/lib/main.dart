@@ -21,6 +21,7 @@ import 'package:get/get.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'MainController.dart';
+import 'app_snackbar.dart';
 import 'note_api_service.dart';
 import 'route_observer.dart';
 import 'views/WideView/windowManger.dart';
@@ -63,6 +64,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: kIsWeb ? "" : "MyCustomfont",
       ),
+      scaffoldMessengerKey: scaffoldMessengerKey,
       navigatorObservers: [routeObserver],
       home: GlobalConfig.isLoggedIn ? const HomePage() : const LoginPage(),
     );

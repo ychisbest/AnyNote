@@ -25,7 +25,6 @@ class GlobalConfig {
   static const String _updateFailedNotesKey = 'updateFailedNotes';
   static const String _defaultQuickNoteDraft = '';
 
-  static const String _serverFontSizeKey = 'fontSize';
   static const String _serverAiApiKeyKey = 'aiApiKey';
   static const String _serverAiUrlKey = 'aiUrl';
   static const String _serverAiModelKey = 'aiModel';
@@ -103,7 +102,6 @@ class GlobalConfig {
 
   static Map<String, String> toServerSettings() {
     return {
-      _serverFontSizeKey: fontSize.toString(),
       _serverAiApiKeyKey: aiApiKey,
       _serverAiUrlKey: aiUrl,
       _serverAiModelKey: aiModel,
@@ -111,13 +109,6 @@ class GlobalConfig {
   }
 
   static void applyServerSettings(Map<String, dynamic> settings) {
-    if (settings.containsKey(_serverFontSizeKey)) {
-      final value = settings[_serverFontSizeKey];
-      final parsed = _parseInt(value);
-      if (parsed != null) {
-        fontSize = parsed;
-      }
-    }
     if (settings.containsKey(_serverAiApiKeyKey)) {
       final value = settings[_serverAiApiKeyKey];
       if (value is String) {
@@ -138,13 +129,4 @@ class GlobalConfig {
     }
   }
 
-  static int? _parseInt(dynamic value) {
-    if (value is int) {
-      return value;
-    }
-    if (value is String) {
-      return int.tryParse(value);
-    }
-    return null;
-  }
 }
