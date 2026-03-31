@@ -345,9 +345,12 @@ class NoteContentPreview extends StatelessWidget {
     final showFade = content.trim().length > 120;
 
     Widget buildContent() {
-      return MarkdownRenderer(
-        fontsize: fontSize.toInt(),
-        data: content,
+      return Padding(
+        padding: const EdgeInsets.only(right: 8.0),
+        child: MarkdownRenderer(
+          fontsize: fontSize.toInt(),
+          data: content,
+        ),
       );
     }
 

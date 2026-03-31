@@ -393,17 +393,17 @@ class _BuildDrawerState extends State<BuildDrawer> {
                             PointerDeviceKind.mouse,
                           },
                         ),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          controller: _scrollController,
-                          child: Container(
-                            height: 88,
-                            width: 550,
-                            padding: const EdgeInsets.all(6),
-                            child: const RepaintBoundary(
-                              child: GithubHeatmap(cellSize: 10),
-                            ),
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            controller: _scrollController,
+                            child: Container(
+                              height: 7 * 10 + GithubHeatmap.weekLabelHeight + 12,
+                              width: 550,
+                              padding: const EdgeInsets.all(6),
+                              child: const RepaintBoundary(
+                                child: GithubHeatmap(cellSize: 10),
+                              ),
                           ),
                         ),
                       ),

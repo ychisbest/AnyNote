@@ -11,8 +11,14 @@ class Item {
 
 class GithubHeatmap extends StatelessWidget {
   final double cellSize; // 控制每个热力点的大小
+  final bool showWeekNumbers;
+  static const double weekLabelHeight = 12;
 
-  const GithubHeatmap({super.key, required this.cellSize});
+  const GithubHeatmap({
+    super.key,
+    required this.cellSize,
+    this.showWeekNumbers = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,8 +41,11 @@ class GithubHeatmap extends StatelessWidget {
       builder: (context, constraints) {
         return CustomPaint(
           size: Size(constraints.maxWidth, constraints.maxHeight),
-          painter:
-          HeatmapPainter(items: items, cellSize: cellSize), // 传入 cellSize
+          painter: HeatmapPainter(
+            items: items,
+            cellSize: cellSize,
+            showWeekNumbers: showWeekNumbers,
+          ), // 传入 cellSize
         );
       },
     );
@@ -47,8 +56,13 @@ class GithubHeatmap extends StatelessWidget {
 class HeatmapPainter extends CustomPainter {
   final List<NoteItem> items;
   final double cellSize; // 控制每个热力点的大小
+  final bool showWeekNumbers;
 
-  HeatmapPainter({required this.items, required this.cellSize});
+  HeatmapPainter({
+    required this.items,
+    required this.cellSize,
+    required this.showWeekNumbers,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -57,8 +71,30 @@ class HeatmapPainter extends CustomPainter {
     final endDate = DateTime(now.year, 12, 31);
     final totalDays = endDate.difference(startDate).inDays + 1;
     final totalWeeks = (totalDays + startDate.weekday - 1) ~/ 7;
+    final double topLabelHeight =
+        showWeekNumbers ? GithubHeatmap.weekLabelHeight : 0;
+    final TextPainter textPainter = TextPainter(
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    );
+    const TextStyle weekTextStyle = TextStyle(
+      fontSize: 9,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFF8A8AA1),
+    );
 
     for (int week = 0; week < totalWeeks; week++) {
+      if (showWeekNumbers) {
+        textPainter.text = TextSpan(
+          text: '${week + 1}',
+          style: weekTextStyle,
+        );
+        textPainter.layout(minWidth: cellSize, maxWidth: cellSize);
+        final double labelX = week * cellSize;
+        final double labelY =
+            (topLabelHeight - textPainter.height) / 2;
+        textPainter.paint(canvas, Offset(labelX, labelY));
+      }
       for (int day = 0; day < 7; day++) {
         final currentDayOffset = week * 7 + day - (startDate.weekday - 1);
         final date = startDate.add(Duration(days: currentDayOffset));
@@ -71,7 +107,7 @@ class HeatmapPainter extends CustomPainter {
 
         final rect = Rect.fromLTWH(
           week * cellSize,
-          day * cellSize,
+          topLabelHeight + day * cellSize,
           cellSize - 2, // -2 保持间隙
           cellSize - 2,
         );

@@ -134,7 +134,8 @@ class WindowsWideHome extends StatelessWidget {
 
   Widget _buildNotesWide() {
     const double activityCellSize = 14;
-    final double activityHeight = activityCellSize * 7;
+    final double activityHeight =
+        activityCellSize * 7 + GithubHeatmap.weekLabelHeight;
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
       child: Row(
