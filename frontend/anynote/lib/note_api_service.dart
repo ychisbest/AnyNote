@@ -1,8 +1,83 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:brotli/brotli.dart';
 import 'package:dio/dio.dart';
-import 'package:dio_brotli_transformer/dio_brotli_transformer.dart';
 import 'package:hive/hive.dart';
+import 'package:zstandard/zstandard.dart';
+import 'date_parsing.dart';
 
 part 'note_api_service.g.dart'; // 用于代码生成
+
+class EncodingAwareTransformer extends BackgroundTransformer {
+  @override
+  Future transformResponse(
+    RequestOptions options,
+    ResponseBody responseBody,
+  ) async {
+    final contentEncodingValues =
+        responseBody.headers[Headers.contentEncodingHeader] ?? const [];
+
+    if (contentEncodingValues.isEmpty) {
+      return super.transformResponse(options, responseBody);
+    }
+
+    final encodings = contentEncodingValues
+        .expand((value) => value.split(','))
+        .map((value) => value.trim().toLowerCase())
+        .where((value) => value.isNotEmpty && value != 'identity')
+        .toList();
+
+    if (encodings.isEmpty) {
+      return super.transformResponse(options, responseBody);
+    }
+
+    var bytes = await _readAllBytes(responseBody.stream);
+
+    for (final encoding in encodings.reversed) {
+      switch (encoding) {
+        case 'zstd':
+          final decompressed = await Zstandard().decompress(bytes);
+          if (decompressed == null) {
+            throw DioException(
+              requestOptions: options,
+              message: 'Failed to decompress zstd response.',
+            );
+          }
+          bytes = decompressed;
+          break;
+        case 'br':
+          bytes = Uint8List.fromList(brotli.decode(bytes));
+          break;
+        case 'gzip':
+          bytes = Uint8List.fromList(gzip.decode(bytes));
+          break;
+      }
+    }
+
+    final headers = Map<String, List<String>>.from(responseBody.headers);
+    headers.remove(Headers.contentEncodingHeader);
+
+    final decodedBody = ResponseBody.fromBytes(
+      bytes,
+      responseBody.statusCode,
+      statusMessage: responseBody.statusMessage,
+      isRedirect: responseBody.isRedirect,
+      headers: headers,
+      onClose: responseBody.close,
+    )..extra.addAll(responseBody.extra);
+
+    return super.transformResponse(options, decodedBody);
+  }
+
+  Future<Uint8List> _readAllBytes(Stream<Uint8List> stream) async {
+    final builder = BytesBuilder(copy: false);
+    await for (final chunk in stream) {
+      builder.add(chunk);
+    }
+    return builder.takeBytes();
+  }
+}
 
 @HiveType(typeId: 0) // 每个适配器需要唯一的 typeId
 class NoteItem {
@@ -48,32 +123,23 @@ class NoteItem {
   factory NoteItem.fromJson(Map<String, dynamic> json) {
     return NoteItem(
       id: json['id'],
-      isTopMost: json['isTopMost'],
+      isTopMost: json['pinned'] ?? false,
       content: json['content'],
-      createTime: DateTime.parse(json['createTime']).toLocal(),
-      lastUpdateTime: json['lastUpdateTime'] != null
-          ? DateTime.parse(json['lastUpdateTime']).toLocal()
-          : null,
-      archiveTime: json['archiveTime'] != null
-          ? DateTime.parse(json['archiveTime']).toLocal()
-          : null,
-      isArchived: json['isArchived'],
-      color: json['color'],
-      index: json['index'],
+      createTime:
+          parseAppApiDate(json['create_time']) ?? DateTime.now().toUtc(),
+      lastUpdateTime: parseAppApiDate(json['update_time']),
+      archiveTime: parseAppApiDate(json['archive_time']),
+      isArchived: json['is_archived'] ?? false,
+      color: null,
+      index: 0,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'isTopMost': isTopMost,
       'content': content,
-      'createTime': createTime.toIso8601String(),
-      'lastUpdateTime': lastUpdateTime?.toIso8601String(),
-      'archiveTime': archiveTime?.toIso8601String(),
-      'isArchived': isArchived,
-      'color': color,
-      'index': index,
+      'is_archived': isArchived,
+      'pinned': isTopMost,
     };
   }
 }
@@ -95,18 +161,22 @@ class NotesApi {
             false, // Ensure that Dio follows redirects automatically
         baseUrl: baseUrl,
         headers: {
-          'Accept-Encoding': 'gzip br',
+          'Accept-Encoding': 'zstd, br, gzip',
         },
         connectTimeout: const Duration(seconds: 5),
         sendTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 5),
       ));
-      _dio.transformer = DioBrotliTransformer();
+      _dio.transformer = EncodingAwareTransformer();
       _dio.interceptors.add(
         InterceptorsWrapper(
           onRequest: (options, handler) {
-            options.headers["SignalR-ConnectionId"] = signalrID;
-            options.headers["x-secret"] = secret;
+            if (signalrID?.isNotEmpty ?? false) {
+              options.headers["SignalR-ConnectionId"] = signalrID;
+            }
+            if (secret.isNotEmpty) {
+              options.headers["X-Auth-Token"] = secret;
+            }
             return handler.next(options);
           },
         ),
@@ -124,7 +194,7 @@ class NotesApi {
 
   Future<List<NoteItem>> getNotes() async {
     try {
-      final response = await _dio.get('/api/Notes');
+      final response = await _dio.get('/api/notes');
       List jsonResponse = response.data;
       return jsonResponse.map((item) => NoteItem.fromJson(item)).toList();
     } catch (e) {
@@ -134,7 +204,7 @@ class NotesApi {
 
   Future<int> login() async {
     try {
-      final response = await _dio.get('/api/Notes');
+      final response = await _dio.get('/api/healthz');
       return response.statusCode ?? 0;
     } catch (e) {
       if (e is DioException && e.response?.statusCode == 401) {
@@ -148,7 +218,7 @@ class NotesApi {
   Future<NoteItem> putNoteItem(int id, NoteItem noteItem) async {
     try {
       final response = await _dio.put(
-        '/api/Notes/$id',
+        '/api/notes/$id',
         data: noteItem.toJson(),
       );
       return NoteItem.fromJson(response.data);
@@ -160,64 +230,11 @@ class NotesApi {
     }
   }
 
-  Future<NoteItem> addNote() async {
-    try {
-      final response = await _dio.post('/api/Notes/add');
-      return NoteItem.fromJson(response.data);
-    } catch (e) {
-      throw Exception('Failed to add note: $e');
-    }
-  }
-
-  Future<void> archiveItem(int id) async {
-    try {
-      await _dio.post('/api/Notes/Archieve', queryParameters: {'id': id});
-    } catch (e) {
-      throw Exception('Failed to archive note: $e');
-    }
-  }
-
-  Future<void> updateIndex(List<int> ids, List<int> indices) async {
-    if (ids.length != indices.length) {
-      throw ArgumentError(
-          'The lists of ids and indices must have the same length.');
-    }
-    try {
-      await _dio.post('/api/Notes/UpdateIndex', data: {
-        'ids': ids,
-        'indices': indices,
-      });
-    } catch (e) {
-      print(e);
-      throw Exception('Failed to update indices: $e');
-    }
-  }
-
-  Future<void> unarchiveItem(int id) async {
-    try {
-      await _dio.post('/api/Notes/UnArchieve', queryParameters: {'id': id});
-    } catch (e) {
-      throw Exception('Failed to unarchive note: $e');
-    }
-  }
-
   Future<NoteItem> postNoteItem(NoteItem noteItem) async {
     try {
       final response = await _dio.post(
-        '/api/Notes',
+        '/api/notes',
         data: noteItem.toJson(),
-      );
-      return NoteItem.fromJson(response.data);
-    } catch (e) {
-      throw Exception('Failed to create note: $e');
-    }
-  }
-
-  Future<NoteItem> addNoteItem(String content) async {
-    try {
-      final response = await _dio.post(
-        '/',
-        data: {'content': content, 'Index': -1},
       );
       return NoteItem.fromJson(response.data);
     } catch (e) {
@@ -227,37 +244,12 @@ class NotesApi {
 
   Future<void> deleteNoteItem(int id) async {
     try {
-      await _dio.delete('/api/Notes/$id');
+      await _dio.delete('/api/notes/$id');
     } catch (e) {
       if ((e as DioException).response?.statusCode != 404) {
         print("not found");
         throw Exception('Failed to delete note: $e');
       }
-    }
-  }
-
-  Future<Map<String, dynamic>> getSettings() async {
-    try {
-      final response = await _dio.get('/api/Settings');
-      return Map<String, dynamic>.from(response.data as Map);
-    } catch (e) {
-      throw Exception('Failed to load settings: $e');
-    }
-  }
-
-  Future<void> saveSettings(Map<String, String> settings) async {
-    try {
-      await _dio.put('/api/Settings', data: settings);
-    } catch (e) {
-      throw Exception('Failed to save settings: $e');
-    }
-  }
-
-  Future<void> saveSetting(String key, String? value) async {
-    try {
-      await _dio.put('/api/Settings/$key', data: {'value': value});
-    } catch (e) {
-      throw Exception('Failed to save setting: $e');
     }
   }
 }

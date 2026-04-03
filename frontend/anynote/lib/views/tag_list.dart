@@ -49,7 +49,7 @@ class NoteTagListView extends StatelessWidget {
         body: GetX<MainController>(builder: (c) {
           var items = c.extractTagsWithNotes[tag] ?? [];
 
-          return BuildNoteList(items,false);
+          return BuildNoteList(items);
         }));
   }
 }
@@ -75,7 +75,7 @@ class AddTagListView extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: NoteItemWidget(
-                          controller: c, item: items[ci], isArchive: true),
+                          controller: c, item: items[ci]),
                     ),
                     Wrap(
                       direction: Axis.horizontal,

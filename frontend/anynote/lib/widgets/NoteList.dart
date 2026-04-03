@@ -15,13 +15,11 @@ const double _noteFadeHeight = 44;
 class NoteItemWidget extends StatefulWidget {
   final MainController controller;
   final NoteItem item;
-  final bool isArchive;
 
   const NoteItemWidget({
     super.key,
     required this.controller,
     required this.item,
-    required this.isArchive,
   });
 
   @override
@@ -34,20 +32,23 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dividerColor = darkenColor(widget.item.color.toFullARGB(), 0.18);
 
     return Obx(() {
       final controller = widget.controller;
       final item = widget.item;
-      final isArchive = widget.isArchive;
       final isSelectionMode = controller.isSelectionMode.value;
       final isSelected =
           item.id != null && controller.selectedNoteIds.contains(item.id);
       final baseRowColor = isSelected
-          ? darkenColor(item.color.toFullARGB(),0.05)
-          : item.color.toFullARGB();
+          ? const Color(0xFFE8F0FE)
+          : item.isTopMost
+              ? const Color(0xFFFFF7E8)
+              : Colors.white;
       final rowColor =
           _isHovered ? darkenColor(baseRowColor, 0.03) : baseRowColor;
+      final dividerColor = item.isTopMost
+          ? const Color(0xFFF4C97A)
+          : const Color(0xFFE5E7EB);
       const horizontalPadding = 12.0;
 
       final content = Padding(
@@ -175,10 +176,8 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
               var res = await _showOptionsDialog(
                 context,
                 item,
-                controller,
-                isArchive,
               );
-              if (res != null) _handleOption(res, item, controller, isArchive);
+              if (res != null) _handleOption(res, item, controller);
             },
             child: contentWithIndicator,
           ),
@@ -190,8 +189,6 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
   Future<String?> _showOptionsDialog(
     BuildContext context,
     NoteItem item,
-    MainController controller,
-    bool isArchive,
   ) {
     return showDialog<String>(
       context: context,
@@ -228,32 +225,6 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
                 ),
                 onTap: () => Navigator.of(context).pop('toggleTopMost'),
               ),
-              if (!isArchive)
-                ListTile(
-                  leading: const Icon(Icons.arrow_upward),
-                  title: const Text("Move Up", style: TextStyle(fontSize: 16)),
-                  onTap: () => Navigator.of(context).pop('up'),
-                ),
-              if (!isArchive)
-                ListTile(
-                  leading: const Icon(Icons.arrow_downward),
-                  title: const Text(
-                    "Move Down",
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  onTap: () => Navigator.of(context).pop('down'),
-                ),
-              ListTile(
-                leading: Icon(
-                  item.isArchived ? Icons.unarchive : Icons.archive,
-                  color: Colors.blue,
-                ),
-                title: Text(
-                  item.isArchived ? 'Unarchive' : 'Archive',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                onTap: () => Navigator.of(context).pop('toggleArchive'),
-              ),
               ListTile(
                 leading: const Icon(Icons.copy, color: Colors.blue),
                 title: const Text('Copy', style: TextStyle(fontSize: 16)),
@@ -275,19 +246,11 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
     String action,
     NoteItem item,
     MainController controller,
-    bool isArchive,
   ) {
     switch (action) {
       case 'toggleTopMost':
         item.isTopMost = !item.isTopMost;
         controller.updateNote(item.id!, item);
-        break;
-      case 'toggleArchive':
-        if (isArchive) {
-          controller.unarchiveNote(item.id!);
-        } else {
-          controller.archiveNote(item.id!);
-        }
         break;
       case 'multiSelect':
         controller.enterSelectionMode(initialId: item.id);
@@ -297,26 +260,6 @@ class _NoteItemWidgetState extends State<NoteItemWidget> {
         break;
       case 'delete':
         controller.deleteNote(item.id!);
-        break;
-      case 'up':
-        var list = controller.filteredUnarchivedNotes;
-        int index = list.indexWhere((obj) => obj.id == item.id);
-        if (index > 0) {
-          var temp = list[index - 1];
-          list[index - 1] = list[index];
-          list[index] = temp;
-        }
-        controller.updateIndex(list);
-        break;
-      case 'down':
-        var list = controller.filteredUnarchivedNotes;
-        int index = list.indexWhere((obj) => obj.id == item.id);
-        if (index > -1 && index < list.length - 1) {
-          var temp = list[index + 1];
-          list[index + 1] = list[index];
-          list[index] = temp;
-        }
-        controller.updateIndex(list);
         break;
     }
   }
@@ -407,8 +350,7 @@ class NoteContentPreview extends StatelessWidget {
 
 Widget BuildNoteList(
   List<NoteItem> archivedNotes,
-  bool isArchive, {
-  ScrollController? sc,
+  {ScrollController? sc,
 }) {
   List<NoteItem> sortNotesByDateDesc(List<NoteItem> items) {
     final sorted = List<NoteItem>.from(items);
@@ -501,7 +443,6 @@ Widget BuildNoteList(
         key: ValueKey(item.id),
         controller: controller,
         item: item,
-        isArchive: isArchive,
       ),
     );
   }
@@ -528,20 +469,6 @@ Widget BuildNoteList(
     final text = buildBatchCopyText(selectedNotes);
     if (text.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: text));
-    controller.exitSelectionMode();
-  }
-
-  Future<void> handleBatchArchive(BuildContext context) async {
-    final selectedNotes = getSelectedNotes();
-    if (selectedNotes.isEmpty) return;
-    for (final note in selectedNotes) {
-      if (note.id == null) continue;
-      if (isArchive) {
-        await controller.unarchiveNote(note.id!);
-      } else {
-        await controller.archiveNote(note.id!);
-      }
-    }
     controller.exitSelectionMode();
   }
 
@@ -581,11 +508,10 @@ Widget BuildNoteList(
 
   Widget buildSelectionBar(BuildContext context) {
     final theme = Theme.of(context);
-    final actionLabel = isArchive ? 'Unarchive' : 'Archive';
-    final actionIcon = isArchive ? Icons.unarchive : Icons.archive;
 
     return Obx(() {
-      final selectedCount = getSelectedNotes().length;
+      final selectedNotes = getSelectedNotes();
+      final selectedCount = selectedNotes.length;
       return Material(
         elevation: 6,
         color: theme.colorScheme.surface,
@@ -608,11 +534,6 @@ Widget BuildNoteList(
                 onPressed: handleBatchCopy,
                 tooltip: 'Copy',
                 icon: const Icon(Icons.copy),
-              ),
-              IconButton(
-                onPressed: () => handleBatchArchive(context),
-                tooltip: actionLabel,
-                icon: Icon(actionIcon),
               ),
               IconButton(
                 onPressed: () => handleBatchDelete(context),

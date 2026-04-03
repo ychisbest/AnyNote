@@ -32,6 +32,7 @@ class _EditNotePageState extends State<EditNotePage> {
   bool _isAdding = false;
   bool _isModifyed = false;
   String _lastChange = "";
+  static const Color _editorBackgroundColor = Colors.white;
   NoteItem item = NoteItem(
       createTime: DateTime.now(),
       index: 0,
@@ -39,22 +40,6 @@ class _EditNotePageState extends State<EditNotePage> {
       content: "");
   SyncStatus _syncStatus = SyncStatus.completed;
   List<String> _cachedTags = [];
-
-  final List<Color> _colors = [
-    Colors.white,
-    Colors.red[50]!,
-    Colors.orange[50]!,
-    Colors.yellow[50]!,
-    Colors.green[50]!,
-    Colors.blue[50]!,
-    Colors.purple[50]!,
-    Colors.pink[50]!,
-    Colors.indigo[50]!,
-    Colors.teal[50]!,
-    Colors.cyan[50]!,
-    Colors.deepPurple[50]!,
-    Colors.grey[100]!,
-  ];
 
   bool _firstLineHasTag(String text, String tag) {
     final lines = text.split('\n');
@@ -135,10 +120,10 @@ class _EditNotePageState extends State<EditNotePage> {
             final tag = tags[index];
             final isActive = _firstLineHasTag(currentText, tag);
             final bgColor = isActive
-                ? darkenColor(item.color.toFullARGB(), 0.06)
-                : item.color.toFullARGB().withOpacity(0.4);
+                ? const Color(0xFFE8F0FE)
+                : const Color(0xFFF3F4F6);
             final borderColor = isActive
-                ? darkenColor(item.color.toFullARGB(), 0.2)
+                ? const Color(0xFF90CAF9)
                 : Colors.black12;
 
             return Padding(
@@ -192,7 +177,7 @@ class _EditNotePageState extends State<EditNotePage> {
       builder: (context) {
         return Container(
           decoration: BoxDecoration(
-            color: item.color.toFullARGB(),
+            color: _editorBackgroundColor,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           ),
           padding: const EdgeInsets.only(top: 8),
@@ -402,15 +387,6 @@ class _EditNotePageState extends State<EditNotePage> {
     }
   }
 
-  void _changeNoteColor(Color color) {
-    setState(() {
-      _isModifyed=true;
-      item.color = color.value & 0x00FFFFFF;
-      _syncStatus = SyncStatus.waiting;
-    });
-    _executeUpdate();
-  }
-
   Widget _getSyncIcon() {
     switch (_syncStatus) {
       case SyncStatus.waiting:
@@ -450,14 +426,14 @@ class _EditNotePageState extends State<EditNotePage> {
       },
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
-          statusBarColor: item.color.toFullARGB(),
-          systemNavigationBarColor: item.color.toFullARGB(),
+          statusBarColor: _editorBackgroundColor,
+          systemNavigationBarColor: _editorBackgroundColor,
         ),
         child: Scaffold(
-          backgroundColor: item.color.toFullARGB(),
+          backgroundColor: _editorBackgroundColor,
           appBar: AppBar(
             title: Text(widget.item==null ? "Add New Note" : "Edit Note"),
-            backgroundColor: item.color.toFullARGB(),
+            backgroundColor: _editorBackgroundColor,
             actions: [
               Row(
                 children: [
@@ -495,41 +471,6 @@ class _EditNotePageState extends State<EditNotePage> {
   Widget EditBody() {
     return Column(
       children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: _colors.map((color) {
-              return Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: GestureDetector(
-                  onTap: () => _changeNoteColor(color),
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          spreadRadius: 1,
-                          blurRadius: 5,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: item.color.toFullARGB() == color.value.toFullARGB()
-                            ? darkenColor(item.color.toFullARGB(),0.2)
-                            : Colors.black12,
-                        width: item.color.toFullARGB() == color.value.toFullARGB() ? 2 : 0,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
         Expanded(
           child: Align(
             alignment: Alignment.topCenter,

@@ -144,7 +144,6 @@ class _SettingViewState extends State<SettingView> {
             GlobalConfig.aiModel = value;
             break;
         }
-        Get.find<MainController>().scheduleSettingsSync();
       },
     );
   }

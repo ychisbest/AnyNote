@@ -178,8 +178,7 @@ class _BrowserState extends State<Browser> {
                             padding: const EdgeInsets.all(8.0),
                             child: NoteItemWidget(
                                 controller: c,
-                                item: memo,
-                                isArchive: memo.isArchived));
+                                item: memo));
                       },
                     );
             }),

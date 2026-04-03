@@ -79,7 +79,6 @@ class RandomView extends StatelessWidget {
                 ...dayNotes.map((note) => NoteItemWidget(
                   controller: c,
                   item: note,
-                  isArchive: false,
                 )),
                 const SizedBox(height: 50),
               ],

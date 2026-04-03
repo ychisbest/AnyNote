@@ -44,9 +44,9 @@ class _ArchiveListState extends State<ArchiveList> {
         if (widget.isArchive) _buildTagFilters(),
         Expanded(
           child: Obx(() {
-            var archivedNotes = widget.isArchive
-                ? controller.filteredArchivedNotes
-                : controller.filteredUnarchivedNotes;
+            final notes = widget.isArchive
+                ? controller.filteredNotes
+                : controller.filteredTodayNotes;
             return Scrollbar(
               controller: sc,
               child: ScrollConfiguration(
@@ -65,7 +65,7 @@ class _ArchiveListState extends State<ArchiveList> {
                       // Handle error, e.g., show a SnackBar
                     }
                   },
-                  child: BuildNoteList(archivedNotes, widget.isArchive,sc:sc),
+                  child: BuildNoteList(notes, sc: sc),
                 ),
               ),
             );

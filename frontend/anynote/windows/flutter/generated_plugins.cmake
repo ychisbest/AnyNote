@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   screen_retriever_windows
   window_manager
+  zstandard_windows
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

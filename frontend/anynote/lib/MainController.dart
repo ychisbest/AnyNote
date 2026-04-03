@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:anynote/Extension.dart';
 import 'package:anynote/app_snackbar.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +20,6 @@ class MainController extends GetxController {
   UpdateEditTextCallback? updateEditTextCallback;
 
   final RxInt fontSize = GlobalConfig.fontSize.obs;
-  Timer? _settingsSaveDebounce;
 
   @override
   void onInit() {
@@ -32,7 +30,6 @@ class MainController extends GetxController {
 
   @override
   void onClose() {
-    _settingsSaveDebounce?.cancel();
     super.onClose();
   }
 
@@ -122,12 +119,6 @@ class MainController extends GetxController {
       final fetchedNotes = await _api.getNotes();
       notes.assignAll(fetchedNotes);
 
-      try {
-        await syncSettingsFromServer();
-      } catch (e) {
-        print('Error fetching settings: $e');
-      }
-
       isLoading.value = false;
 
       await saveNotesToLocal();
@@ -141,27 +132,6 @@ class MainController extends GetxController {
       print('Error fetching notes: $e');
       return false;
     }
-  }
-
-  Future<void> syncSettingsFromServer() async {
-    final settings = await _api.getSettings();
-    GlobalConfig.applyServerSettings(settings);
-    fontSize.value = GlobalConfig.fontSize;
-  }
-
-  Future<void> saveSettingsToServer() async {
-    await _api.saveSettings(GlobalConfig.toServerSettings());
-  }
-
-  void scheduleSettingsSync({Duration delay = const Duration(milliseconds: 400)}) {
-    _settingsSaveDebounce?.cancel();
-    _settingsSaveDebounce = Timer(delay, () async {
-      try {
-        await saveSettingsToServer();
-      } catch (e) {
-        print('Error saving settings: $e');
-      }
-    });
   }
 
   Future<Map<String, dynamic>> login() async {
@@ -205,30 +175,9 @@ class MainController extends GetxController {
 
   Future<NoteItem> addNote(NoteItem newNote) async {
     try {
-      //final localId = newNote.id;
-      final addedNote = await _api.addNoteItem(newNote.content ?? "");
+      final addedNote = await _api.postNoteItem(newNote);
       addNoteLocally(addedNote);
-
-      final now = DateTime.now();
-      if (addedNote.id != null) {
-        final patchedNote = NoteItem(
-          id: addedNote.id,
-          isTopMost: addedNote.isTopMost,
-          content: addedNote.content,
-          createTime: now,
-          lastUpdateTime: addedNote.lastUpdateTime ?? now,
-          archiveTime: addedNote.archiveTime,
-          isArchived: addedNote.isArchived,
-          color: addedNote.color,
-          index: addedNote.index,
-        );
-        final updatedNote = await _api.putNoteItem(addedNote.id!, patchedNote);
-        updateNoteLocally(updatedNote);
-        await saveNotesToLocal();
-        return updatedNote;
-      }
-
-      //updateNoteLocally(addedNote, id: localId);
+      await saveNotesToLocal();
       return addedNote;
     } catch (e) {
       print('Error adding note: $e');
@@ -238,8 +187,20 @@ class MainController extends GetxController {
 
   Future<void> archiveNote(int id) async {
     try {
-      await _api.archiveItem(id);
-      archiveNoteLocally(id);
+      final note = notes.firstWhere((item) => item.id == id);
+      final updatedNote = NoteItem(
+        id: note.id,
+        isTopMost: note.isTopMost,
+        content: note.content,
+        createTime: note.createTime,
+        lastUpdateTime: note.lastUpdateTime,
+        archiveTime: note.archiveTime,
+        isArchived: true,
+        index: note.index,
+      );
+      final savedNote = await _api.putNoteItem(id, updatedNote);
+      updateNoteLocally(savedNote, id: id);
+      await saveNotesToLocal();
     } catch (e) {
       print('Error archiving note: $e');
     }
@@ -247,8 +208,20 @@ class MainController extends GetxController {
 
   Future<void> unarchiveNote(int id) async {
     try {
-      await _api.unarchiveItem(id);
-      unarchiveNoteLocally(id);
+      final note = notes.firstWhere((item) => item.id == id);
+      final updatedNote = NoteItem(
+        id: note.id,
+        isTopMost: note.isTopMost,
+        content: note.content,
+        createTime: note.createTime,
+        lastUpdateTime: note.lastUpdateTime,
+        archiveTime: note.archiveTime,
+        isArchived: false,
+        index: note.index,
+      );
+      final savedNote = await _api.putNoteItem(id, updatedNote);
+      updateNoteLocally(savedNote, id: id);
+      await saveNotesToLocal();
     } catch (e) {
       print('Error unarchiving note: $e');
     }
@@ -289,22 +262,6 @@ class MainController extends GetxController {
       await _api.deleteNoteItem(id);
     } catch (e) {
       print('Error deleting note without prompt: $e');
-    }
-  }
-
-  Future<void> updateIndex(List<NoteItem> items) async {
-    try {
-      List<int> ids = items.map((item) => item.id!).toList();
-      List<int> indices = [];
-      for(int i = 1;i <= ids.length;i++){
-        indices.add(i);
-      }
-
-      updateIndicesLocally(ids, indices);
-
-      await _api.updateIndex(ids, indices);
-    } catch (e) {
-      print('Error updating note indices: $e');
     }
   }
 
@@ -367,9 +324,6 @@ class MainController extends GetxController {
       if (a.isTopMost != b.isTopMost) {
         return b.isTopMost ? 1 : -1;
       }
-      if (withIndex && a.index != b.index) {
-        return a.index.compareTo(b.index);
-      }
       return b.createTime.compareTo(a.createTime);
     });
     return notesList;
@@ -381,7 +335,18 @@ class MainController extends GetxController {
 
   List<NoteItem> get filteredUnarchivedNotes {
     var res = notes.where((note) => !note.isArchived).toList();
-    return sortNotes(res, true);
+    return sortNotes(res, false);
+  }
+
+  List<NoteItem> get filteredTodayNotes {
+    final now = DateTime.now();
+    return filteredNotes.where((note) {
+      final createdAt = note.createTime.toLocal();
+      final isToday = createdAt.year == now.year &&
+          createdAt.month == now.month &&
+          createdAt.day == now.day;
+      return note.isTopMost || isToday;
+    }).toList();
   }
 
   Map<String, List<NoteItem>> get extractTagsWithNotes {

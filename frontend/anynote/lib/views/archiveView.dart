@@ -13,7 +13,7 @@ class Archiveview extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: const Text("Archived"),
+          title: const Text("Search"),
         ),
         body: SafeArea(
           child: const ArchiveList(

@@ -52,7 +52,7 @@ class WindowsWideHome extends StatelessWidget {
                   children: [
                     _buildNotesWide(),
                     _buildMainContent(const Browser()),
-                     ArchiveList(isArchive: true),
+                    const ArchiveList(isArchive: true),
                     _buildMainContent(TagList()),
                     _buildMainContent(const SettingView()),
                   ],
@@ -92,9 +92,9 @@ class WindowsWideHome extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 10),
               children: [
-                _buildMenuItem(Icons.note_outlined, "Notes", 0),
+                _buildMenuItem(Icons.today_outlined, "Today", 0),
                 _buildMenuItem(Icons.calendar_today_outlined, "Dates", 1),
-                _buildMenuItem(Icons.archive_outlined, "Archived", 2),
+                _buildMenuItem(Icons.search, "Search", 2),
                 _buildMenuItem(Icons.local_offer_outlined, "Tags", 3),
                 _buildMenuItem(Icons.settings_outlined, "Settings", 4),
               ],

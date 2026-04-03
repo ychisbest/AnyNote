@@ -1,8 +1,8 @@
-﻿using anynote;
+using anynote;
+using anynote.Compression;
 using anynote.Hubs;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 Directory.CreateDirectory("/data");
 
@@ -11,19 +11,28 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 builder.Services.AddResponseCompression(c =>
-    {
-        c.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/json" });
-        c.Providers.Add(new BrotliCompressionProvider(new BrotliCompressionProviderOptions() { Level = System.IO.Compression.CompressionLevel.Optimal }));
-        c.Providers.Add(new GzipCompressionProvider(
-        new GzipCompressionProviderOptions()
-        {
-            Level = System.IO.Compression.CompressionLevel.Optimal
-        }
-        ));
-    }
-);
+{
+    c.EnableForHttps = true;
+    c.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/json" });
+    c.Providers.Clear();
+    c.Providers.Add<ZstdCompressionProvider>();
+    c.Providers.Add<BrotliCompressionProvider>();
+    c.Providers.Add<GzipCompressionProvider>();
+});
+builder.Services.Configure<ZstdCompressionProviderOptions>(options =>
+{
+    options.Level = 6;
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+{
+    options.Level = System.IO.Compression.CompressionLevel.Fastest;
+});
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = System.IO.Compression.CompressionLevel.Fastest;
+});
 
-// 添加环境变量到配置中
+// Add environment variables to configuration.
 builder.Configuration.AddEnvironmentVariables();
 builder.Services.AddLogging();
 builder.Services.AddSignalR();
@@ -58,18 +67,11 @@ app.MapControllers();
 app.MapHub<NoteHub>("/notehub");
 
 Console.WriteLine($@"
-┌──────────────────────────────────────────────────────────────────┐
-│  █████╗ ███╗   ██╗██╗   ██╗███╗   ██╗ ██████╗ ████████╗███████╗  │
-│ ██╔══██╗████╗  ██║╚██╗ ██╔╝████╗  ██║██╔═══██╗╚══██╔══╝██╔════╝  │
-│ ███████║██╔██╗ ██║ ╚████╔╝ ██╔██╗ ██║██║   ██║   ██║   █████╗    │
-│ ██╔══██║██║╚██╗██║  ╚██╔╝  ██║╚██╗██║██║   ██║   ██║   ██╔══╝    │
-│ ██║  ██║██║ ╚████║   ██║   ██║ ╚████║╚██████╔╝   ██║   ███████╗  │
-│ ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═══╝ ╚═════╝    ╚═╝   ╚══════╝  │
-└──────────────────────────────────────────────────────────────────┘
+============================================================
+ AnyNote
+============================================================
 
-                                                               
-
-{(!string.IsNullOrEmpty(Secret.value)? $"* your secret is {Secret.value}": "* You haven't set a secret")}
+{(!string.IsNullOrEmpty(Secret.value) ? $"* your secret is {Secret.value}" : "* You haven't set a secret")}
 
 ");
 app.Run();

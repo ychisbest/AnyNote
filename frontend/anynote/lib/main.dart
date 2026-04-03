@@ -192,7 +192,7 @@ class NerrowHome extends StatelessWidget {
                 c.exitSelectionMode();
                 Get.to(() => Archiveview());
               },
-              child: const Icon(Icons.archive_outlined, color: Colors.black87),
+              child: const Icon(Icons.search, color: Colors.black87),
             ),
           ],
         ),
@@ -413,7 +413,7 @@ class _BuildDrawerState extends State<BuildDrawer> {
                   _buildSectionLabel('Library'),
                   _buildDrawerItem(
                     icon: Icons.search_rounded,
-                    title: 'Archived & Search',
+                    title: 'Search',
                     onTap: () async {
                       Get.back();
                       Get.to(() => Archiveview());
